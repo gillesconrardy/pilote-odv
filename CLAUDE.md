@@ -86,8 +86,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   (démarrage, toutes les 2 min, retour dans l'appli) et affiche un bandeau « Nouvelle version disponible » qui recharge avec `?v=N`, puis commit de
   `index.html`, `simulateur/index.html`, `version.json` sur `main` ; en ligne en 1–2 min.
 - Logo : véhicule « 01 » en pixel art (`icons/logo.svg`, PNG dérivés, `manifest.webmanifest`).
-- Style visuel « LEGO » : gris bleuté foncé + bande orange (comme les véhicules), fond à picots,
-  boutons aux couleurs LEGO (vert, jaune, bleu, rouge). Garder ce style pour toute nouvelle page.
+- Style visuel de l'appli (depuis v1.22, choix de Gilles parmi 3 maquettes) : **« Holo ambre »**, futuriste
+  minimaliste — fond graphite #121314, cartes #1a1c1e, accent ambre #ff9a3c, texte #edeae4, polices Space Grotesk
+  + Space Mono (Google Fonts), coins « crochets » ambre sur les cartes, titres `> EN CAPITALES` en mono, plateau
+  sombre à points avec règle 0–40. Bloc CSS « Thème Holo ambre » en fin de `<style>` dans `src/page.html`.
+  Le simulateur garde encore l'ancien style LEGO (gris + bande orange, fond à picots).
 - Nouvelle chorégraphie : fichier de lignes `mvc.*` indentées de 4 espaces dans `choregraphies/`,
   partant de et revenant à (30,0)(20,0)(10,0)(0,0), sans chevauchement ; l'ajouter à `CHORS` dans
   `build.py`. `gen_cinq.py` / `gen_vague_spirale.py` montrent comment les générer et les valider.

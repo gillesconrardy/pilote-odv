@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#3a3d41">
+<meta name="theme-color" content="#121314">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
 <title>Pilote ODV</title>
 <link rel="icon" type="image/png" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -151,6 +153,80 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
 .batt i{display:block;height:100%;width:0;border-radius:1px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
+/* ================= Thème « Holo ambre » (graphite + ambre, futuriste minimaliste) ================= */
+:root{--bg:#121314;--stud:#121314;--card:#1a1c1e;--ink:#edeae4;--muted:#a8a49c;--line:#3a3631;--soft:#232528;
+  --dbg:#24262a;--dbg2:#1a1c1e;--lbg:#121314;--panel:#17181a;--edge:#4a443d;
+  --accent:#ff9a3c;--green:#4cc27a;--blue:#5aa2ff;--red:#e5483a;--amber:#ff9a3c;--yellow:#ffc24a;
+  --v1:#3b7ddd;--v2:#f08a30;--v3:#3da663;--v4:#9b6bd6;
+  --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;--sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html,body{background:var(--bg);font-family:var(--sans);color:var(--ink)}
+header{background:var(--panel);box-shadow:none;border-radius:4px;color:var(--ink);padding:14px 16px}
+header::before{content:"";position:absolute;left:0;top:0;width:14px;height:14px;border-left:2px solid var(--accent);border-top:2px solid var(--accent);background:none}
+header::after{content:"";position:absolute;left:auto;right:0;top:auto;bottom:0;width:14px;height:14px;height:14px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);background:none;border-radius:0}
+.logo{width:42px;height:42px;filter:none;border-radius:6px}
+h1{font:500 19px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ink)}
+header .sub{color:var(--muted);font-size:11.5px;letter-spacing:.06em}
+.ver{font:400 10.5px var(--mono);color:var(--muted)}
+.ver b{background:none;color:var(--accent);border:1px solid rgba(255,154,60,.45);border-radius:6px;font:700 11px var(--mono);padding:1px 7px}
+nav{background:var(--card);box-shadow:none;border-radius:12px;padding:4px;gap:6px}
+nav button{background:none;box-shadow:none;color:var(--muted);font:500 13px var(--sans);letter-spacing:.1em;border:1px solid transparent;border-radius:9px;padding:9px 4px}
+nav button.on{background:#2a2622;color:var(--accent);border-color:rgba(255,154,60,.45);box-shadow:none;font-weight:600}
+.card{background:var(--card);box-shadow:none;border-radius:4px;border:1px solid #232528}
+.card::before{content:"";position:absolute;left:-1px;top:-1px;width:12px;height:12px;border-left:2px solid var(--accent);border-top:2px solid var(--accent);background:none;opacity:1}
+.card::after{content:"";position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent)}
+h2{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--accent)}
+h2::before{content:"> "}
+.sub{color:var(--muted)}
+.btn{background:#1f2124;color:var(--ink);border:1px solid var(--edge);box-shadow:none;border-radius:10px;font-weight:500;letter-spacing:.04em}
+.btn.primary{background:var(--accent);color:#1a1208;border-color:var(--accent);font-weight:600}
+.btn:active,.rb:active{transform:translateY(1px)}
+.ch{border-bottom:1px dashed var(--line)}
+.ch .grip{color:var(--muted)}
+.ch.drag{background:#24262a;box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.ch .nm span{font-family:var(--mono);font-size:11.5px}
+.ord button{background:#1f2124;border:1px solid var(--edge);color:var(--ink);border-radius:8px}
+.badge{font-family:var(--mono);font-weight:400;font-size:10.5px}
+.tip{border-color:var(--muted);color:var(--muted)}
+.bubble,.newver{background:#24262a;color:var(--ink);border-bottom-color:var(--accent);border-radius:6px}
+.sw span{background:#34302b}
+.sw span::after{background:#edeae4;box-shadow:none}
+.sw input:checked+span::after{background:#1a1208}
+.veh{background:var(--panel);border:1px solid #2a2c2f;border-top:3px solid var(--vc);border-radius:6px;box-shadow:none}
+.veh .role{font-family:var(--mono);font-size:10.5px}
+.veh .more{color:var(--muted)}
+.tag{background:#24262a;border-bottom-color:var(--accent);font-family:var(--mono);border-radius:6px}
+.tag i{border-color:var(--panel)}
+.bar,.prog{background:#2a2622}
+.note{background:var(--panel);border:1px dashed var(--line);border-radius:4px}
+.rb{box-shadow:none;border-radius:10px;font-family:var(--sans);font-weight:600;letter-spacing:.06em}
+.rb.play{background:var(--accent);color:#1a1208}
+.rb.pause,.rb.home{background:#1f2124;color:var(--ink);border:1px solid var(--edge)}
+.rb.stop{background:#c62e22;color:#fff}
+.rb .ic{font-family:var(--sans)}
+.state .big{font-weight:400;letter-spacing:.02em}
+.prog{height:6px;border-radius:0}
+.banner{background:#2a2216;color:#ffd9a8;border:1px solid #6b5414;border-radius:4px}
+dialog{background:var(--card);border:1px solid var(--edge);border-radius:6px}
+textarea,input[type=text],input[type=password]{background:var(--panel)!important;color:var(--ink)!important;border:1px solid var(--edge)!important;border-radius:8px}
+.log{font-family:var(--mono)}
+.seg{background:var(--panel);border:1px solid #2a2c2f}
+.seg button.on{background:#2a2622;color:var(--accent);box-shadow:none}
+.vpick button{background:#24262a}
+.joy{background:var(--panel);border:1px solid var(--edge)}
+.joy::before,.joy::after{background:#34302b}
+.joy .knob{box-shadow:0 0 0 6px rgba(255,154,60,.15)}
+.edwrap{background:var(--bg)}
+.chips button{background:#1f2124;color:var(--ink);border:1px solid var(--edge);box-shadow:none;font-family:var(--mono)}
+.chips button.on{background:var(--accent);color:#1a1208;border-color:var(--accent)}
+.edrow select{background:var(--panel);border-color:var(--edge)}
+pre.code{background:var(--panel);font-family:var(--mono)}
+.odo .t{background:#24262a;font-family:var(--mono)}
+.odo .bar{background:#2a2622;border-radius:0}
+.odo b{font-family:var(--mono);font-weight:400}
+:root{color-scheme:dark}
+a{color:var(--accent)}
+input[type=checkbox],input[type=range]{accent-color:var(--accent)}
+.toast{background:#24262a;color:var(--ink);border:1px solid var(--edge);border-bottom:3px solid var(--accent);border-radius:6px}
 </style>
 </head>
 <body>
@@ -1491,13 +1567,14 @@ $('odoReset').onclick = () => { ODO.dist = [0, 0, 0, 0]; store.set('odo', ODO.di
 const cv = $('cv');
 function drawPlate(c, tl, w, man, trails, ovr) {
   const cx = c.getContext('2d'), W = c.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
-  cx.fillStyle = dark ? '#262624' : '#efeae1'; cx.fillRect(0, 0, W, W);
-  cx.fillStyle = dark ? '#3a3936' : '#ffffff'; cx.fillRect(X(35), Y(-5), 40 * u, 40 * u);
-  cx.fillStyle = dark ? '#555' : '#c9cbcd';
-  for (let gx = -4; gx <= 34; gx += 2) for (let gy = -4; gy <= 34; gy += 2) { cx.beginPath(); cx.arc(X(gx), Y(gy), u * .22, 0, 7); cx.fill(); }
-  cx.fillStyle = '#3d3e40'; cx.fillRect(X(35), Y(-6), 41 * u, u * .45); cx.fillRect(X(-5.6), Y(-6), u * .45, 41 * u);
-  cx.fillStyle = '#d0302a'; [[-4, -5.8], [-2.6, -5.8], [-5.8, -4.2]].forEach(([a, b]) => { cx.beginPath(); cx.arc(X(a), Y(b), u * .45, 0, 7); cx.fill(); });
+  cx.fillStyle = '#121314'; cx.fillRect(0, 0, W, W);
+  cx.fillStyle = '#17181a'; cx.fillRect(X(35), Y(-5), 40 * u, 40 * u);
+  cx.fillStyle = '#3a3631';
+  for (let gx = -4; gx <= 34; gx += 2) for (let gy = -4; gy <= 34; gy += 2) { cx.beginPath(); cx.arc(X(gx), Y(gy), u * .16, 0, 7); cx.fill(); }
+  cx.fillStyle = '#4a443d'; cx.fillRect(X(35), Y(-5.5), 40.5 * u, u * .3); cx.fillRect(X(-5.5), Y(-5.5), u * .3, 40.5 * u);
+  cx.fillStyle = '#ff9a3c'; cx.beginPath(); cx.arc(X(-5.35), Y(-5.35), u * .55, 0, 7); cx.fill();
+  cx.fillStyle = '#a8a49c'; cx.font = `${1.3 * u}px "Space Mono",ui-monospace,monospace`; cx.textBaseline = 'top';
+  for (let k = 0; k <= 40; k += 10) { cx.textAlign = k === 0 ? 'right' : k === 40 ? 'left' : 'center'; cx.fillText(String(k), X(k - 5), u * .25); }
   const cols = ['--v1', '--v2', '--v3', '--v4'].map(k => getComputedStyle(document.documentElement).getPropertyValue(k).trim());
   if (trails && tl) {
     for (let i = 0; i < 4; i++) {
@@ -1521,12 +1598,12 @@ function drawPlate(c, tl, w, man, trails, ovr) {
     const p = P[i], L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
     let hit = false;
     for (let j = 0; j < 4; j++) if (j !== i && Math.max(Math.abs(p[0] - P[j][0]), Math.abs(p[1] - P[j][1])) < 9) hit = true;
-    cx.fillStyle = '#2f3033'; cx.beginPath(); cx.roundRect ? cx.roundRect(L, T, S, S, u) : cx.rect(L, T, S, S); cx.fill();
-    cx.fillStyle = cols[i]; cx.fillRect(L + u, T + S - 2.2 * u, S - 2 * u, u * .6);
-    cx.fillStyle = '#fff'; cx.font = `700 ${3.2 * u}px ui-monospace,monospace`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.fillStyle = '#24262a'; cx.beginPath(); cx.roundRect ? cx.roundRect(L, T, S, S, u * .8) : cx.rect(L, T, S, S); cx.fill();
+    cx.fillStyle = cols[i]; cx.fillRect(L + u * .8, T + S - 1.3 * u, S - 1.6 * u, u * .9);
+    cx.fillStyle = '#edeae4'; cx.font = `700 ${3 * u}px "Space Mono",ui-monospace,monospace`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
     cx.fillText('0' + (i + 1), X(p[0]), Y(p[1] - .6));
-    if (man && man.v === i + 1) { cx.strokeStyle = '#e2408a'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
-    if (hit) { cx.strokeStyle = '#c91a09'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+    if (man && man.v === i + 1) { cx.strokeStyle = '#ff9a3c'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+    if (hit) { cx.strokeStyle = '#e5483a'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
   }
 }
 function drawBoard() {

@@ -15,13 +15,13 @@ IS_SENDER = VEHICLE_ID == SENDER_ID
 ME = VEHICLE_ID - 1            # indice du vehicule (0 a 3)
 CHANNEL = 1
 DO_HOMING = True          # True : recalage contre la cloture au demarrage
-LOOP = True                 # True : la suite de choregraphies tourne en boucle
+LOOP = False                 # True : la suite de choregraphies tourne en boucle
 GEAR = 80                     # degres moteur par pas de grille
 LEAD = 1000                   # ms : delai avant application d'une commande (tous en meme temps)
 BCAST_MS = 250                # ms : intervalle de diffusion de l'horloge
 COMP = 30                     # ms : compensation du delai radio
 BIG = 1000000000
-GEN = 315                   # numero de version : les 4 vehicules d'un meme envoi ont le meme
+GEN = 340                   # numero de version : les 4 vehicules d'un meme envoi ont le meme
 HOME_X = 30
 HOME_Y = 0
 TOTAL = 119498               # ms : duree totale de la suite
