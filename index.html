@@ -243,6 +243,7 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .btn.close{border-radius:5px!important}
 .xclose{flex:none;width:36px;height:36px;padding:0;display:grid;place-items:center;background:transparent;border:1.5px solid var(--accent);border-radius:5px;color:var(--accent);cursor:pointer}
 .xclose.flash{animation:btnFlashX .35s ease-out}
+.xclose:focus{outline:none}.xclose:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @keyframes btnFlashX{0%{background:#fff}100%{background:transparent}}
 /* même arrondi léger (5 px) pour tous les boutons et sélecteurs */
 .btn,.rb,.seg,.seg button,.ord button,.chips button,.addchip,.pchips button,.aiex button,.vpick button{border-radius:5px!important}
@@ -584,7 +585,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 </div></div>
 <button class="newver" id="newVer"><span style="font-size:22px">⟳</span><span><span id="newVerTxt">Nouvelle version disponible</span><small>Touche ici pour mettre à jour</small></span></button>
 <dialog id="pvDlg" style="padding:12px">
-  <div class="row" style="justify-content:space-between;margin-bottom:6px"><b id="pvName" style="font-size:16px"></b><button class="xclose" id="pvClose" aria-label="Fermer" title="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap;gap:10px;margin-bottom:6px"><b id="pvName" style="font-size:16px;flex:1;min-width:0"></b><button class="xclose" id="pvClose" aria-label="Fermer" title="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <canvas id="pvCv" width="600" height="600" style="margin-top:0"></canvas>
   <div class="row" style="margin-top:8px;flex-wrap:nowrap"><button class="btn primary" id="pvPlay" style="min-width:52px">❚❚</button>
     <input type="range" id="pvSeek" min="0" max="1000" value="0" style="flex:1;accent-color:var(--accent)">
