@@ -1294,6 +1294,7 @@ async function updateAll() {
       if (!await sendVehicle(v, true, false)) throw new Error(`Échec de l'envoi au véhicule ${v} (voir son message ci-dessous).`);
     }
     msg('<span class="ok">✓ Les 4 véhicules ont la nouvelle sélection. Passe à Pilotage et appuie sur Lecture.</span>');
+    odoZero();   // nouvelle sélection : les compteurs repartent de zéro
     setUpdMode(false); showTab('tele');
   } catch (e) { msg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); }
   finally { updating = false; $('updAll').disabled = false; $('updAll2').disabled = !PLAY.length; }
@@ -1998,7 +1999,8 @@ function odoDraw(now) {
   }
   $('odoT').textContent = fm(ODO.dist.reduce((a, b) => a + b, 0));
 }
-$('odoReset').onclick = () => { ODO.dist = [0, 0, 0, 0]; store.set('odo', ODO.dist); ODO.drawAt = 0; odoDraw(performance.now()); toast('Compteurs remis à zéro'); };
+function odoZero() { ODO.dist = [0, 0, 0, 0]; ODO.speed = [0, 0, 0, 0]; ODO.last = null; store.set('odo', ODO.dist); ODO.drawAt = 0; odoDraw(performance.now()); }
+$('odoReset').onclick = () => { odoZero(); toast('Compteurs remis à zéro'); };
 // ====================================================================== mini board
 const cv = $('cv');
 function drawPlate(c, tl, w, man, trails, ovr) {
