@@ -9,7 +9,7 @@ il pilote depuis Chrome sur Android (Safari/Chrome iPhone n'ont pas le Bluetooth
 - Dossier local de Gilles : `C:\Gestion\lego_Vehicle` (copie du projet dans `Pilote ODV\`)
 - Noms Bluetooth des hubs : `vehicle1`, `vehicle2`, `vehicle3`, `vehicle4` (sans espace)
 - Ne publier (git push) que quand Gilles le demande.
-- Nom de l'application : **F4 Square** (depuis v1.29 ; titre, en-tête, manifest, simulateur). Le dépôt et l'adresse restent `pilote-odv`.
+- Nom de l'application : **F4 Square** (depuis v1.29 ; titre, en-tête, manifest, simulateur), écrit en police **Russo One** (Google Fonts), « F4 » en clair et « SQUARE » en ambre (`h1.brand`). Le dépôt et l'adresse restent `pilote-odv`.
 
 ## Le matériel et le code d'origine
 `choregraphies/0_origine_ODV_Cfg05_Vehicle01.py` = programme d'origine (4 fichiers identiques sauf

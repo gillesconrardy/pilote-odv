@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#121314">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Russo+One&display=swap">
 <title>F4 Square</title>
 <link rel="icon" type="image/png" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -234,6 +234,8 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+h1.brand{font:400 24px "Russo One",var(--sans);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+h1.brand span{color:var(--accent)}
 nav{flex-wrap:wrap}
 nav button[data-tab=stats]{flex-basis:100%}
 .slabel{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--muted)}
@@ -314,7 +316,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <img class="logo" src="/*ICON*/" alt="">
-    <div><h1 style="white-space:nowrap">F4 Square</h1></div>
+    <div><h1 class="brand">F4 <span>Square</span></h1></div>
     <div class="ver" title="Version de l'application"><b>v/*VERSION*/</b><br>/*BUILT*/</div>
   </header>
   <div class="banner" id="nobt"></div>
