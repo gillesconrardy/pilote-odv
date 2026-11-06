@@ -22,6 +22,7 @@ async def main():
         await pg.fill('#aiTxt', 'un carré qui tourne'); await pg.click('#aiGo'); await pg.wait_for_timeout(300)
         print('sans clé:', await pg.inner_text('#toast'))
         await pg.fill('#aiKey', 'sk-test'); await pg.click('#aiGo'); await pg.wait_for_timeout(1500)
+        print('statut brut:', await pg.inner_text('#aiSt'), await pg.inner_text('#toast'))
         print('appels:', len(calls), '| modèle', calls[0]['model'], '| 2e message:', calls[1]['messages'][-1]['content'][:160].replace('\n', ' / '))
         print('statut:', await pg.inner_text('#aiSt'))
         print('nom:', await pg.input_value('#edName'), '| étapes:', await pg.inner_text('#edChips'))

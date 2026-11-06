@@ -234,6 +234,16 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+.aiex{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.aiex button{flex:none;border:1px solid var(--edge);background:#1f2124;color:var(--ink);border-radius:20px;padding:6px 12px;font:500 13px var(--sans)}
+.aiex button:active{border-color:var(--accent);color:var(--accent)}
+.aibox{display:flex;gap:8px;align-items:stretch}
+.aibox textarea{flex:1;height:64px;min-height:64px;font:15px var(--sans);resize:none}
+.aibox .btn{width:56px;padding:0;font-size:22px}
+#aiSt:not(:empty){margin-top:8px}
+#aiCfg{margin-top:8px}
+#aiCfg summary{list-style:none;cursor:pointer}
+#aiCfg summary::-webkit-details-marker{display:none}
 a{color:var(--accent)}
 input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .toast{background:#24262a;color:var(--ink);border:1px solid var(--edge);border-bottom:3px solid var(--accent);border-radius:6px}
@@ -349,15 +359,6 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <div class="sub" id="edHint" style="margin-top:6px"></div>
   </div>
   <div class="card">
-    <h2>🤖 Inventer avec l'IA</h2>
-    <textarea id="aiTxt" style="height:84px;font:15px system-ui" placeholder="Décris ta chorégraphie, par ex. : les 4 véhicules forment un carré qui tourne deux fois, puis une vague lente de gauche à droite."></textarea>
-    <div class="row" style="margin-top:8px"><button class="btn primary" id="aiGo">✨ Inventer</button><span class="sub" id="aiSt" style="flex:1"></span></div>
-    <details id="aiCfg" style="margin-top:8px"><summary class="sub">Clé API Anthropic (gardée uniquement sur ce téléphone)</summary>
-      <input type="password" id="aiKey" placeholder="sk-ant-..." autocomplete="off" style="width:100%;font:15px system-ui;margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink)">
-      <div class="sub" style="margin-top:4px">Crée la clé sur console.anthropic.com (usage facturé, quelques centimes par chorégraphie). Elle n'est jamais publiée sur GitHub. <a href="#" id="aiForget">Effacer la clé</a></div>
-    </details>
-  </div>
-  <div class="card">
     <h2>Étapes</h2>
     <div class="chips" id="edChips"></div>
     <div id="edStep"></div>
@@ -368,6 +369,25 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     </div>
     <div class="row" style="margin-top:8px"><button class="btn" id="edHome">⌂ Ajouter le retour au départ</button><label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="edSnap" checked> Aimanter (1 pas)</label></div>
     <div id="edCheck" style="margin-top:10px"></div>
+  </div>
+  <div class="card" id="aiCard">
+    <h2>Inventer avec l'IA <button type="button" class="tip" data-tip="Décris le mouvement en quelques mots : l'IA propose les étapes, l'appli vérifie les collisions et les fait corriger. Tu peux ensuite tout retoucher à la main.">i</button></h2>
+    <div class="aiex" id="aiEx">
+      <button type="button" data-t="Les 4 véhicules forment un carré qui tourne deux fois sur lui-même, puis reviennent en ligne.">Carré qui tourne</button>
+      <button type="button" data-t="Une vague lente : les véhicules descendent puis remontent l'un après l'autre, de gauche à droite.">Vague</button>
+      <button type="button" data-t="Les véhicules s'enroulent en spirale vers le centre puis se déroulent vers les coins.">Spirale</button>
+      <button type="button" data-t="Un ballet en miroir : V1 et V4 font les mêmes mouvements en symétrie, V2 et V3 aussi, avec des pauses.">Miroir</button>
+      <button type="button" data-t="Un petit train : les véhicules se suivent en file le long du bord du plateau, puis rentrent.">Petit train</button>
+    </div>
+    <div class="aibox">
+      <textarea id="aiTxt" placeholder="Décris ta chorégraphie…"></textarea>
+      <button class="btn primary" id="aiGo" aria-label="Inventer">✨</button>
+    </div>
+    <div class="sub" id="aiSt"></div>
+    <details id="aiCfg"><summary class="sub" id="aiKeySum">🔑 Clé API</summary>
+      <div class="row" style="margin-top:6px;flex-wrap:nowrap"><input type="password" id="aiKey" placeholder="sk-ant-..." autocomplete="off" style="flex:1;min-width:0;font:15px var(--sans);padding:8px"><button type="button" class="tip" data-tip="Clé Anthropic à créer sur console.anthropic.com (usage facturé, quelques centimes par chorégraphie). Elle reste uniquement sur ce téléphone, jamais sur GitHub.">i</button></div>
+      <a href="#" id="aiForget" class="sub" style="display:inline-block;margin-top:6px">Effacer la clé</a>
+    </details>
   </div>
   <div class="row" style="margin-bottom:12px">
     <button class="btn" id="edPlay" style="flex:1">▶ Aperçu</button>
@@ -1342,8 +1362,11 @@ Réponds UNIQUEMENT par un objet JSON, sans texte autour :
 (ne répète pas la position de départ en première étape).`;
 try { $('aiKey').value = localStorage.getItem('odv.aikey') || ''; } catch (e) {}
 if (!$('aiKey').value) $('aiCfg').open = true;
-$('aiKey').onchange = () => { try { localStorage.setItem('odv.aikey', $('aiKey').value.trim()); } catch (e) {} };
-$('aiForget').onclick = e => { e.preventDefault(); $('aiKey').value = ''; try { localStorage.removeItem('odv.aikey'); } catch (e) {} toast('Clé effacée'); };
+const aiKeyLabel = () => { $('aiKeySum').textContent = $('aiKey').value.trim() ? '🔑 Clé API enregistrée ✓' : '🔑 Ajouter ta clé API'; };
+aiKeyLabel();
+document.querySelectorAll('#aiEx button').forEach(b => b.onclick = () => { $('aiTxt').value = b.dataset.t; $('aiTxt').focus(); });
+$('aiKey').onchange = () => { try { localStorage.setItem('odv.aikey', $('aiKey').value.trim()); } catch (e) {} aiKeyLabel(); };
+$('aiForget').onclick = e => { e.preventDefault(); $('aiKey').value = ''; try { localStorage.removeItem('odv.aikey'); } catch (e) {} aiKeyLabel(); toast('Clé effacée'); };
 async function aiCall(messages) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
