@@ -283,7 +283,8 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
         <span class="sw"><input type="checkbox" id="optLoop"><span></span></span></label>
       <label class="tog" for="optHoming"><div>Recalage au démarrage <button type="button" class="tip" data-tip="Chaque véhicule se cale contre la clôture puis rejoint sa place. Désactive-le si les véhicules sont déjà en place et que les hubs n'ont pas été éteints.">i</button></div>
         <span class="sw"><input type="checkbox" id="optHoming" checked><span></span></span></label>
-      <div class="sum"><span id="sumTxt">–</span><button class="btn primary" id="toSend">Suivant →</button></div>
+      <span id="sumTxt" hidden>–</span>
+      <button class="btn primary" id="toSend" style="width:100%;padding:14px;margin-top:10px">Suivant →</button>
       <div id="sumWarn"></div>
     </div>
   </section>
