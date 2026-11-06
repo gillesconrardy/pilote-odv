@@ -19,8 +19,17 @@ def mod(name, **kw):
     m = types.ModuleType(name); m.__dict__.update(kw); sys.modules[name] = m; return m
 
 class Color:
-    RED = 'red'; GREEN = 'green'; BLUE = 'blue'; WHITE = 'white'; YELLOW = 'yellow'; ORANGE = 'orange'; MAGENTA = 'magenta'
+    CYAN = 'cyan'; RED = 'red'; GREEN = 'green'; BLUE = 'blue'; WHITE = 'white'; YELLOW = 'yellow'; ORANGE = 'orange'; MAGENTA = 'magenta'
 class Port: A = 'A'; C = 'C'
+class Button: LEFT_PLUS='L+'; LEFT_MINUS='L-'; RIGHT_PLUS='R+'; RIGHT_MINUS='R-'; CENTER='C'
+REMOTE = {'pressed': set(), 'present': True}
+class _RButtons:
+    def pressed(self): return set(REMOTE['pressed'])
+class Remote:
+    def __init__(self, timeout=10000):
+        time.sleep(0.5 / SPEED)
+        if not REMOTE['present']: raise OSError('no remote')
+        self.buttons = _RButtons(); self.light = _Light()
 class Direction: CLOCKWISE = 1
 
 class StopWatch:
@@ -35,6 +44,7 @@ def wait(ms):
 
 class _Light:
     def on(self, c): ctx.light = c
+    CYAN = 'cyan'
     def off(self): ctx.light = None
 class _Battery:
     def voltage(self): return 7800
@@ -76,8 +86,8 @@ class _Poll:
     def register(self, s): pass
     def poll(self, t): return not STDINS[ctx.vid].empty()
 
-mod('pybricks'); mod('pybricks.hubs', TechnicHub=TechnicHub); mod('pybricks.pupdevices', Motor=Motor)
-mod('pybricks.parameters', Port=Port, Direction=Direction, Color=Color)
+mod('pybricks'); mod('pybricks.hubs', TechnicHub=TechnicHub); mod('pybricks.pupdevices', Motor=Motor, Remote=Remote)
+mod('pybricks.parameters', Port=Port, Direction=Direction, Color=Color, Button=Button)
 mod('pybricks.tools', wait=wait, StopWatch=StopWatch)
 mod('umath', sin=math.sin, cos=math.cos, pi=math.pi)
 mod('usys', stdin=_Stdin()); mod('uselect', poll=_Poll)
@@ -107,6 +117,8 @@ if __name__ == '__main__':
         th.start(); ths.append(th)
     for t_ms, ch in script:
         while true_ms() < t_ms: time.sleep(0.002)
+        if isinstance(ch, str) and ch.startswith('BTN'):
+            REMOTE['pressed'] = set(ch[3:].split()) ; continue
         if ch == 'RESTART4':
             STOPPED['v4'] = True; time.sleep(0.3)
             with AIR_LOCK: AIR.clear()

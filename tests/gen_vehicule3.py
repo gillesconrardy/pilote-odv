@@ -4,8 +4,8 @@
 #  Ne pas modifier a la main : regenerer depuis la page Pilote ODV.
 # =====================================================================
 from pybricks.hubs import TechnicHub
-from pybricks.pupdevices import Motor
-from pybricks.parameters import Port, Direction, Color
+from pybricks.pupdevices import Motor, Remote
+from pybricks.parameters import Port, Direction, Color, Button
 from pybricks.tools import wait, StopWatch
 from umath import sin, cos, pi
 
@@ -184,8 +184,56 @@ def clamp(v, a, b):
     return a if v < a else (b if v > b else v)
 
 
+# Telecommande LEGO (vehicule 4) : connectee a la demande (commande C), active seulement en manuel.
+remote = None
+OBS = [None, None, None]      # positions des 3 autres vehicules (envoyees par l'appli : O1x,y O2x,y O3x,y)
+MSPD = 0.006                  # vitesse a la telecommande (pas/ms), reglee par l'appli (commande V)
+last_g = -10000               # derniere cible recue de l'appli (joystick ou retour) : prioritaire
+rc_until = 0
+next_pos = 0
+
+
+def free_at(x, y):
+    if x < 0 or x > 30 or y < 0 or y > 30:
+        return False
+    for o in OBS:
+        if o is not None and abs(x - o[0]) < 10 - 1e-6 and abs(y - o[1]) < 10 - 1e-6:
+            return False
+    return True
+
+
+def remote_connect():
+    global remote
+    hub.light.on(Color.CYAN)
+    try:
+        remote = Remote(timeout=6000)
+        remote.light.on(Color.ORANGE)
+        print('RC', 1)
+    except OSError:
+        remote = None
+        print('RC', 0)
+    hub.light.on(Color.MAGENTA if manual else Color.BLUE)
+
+
 def manual_line(s):
-    global manual, blend, tx, ty
+    global manual, blend, tx, ty, MSPD, last_g
+    if s == 'C':
+        if manual:
+            remote_connect()
+        return
+    if s[0] == 'V':
+        try:
+            MSPD = clamp(int(s[1:]) / 100000, 0.0005, 0.016)
+        except ValueError:
+            pass
+        return
+    if s[0] == 'O' and len(s) > 2:
+        k = s.find(',')
+        try:
+            OBS[int(s[1]) - 1] = (int(s[2:k]) / 100, int(s[k + 1:]) / 100)
+        except (ValueError, IndexError):
+            pass
+        return
     if s == 'M':
         manual = True
         blend = False
@@ -207,6 +255,7 @@ def manual_line(s):
                 return
             tx = clamp(nx, -1, 31)
             ty = clamp(ny, -1, 31)
+            last_g = watch.time()
 
 
 if IS_SENDER:
@@ -361,6 +410,35 @@ while True:
             continue
         raw = int((1 + slope) * watch.time() + icpt)
     x, y = pos_at(wrap(vt(raw)))
+    if manual and remote is not None:
+        try:
+            pr = remote.buttons.pressed()
+        except OSError:
+            remote = None
+            pr = ()
+            print('RC', 0)
+        # memes boutons que le programme telecommande : gauche = moteur port C (X), droite = moteur port A (Y)
+        vx = 1 if Button.LEFT_PLUS in pr else (-1 if Button.LEFT_MINUS in pr else 0)
+        vy = -1 if Button.RIGHT_PLUS in pr else (1 if Button.RIGHT_MINUS in pr else 0)
+        if (vx or vy) and local - last_g > 400:
+            step = MSPD * (local - last_loop)
+            if vx and vy:
+                step *= 0.7071
+            nx = clamp(tx + vx * step, 0, 30)
+            ny = clamp(ty + vy * step, 0, 30)
+            if free_at(nx, ny):
+                tx = nx
+                ty = ny
+            elif free_at(nx, ty):
+                tx = nx
+            elif free_at(tx, ny):
+                ty = ny
+            rc_until = local + 300
+    if manual and IS_SENDER and local >= next_pos:
+        # position du vehicule pour l'appli (souvent si la telecommande bouge, sinon toutes les secondes)
+        moving = local < rc_until
+        next_pos = local + (200 if moving else 1000)
+        print('POS', int(mx * 100), int(my * 100), 1 if moving else 0)
     if manual or blend:
         # deplacement a vitesse limitee vers la cible manuelle (ou vers la choregraphie apres Q)
         gx = tx if manual else x
