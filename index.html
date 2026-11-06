@@ -234,6 +234,14 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+nav button{font-size:12px;letter-spacing:0;padding:9px 2px;white-space:nowrap}
+.sunext{font-size:15px;margin:2px 0 10px}
+.surow{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:6px;border:1px solid transparent;margin-bottom:6px;background:var(--panel)}
+.surow.next{border-color:rgba(255,154,60,.55)}
+.surow.ok .st{color:var(--green)}
+.surow .st{font-size:12px;color:var(--muted);min-height:0}
+.surow .btn{flex:none;min-width:96px}
+.vall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chiprow{display:flex;gap:6px;align-items:flex-start}
 .chiprow .chips{flex:1;min-width:0}
 .addchip{flex:none;width:46px;height:38px;margin-top:4px;border-radius:8px;border:1px dashed var(--accent);background:none;color:var(--accent);font:600 20px var(--sans)}
@@ -266,10 +274,23 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <div class="banner" id="nobt"></div>
 
   <nav>
+    <button data-tab="setup">Mise en place</button>
     <button data-tab="choix" class="on">Programme</button>
-    <button data-tab="envoi">Envoi</button>
+    <button data-tab="envoi">Véhicules</button>
     <button data-tab="tele">Pilotage</button>
   </nav>
+
+  <!-- ======================= 0. MISE EN PLACE (toujours avec recalage) ======================= -->
+  <section id="setup">
+    <div class="card">
+      <h2>Mise en place <button type="button" class="tip" data-tip="Chaque véhicule reçoit le programme, se cale contre la clôture puis rejoint sa place de départ. Un seul véhicule sur le plateau à la fois, dans l'ordre 1, 2, 3 puis 4. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
+      <div class="sunext" id="suNext"></div>
+      <div id="suList"></div>
+      <div class="sub" id="suSel" style="margin-top:10px"></div>
+      <button class="btn primary" id="suGo" style="width:100%;padding:14px;margin-top:10px" hidden>Aller au pilotage →</button>
+      <button class="btn" id="suReset" style="width:100%;margin-top:8px">↺ Recommencer la mise en place</button>
+    </div>
+  </section>
 
   <!-- ======================= 1. PROGRAMME ======================= -->
   <section id="choix" class="on">
@@ -281,12 +302,9 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <div class="card">
       <label class="tog" for="optLoop"><div>Jouer en boucle <button type="button" class="tip" data-tip="La suite recommence au début quand elle est finie.">i</button></div>
         <span class="sw"><input type="checkbox" id="optLoop"><span></span></span></label>
-      <label class="tog" for="optHoming"><div>Recalage au démarrage <button type="button" class="tip" data-tip="Chaque véhicule se cale contre la clôture puis rejoint sa place. Désactive-le si les véhicules sont déjà en place et que les hubs n'ont pas été éteints.">i</button></div>
-        <span class="sw"><input type="checkbox" id="optHoming" checked><span></span></span></label>
       <span id="sumTxt" hidden>–</span>
-      <button class="btn primary" id="toSend" style="width:100%;padding:14px;margin-top:10px">Suivant →</button>
-      <div id="updBox" hidden>
-        <button class="btn primary" id="updAll2" style="width:100%;padding:14px;margin-top:10px">⟳ Mettre à jour les 4 véhicules</button>
+      <div id="updBox">
+        <button class="btn primary" id="updAll2" style="width:100%;padding:14px;margin-top:10px">⟳ Envoyer aux 4 véhicules</button>
         <div class="sub" id="updMsg2" style="margin-top:8px"></div>
       </div>
       <div id="sumWarn"></div>
@@ -296,14 +314,13 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <!-- ======================= 2. ENVOI ======================= -->
   <section id="envoi">
     <div class="card">
-      <h2>Changer de chorégraphies</h2>
-      <div class="row"><button class="btn primary" id="updAll">⟳ Mettre à jour les 4 véhicules</button><button class="btn" id="discAll">Tout déconnecter</button></div>
+      <h2>Les 4 véhicules <button type="button" class="tip" data-tip="Reconnecter les 4 : ramène les véhicules au départ, puis leur renvoie la sélection de l'onglet Programme, sans recalage. Tout déconnecter : le téléphone coupe la liaison, les programmes continuent sur les hubs.">i</button></h2>
+      <div class="vall"><button class="btn primary" id="updAll">⟳ Reconnecter les 4</button><button class="btn" id="discAll">Tout déconnecter</button></div>
       <div class="sub" id="updMsg" style="margin-top:8px"></div>
     </div>
     <div class="card">
-      <h2>Envoyer aux hubs</h2>
+      <h2>Un par un</h2>
       <div id="vehList" class="vgrid"></div>
-      <div class="note" id="howto"></div>
       <details style="margin-top:10px"><summary class="sub">Noms des hubs (pour trouver le bon hub automatiquement)</summary>
         <div id="names" style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-top:8px"></div>
         <div class="sub" style="margin-top:6px">La fenêtre Bluetooth ne propose que le hub portant ce nom. Laisse vide pour voir tous les hubs.</div>
@@ -767,6 +784,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem('odv.' + k); re
 
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
 function showTab(id) {
+  try { localStorage.setItem('odv.tab', id); } catch (e) {}
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
   if (id === 'tele') drawBoard();
@@ -774,8 +792,7 @@ function showTab(id) {
 }
 // mode « changer de chorégraphies » (depuis Pilotage) : le bouton de mise à jour remplace « Suivant »
 function setUpdMode(on) {
-  $('updBox').hidden = !on; $('toSend').hidden = on;
-  if (on) $('updMsg2').innerHTML = 'Coche les chorégraphies, puis mets à jour les 4 véhicules.';
+  if (on) $('updMsg2').innerHTML = '';
 }
 
 if (!navigator.bluetooth) {
@@ -906,15 +923,12 @@ function refresh() {
   const w = $('sumWarn');
   const risky = PLAY.filter(i => i.col);
   w.innerHTML = risky.length ? `<div class="note"><b>Attention :</b> ${risky.map(i => esc(i.name)).join(', ')} contient un chevauchement entre véhicules (vérifie-le dans le simulateur).</div>` : '';
-  $('toSend').disabled = !PLAY.length; if ($('updAll2') && !updating) $('updAll2').disabled = !PLAY.length;
+  if ($('updAll2') && !updating) $('updAll2').disabled = !PLAY.length; if (typeof suRender === 'function') suRender();
   renderVehicles();
   drawBoard();
 }
 $('optLoop').checked = store.get('loop2', false);
-$('optHoming').checked = store.get('homing', true);
 $('optLoop').onchange = () => { store.set('loop2', $('optLoop').checked); progCache = {}; renderVehicles(); };
-$('optHoming').onchange = () => { store.set('homing', $('optHoming').checked); progCache = {}; renderVehicles(); };
-$('toSend').onclick = () => showTab('envoi');
 
 // add custom
 if ($('addBtn')) $('addBtn').onclick = () => { $('dlgName').value = ''; $('dlgSrc').value = ''; $('dlgMsg').textContent = ''; $('dlg').showModal(); };
@@ -950,10 +964,10 @@ function genId() {
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return 1 + ((h >>> 0) % 999);
 }
-function programText(vid, homing = $('optHoming').checked) {
+function programText(vid, homing = false) {
   return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name) });
 }
-async function compileFor(vid, homing = $('optHoming').checked) {
+async function compileFor(vid, homing = false) {
   const key = vid + (homing ? 'h' : 'n');
   if (progCache[key]) return progCache[key];
   const src = programText(vid, homing);
@@ -1075,23 +1089,21 @@ function renderVehicles() {
         <div class="line" id="cn${v}"></div>
         <div class="line" id="bat${v}"></div>
         <div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div>
-        <button class="btn primary main" id="send${v}">🔗 Connecter</button>
+        <button class="btn primary main" id="send${v}">Reconnecter</button>
         <button class="more" id="more${v}" title="Autres actions">⋯</button>
         <div class="acts"><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">↻ Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>`;
       box.appendChild(d);
       $('more' + v).onclick = () => d.classList.toggle('open');
-      $('send' + v).onclick = () => sendVehicle(v, true);
+      $('send' + v).onclick = () => { const h = V[v].hub; if (h && h.connected) disconnectOne(v); else sendVehicle(v, true, false); };
       $('run' + v).onclick = () => sendVehicle(v, false);
       $('copy' + v).onclick = async () => { try { await navigator.clipboard.writeText(programText(v)); toast('Programme du véhicule ' + v + ' copié'); } catch { toast('Copie refusée par le navigateur'); } };
     }
   }
   for (let v = 1; v <= 4; v++) { $('send' + v).disabled = !TL || V[v].busy; $('run' + v).disabled = V[v].busy; $('copy' + v).disabled = !TL; }
-  $('howto').innerHTML = $('optHoming').checked
-    ? `<b>Avec recalage :</b> pose le <b>véhicule 1 seul</b> sur le plateau et appuie sur « 🔗 Connecter » : le programme est envoyé, il se cale contre la clôture puis va à sa place. Fais de même pour <b>2</b>, puis <b>3</b>, puis <b>4</b> en dernier. Les véhicules 1 à 3 attendent en vert le signal du 4, qui reste connecté au téléphone pour la télécommande.`
-    : `<b>Sans recalage :</b> les véhicules doivent déjà être à leur place et leurs hubs ne doivent pas avoir été éteints depuis le dernier recalage. Envoie <b>1, 2, 3</b> puis <b>4</b> en dernier.`;
+  if (typeof suRender === 'function' && $('suList')) suRender();
 }
-function setSt(v, txt, cls = '') { $('st' + v).innerHTML = cls ? `<span class="${cls}">${txt}</span>` : txt; }
-function setBar(v, f) { const b = $('bar' + v); if (f === null) { b.style.display = 'none'; return; } b.style.display = 'block'; b.firstElementChild.style.width = (f * 100) + '%'; }
+function setSt(v, txt, cls = '') { const h = cls ? `<span class="${cls}">${txt}</span>` : txt; $('st' + v).innerHTML = h; if ($('sust' + v)) $('sust' + v).innerHTML = h; }
+function setBar(v, f) { for (const id of ['bar' + v, 'subar' + v]) { const b = $(id); if (!b) continue; if (f === null) { b.style.display = 'none'; continue; } b.style.display = 'block'; b.firstElementChild.style.width = (f * 100) + '%'; } }
 
 const DEFAULT_NAMES = { 1: 'vehicle1', 2: 'vehicle2', 3: 'vehicle3', 4: 'vehicle4' };
 const hubName = v => (store.get('hub' + v, DEFAULT_NAMES[v]) || '').trim();
@@ -1132,7 +1144,7 @@ async function getHub(v) {
   await h.connect();
   return h;
 }
-async function sendVehicle(v, doUpload, homing = $('optHoming').checked) {
+async function sendVehicle(v, doUpload, homing = false) {
   if (!navigator.bluetooth) { toast('Bluetooth web indisponible dans ce navigateur'); return false; }
   V[v].busy = true; renderVehicles();
   try {
@@ -1188,7 +1200,15 @@ async function disconnectAll() {
   toast(still.length ? 'Une liaison n\'a pas pu être coupée' : 'Tous les véhicules sont déconnectés');
 }
 $('discAll').onclick = disconnectAll;
+async function disconnectOne(v) {
+  const h = V[v].hub; if (!h) return;
+  if (v === 4) { if (M.active) { M.active = false; M.returning = false; manUI(); } R.hub = null; R.st = null; updateRemote(); }
+  h.onDisc = null; h.onLine = null; h.onReconnect = null; h.autoReconnect = false;
+  await h.close(); V[v].hub = null;
+  setSt(v, 'Déconnecté (le programme continue sur le hub)'); toast('Véhicule ' + v + ' déconnecté');
+}
 setInterval(() => { for (let v = 1; v <= 4; v++) { showBat(v); const h = V[v].hub, el = $('cn' + v); if (!el) continue;
+  const sb = $('send' + v); if (sb && !V[v].busy) { const c = !!(h && h.connected); sb.textContent = c ? 'Déconnecter' : 'Reconnecter'; sb.classList.toggle('primary', !c); }
   el.innerHTML = h && h.reconnecting ? '<span class="warn">◌ reconnexion…</span>' : h && h.connected ? `<span class="ok">● connecté</span> <span class="sub">${esc(h.name)}</span>` : '<span class="sub">○ non connecté</span>'; } }, 1000);
 for (let v = 1; v <= 4; v++) {
   const lab = document.createElement('span'); lab.textContent = 'Véhicule ' + v;
@@ -1272,7 +1292,41 @@ async function updateAll() {
 }
 $('updAll').onclick = updateAll;
 $('updAll2').onclick = updateAll;
-function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + $('optHoming').checked; }
+function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked; }
+
+// ====================================================================== 0. mise en place (recalage, un véhicule à la fois)
+const SU = { done: {} };
+function suRender() {
+  const box = $('suList');
+  if (!box.children.length) for (let v = 1; v <= 4; v++) {
+    const d = document.createElement('div'); d.className = 'surow'; d.style.setProperty('--vc', `var(--v${v})`);
+    d.innerHTML = `<div class="tag" style="grid-row:auto">0${v}<i style="background:var(--v${v})"></i></div>
+      <div style="flex:1;min-width:0"><b>Véhicule ${v}</b><div class="st" id="sust${v}"></div><div class="bar" id="subar${v}"><div></div></div></div>
+      <button class="btn" id="su${v}">Recaler</button>`;
+    box.appendChild(d);
+    $('su' + v).onclick = () => suGo(v);
+  }
+  const next = [1, 2, 3, 4].find(v => !SU.done[v]);
+  for (let v = 1; v <= 4; v++) {
+    const b = $('su' + v); b.disabled = !TL || V[v].busy;
+    b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? '↻ Refaire' : 'Recaler';
+    b.parentElement.classList.toggle('next', v === next); b.parentElement.classList.toggle('ok', !!SU.done[v]);
+    if (!$('sust' + v).innerHTML) $('sust' + v).textContent = SU.done[v] ? '✓ En place' : 'À placer';
+  }
+  $('suNext').innerHTML = !TL ? 'Coche d\'abord des chorégraphies dans l\'onglet Programme.'
+    : next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Recaler ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Recaler ».`)
+    : '<span class="ok">✓ Les 4 véhicules sont en place.</span>';
+  $('suGo').hidden = !!next;
+  $('suSel').textContent = PLAY.length ? `Programme envoyé : ${PLAY.length} chorégraphie${PLAY.length > 1 ? 's' : ''} · ${fmt(TL.total)}` : '';
+}
+async function suGo(v) {
+  $('sust' + v).textContent = '';
+  const ok = await sendVehicle(v, true, true);
+  if (ok) SU.done[v] = true;
+  suRender();
+}
+$('suReset').onclick = () => { SU.done = {}; for (let v = 1; v <= 4; v++) $('sust' + v).innerHTML = ''; suRender(); };
+$('suGo').onclick = () => showTab('tele');
 
 // ====================================================================== 3. remote
 let R = { hub: null, st: null, at: 0, last: null, lastCmd: null, lock: 0 };
@@ -1992,7 +2046,8 @@ function drawBoard() {
 }
 (function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); gameTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
-loadItems(); refresh(); showManSpeed(); gameUI();
+loadItems(); refresh(); showManSpeed(); gameUI(); suRender();
+{ let t = 'setup'; try { t = localStorage.getItem('odv.tab') || 'setup'; } catch (e) {} showTab($(t) && document.querySelector(`nav button[data-tab="${t}"]`) ? t : 'setup'); }
 </script>
 </body>
 </html>

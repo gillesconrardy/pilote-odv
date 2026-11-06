@@ -29,9 +29,10 @@ async def main():
         await pg.add_init_script(MOCK)
         await pg.goto('file://' + __import__('os').path.abspath('../index.html') + ''); await pg.wait_for_timeout(400)
         await pg.screenshot(path='p1.png', full_page=True)
-        await pg.click('#toSend'); await pg.wait_for_timeout(200)
+        await pg.click('nav button[data-tab=setup]'); await pg.wait_for_timeout(200)
         for v in (1, 2, 3, 4):
-            await pg.click('#send%d' % v); await pg.wait_for_timeout(1500)
+            await pg.click('#su%d' % v); await pg.wait_for_timeout(1500)
+        print('mise en place:', (await pg.inner_text('#suNext')), '| aller visible', await pg.is_visible('#suGo'))
         await pg.screenshot(path='p2.png', full_page=True)
         w = await pg.evaluate('window.__writes')
         for name, ws in w.items():

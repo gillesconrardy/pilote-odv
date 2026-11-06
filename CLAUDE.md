@@ -49,7 +49,12 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      Le V4 imprime `JP x1 y1 … x4 y4 phase prises` (×100) toutes les 250 ms.
    - Au démarrage, chaque hub imprime `BAT <mV>` (niveau affiché dans Envoi : 6,0 V = 0 %, 8,4 V = 100 %).
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
-4. **`src/page.html`** : Pilote ODV (onglets Programme / Envoi / Pilotage). Compile avec
+4. **`src/page.html`** : Pilote ODV, 4 onglets (le dernier ouvert est mémorisé, `odv.tab`) :
+   **Mise en place** (`#setup` : TOUJOURS avec recalage, un véhicule à la fois 1→4, bouton « Recaler » par véhicule,
+   `sendVehicle(v, true, true)`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
+   sans recalage), **Véhicules** (`#envoi` : cartes, « Reconnecter » = renvoi sans recalage / « Déconnecter » par
+   véhicule, « Reconnecter les 4 » = `updateAll`, « Tout déconnecter »), **Pilotage** (`#tele`).
+   Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale. Compile avec
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub
    (format multi-mpy6 : taille u32 + `__main__\0` + mpy ; commandes 0 stop, 3 meta, 4 RAM, 1 start,
    6 stdin), service Pybricks `c5f50001-8280-46da-89f4-6d8051e4aeef`.

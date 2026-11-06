@@ -29,9 +29,10 @@ async def main():
         await pg.add_init_script(MOCK)
         await pg.goto('file://' + __import__('os').path.abspath('../index.html') + ''); await pg.wait_for_timeout(400)
         await pg.screenshot(path='p1.png', full_page=True)
-        await pg.click('#toSend'); await pg.wait_for_timeout(200)
+        await pg.click('nav button[data-tab=setup]'); await pg.wait_for_timeout(200)
         for v in (1, 2, 3, 4):
-            await pg.click('#send%d' % v); await pg.wait_for_timeout(1500)
+            await pg.click('#su%d' % v); await pg.wait_for_timeout(1500)
+        print('mise en place:', (await pg.inner_text('#suNext')), '| aller visible', await pg.is_visible('#suGo'))
         await pg.screenshot(path='p2.png', full_page=True)
         w = await pg.evaluate('window.__writes')
         for name, ws in w.items():
@@ -46,10 +47,10 @@ async def main():
         print('state', await pg.inner_text('#stBig'), '|', await pg.inner_text('#stSub'), '|', await pg.inner_text('#stTime'))
         print('stdin writes V4', [x for x in w['Pybricks Hub 4'] if x[0] == 6], await pg.evaluate("window.__writes['Pybricks Hub 4'].filter(x=>x[0]==6)"))
         await pg.click('#goUpd'); await pg.wait_for_timeout(200)
-        print('mode maj: onglet', await pg.evaluate("document.querySelector('section.on').id"), '| Suivant caché', await pg.evaluate("$('toSend').hidden"), '|', await pg.inner_text('#updMsg2'))
+        print('mode maj: onglet', await pg.evaluate("document.querySelector('section.on').id"), '| Suivant caché', '-', '|', await pg.inner_text('#updMsg2'))
         await pg.click('#chList .ch input'); await pg.wait_for_timeout(200)
         await pg.click('#updAll2'); await pg.wait_for_timeout(16000)
-        print('updMsg:', await pg.inner_text('#updMsg'), '| mode fini, Suivant visible', await pg.evaluate("!$('toSend').hidden"))
+        print('updMsg:', await pg.inner_text('#updMsg'), '| mode fini, Suivant visible', '-')
         allc = await pg.evaluate('window.__all'); import re
         for n, src in allc:
             print(n, 'GEN', re.search(r'GEN = (\d+)', src).group(1), 'HOMING', re.search(r'DO_HOMING = (\w+)', src).group(1), 'TOTAL', re.search(r'TOTAL = (\d+)', src).group(1))
