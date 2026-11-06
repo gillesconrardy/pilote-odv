@@ -421,7 +421,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <button data-tab="stats"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V6M17 16v-8"/></svg><span>Stats</span></button>
   </nav>
 
-  <!-- ======================= 0. MISE EN PLACE (toujours avec recalage) ======================= -->
+  <!-- ======================= 0. MISE EN PLACE (toujours avec calibrage) ======================= -->
   <section id="setup">
     <div class="card">
       <h2>Mise en place <button type="button" class="tip" data-tip="Chaque véhicule se cale contre la clôture puis rejoint sa place de départ et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Un seul véhicule sur le plateau à la fois, dans l'ordre 1, 2, 3 puis 4. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
@@ -454,7 +454,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <!-- ======================= 2. ENVOI ======================= -->
   <section id="envoi">
     <div class="card">
-      <h2>Les 4 véhicules <button type="button" class="tip" data-tip="Tout reconnecter : ramène les véhicules au départ, puis leur renvoie la sélection de l'onglet Programme, sans recalage. Tout déconnecter : le téléphone coupe la liaison, les programmes continuent sur les hubs.">i</button></h2>
+      <h2>Les 4 véhicules <button type="button" class="tip" data-tip="Tout reconnecter : ramène les véhicules au départ, puis leur renvoie la sélection de l'onglet Programme, sans calibrage. Tout déconnecter : le téléphone coupe la liaison, les programmes continuent sur les hubs.">i</button></h2>
       <div class="vall"><button class="btn primary" id="updAll">Tout reconnecter</button><button class="btn" id="discAll">Tout déconnecter</button></div>
       <div class="sub" id="updMsg" style="margin-top:8px"></div>
     </div>
@@ -1135,7 +1135,7 @@ function genId(tl = TL, loop = $('optLoop').checked) {
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return 1 + ((h >>> 0) % 999);
 }
-// programme « mise en place » : recalage puis attente au départ, sans chorégraphie (une simple pause)
+// programme « mise en place » : calibrage puis attente au départ, sans chorégraphie (une simple pause)
 let IDLE = null;
 const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Mise en place', src: '    mvc.wait_sync_ms(500)\n' }]));
 function programText(vid, homing = false, idle = false) {
@@ -1341,7 +1341,7 @@ async function sendVehicle(v, doUpload, homing = false, idle = false) {
     await h.start();
     if (v !== 4) { for (let k = 0; k < 15 && gotBat === null; k++) await sleep(100); if (gotBat) setBat(v, gotBat); h.onLine = null; }
     if (v === 4) { attachRemote(h, idle); setSt(v, `✓ En marche sur « ${esc(h.name)} » · télécommande prête`, 'ok'); toast('Véhicule 4 prêt : passe à la télécommande'); }
-    else { await sleep(300); await h.close(); setSt(v, `✓ En marche sur « ${esc(h.name)} » ${homing && doUpload ? '· recalage puis attente du véhicule 4' : '· attend le véhicule 4'}`, 'ok'); }
+    else { await sleep(300); await h.close(); setSt(v, `✓ En marche sur « ${esc(h.name)} » ${homing && doUpload ? '· calibrage puis attente du véhicule 4' : '· attend le véhicule 4'}`, 'ok'); }
     return true;
   } catch (e) {
     setBar(v, null);
@@ -1454,7 +1454,7 @@ async function updateAll() {
     // 3. arrêter le véhicule 4 pour couper l'ancienne horloge
     msg('Arrêt du véhicule 4…');
     const h4 = await ensureHub(4); h4.onLine = null; h4.autoReconnect = false; R.st = null; await h4.stop();
-    // 4. envoyer 1, 2, 3 puis 4, sans recalage (ils sont déjà en place)
+    // 4. envoyer 1, 2, 3 puis 4, sans calibrage (ils sont déjà en place)
     for (const v of [1, 2, 3, 4]) {
       msg(`Connexion au véhicule ${v}…`);
       await ensureHub(v);
@@ -1471,7 +1471,7 @@ $('updAll').onclick = updateAll;
 $('updAll2').onclick = updateAll;
 function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked; }
 
-// ====================================================================== 0. mise en place (recalage, un véhicule à la fois)
+// ====================================================================== 0. mise en place (calibrage, un véhicule à la fois)
 const SU = { done: {} };
 function suRender() {
   const box = $('suList');
@@ -1479,19 +1479,19 @@ function suRender() {
     const d = document.createElement('div'); d.className = 'surow'; d.id = 'surow' + v; d.style.setProperty('--vc', `var(--v${v})`);
     d.innerHTML = `<div class="tag vbk" style="grid-row:auto;--c:var(--v${v})">0${v}</div>
       <div style="flex:1;min-width:0"><b>Véhicule ${v}</b><div class="st" id="sust${v}"></div><div class="bar" id="subar${v}"><div></div></div></div>
-      <button class="btn" id="su${v}">Recaler</button>`;
+      <button class="btn" id="su${v}">Calibrer</button>`;
     box.appendChild(d);
     $('su' + v).onclick = () => suGo(v);
   }
   const next = [1, 2, 3, 4].find(v => !SU.done[v]);
   for (let v = 1; v <= 4; v++) {
     const b = $('su' + v); b.disabled = V[v].busy;
-    b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? 'Refaire' : 'Recaler';
+    b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? 'Refaire' : 'Calibrer';
     b.parentElement.classList.toggle('next', v === next); b.parentElement.classList.toggle('ok', !!SU.done[v]);
   }
   // à placer d'abord (dans l'ordre), puis ceux déjà en place, en vert, en bas de la liste
   for (const v of [1, 2, 3, 4].filter(v => !SU.done[v]).concat([1, 2, 3, 4].filter(v => SU.done[v]))) box.appendChild($('surow' + v));
-  $('suNext').innerHTML = next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Recaler ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Recaler ».`)
+  $('suNext').innerHTML = next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Calibrer ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Calibrer ».`)
     : '<span class="ok">✓ Les 4 véhicules sont en place.</span> Choisis maintenant les chorégraphies.';
   $('suGo').hidden = !!next;
 }
