@@ -205,9 +205,15 @@ h2::before{content:"> "}
 .rb .ic{font-family:var(--sans)}
 .state .big{font-weight:400;letter-spacing:.02em}
 .state{align-items:center}
-#tele .state .big{font-size:14.5px;font-weight:500}
-#tele .state .sub{font-size:11.5px}
-#connect4{padding:6px 10px;font-size:12.5px;border-radius:8px;flex:none}
+#tele .state .big{font-size:13px;font-weight:500;letter-spacing:.04em}
+#tele .state .sub{font-size:11px}
+#tele .state .sub:empty,#stTime:empty{display:none}
+#tele .prog{margin:6px 0 2px}
+#stTime{font:11px var(--mono)}
+#connect4{padding:4px 9px;font-size:11.5px;border-radius:7px;flex:none}
+h2 .tip{display:inline-grid;vertical-align:middle;width:17px;height:17px;font-size:10.5px;margin-left:4px}
+h2 .tip::before{content:none}
+h2 .tip{text-transform:none;letter-spacing:0}
 .prog{height:6px;border-radius:0}
 .banner{background:#2a2216;color:#ffd9a8;border:1px solid #6b5414;border-radius:4px}
 dialog{background:var(--card);border:1px solid var(--edge);border-radius:6px}
@@ -287,10 +293,10 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <!-- ======================= 3. TÉLÉCOMMANDE ======================= -->
   <section id="tele">
     <div class="card">
-      <div class="state"><div><div class="big" id="stBig">Non connecté</div><div class="sub" id="stSub">Connecte le véhicule 4 pour piloter.</div></div>
+      <div class="state"><div><div class="big" id="stBig">○ Non connecté</div><div class="sub" id="stSub"></div></div>
         <button class="btn" id="connect4">Connecter V4</button></div>
       <div class="prog"><div id="stProg"></div></div>
-      <div class="sub" id="stTime">&nbsp;</div>
+      <div class="sub" id="stTime"></div>
       <div class="remote top">
         <button class="rb play" id="bPlay" disabled><span class="ic">▶</span>Lecture</button>
         <button class="rb pause" id="bPause" disabled><span class="ic">❚❚</span>Pause</button>
@@ -301,20 +307,19 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div id="joyBox" style="display:none"><div class="joy" id="joy"><div class="knob" id="knob"></div></div></div>
     </div>
     <div class="card" id="odoCard">
-      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs</h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs <button type="button" class="tip" data-tip="Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas = 12,25 mm).">i</button></h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
       <div id="odo" style="margin-top:8px"></div>
-      <div class="sub" style="margin-top:6px">Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas de grille = 12,25 mm).</div>
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
-      <h2>Conduite manuelle · véhicule 4</h2>
+      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <div class="row" style="margin-top:8px"><button class="btn" id="rcGo" disabled>🎮 Connecter la télécommande</button><span class="sub" id="rcSt">Télécommande : non connectée</span></div>
-      <div class="sub" id="manMsg" style="margin-top:8px">Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.</div>
+      <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
     <div class="card" id="gameCard">
-      <h2>🎯 Jeu de poursuite</h2>
-      <div class="sub">Tu conduis le véhicule 4 (joystick ou télécommande) ; les véhicules 1, 2 et 3 te chassent. Ils ne te percutent jamais : s'ils viennent se coller à toi, tu es attrapé.</div>
+      <h2>Jeu de poursuite <button type="button" class="tip" data-tip="Tu conduis le véhicule 4 (joystick ou télécommande) ; les véhicules 1, 2 et 3 te chassent. Ils ne te percutent jamais : s'ils viennent se coller à toi, tu es attrapé.">i</button></h2>
+      
       <div class="edrow"><label>Difficulté</label><div class="seg" id="gDiff" style="flex:1"><button data-s="3">Facile</button><button data-s="5" class="on">Moyen</button><button data-s="7">Difficile</button></div></div>
       <div class="row" style="justify-content:space-around;margin:8px 0;text-align:center">
         <div><div class="sub">Survie</div><b id="gTime" style="font-size:22px">0,0 s</b></div>
@@ -324,8 +329,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <button class="btn primary" id="gGo" style="width:100%">▶ Lancer la poursuite</button>
       <div class="sub" id="gMsg" style="margin-top:8px"></div>
     </div>
-    <div class="row" style="margin:12px 0"><button class="btn" id="discAll2">Tout déconnecter</button><button class="btn" id="goUpd">Changer de chorégraphies…</button></div>
-    <div class="note"><b>Stop et retour :</b> les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision.<br><b>Arrêt d'urgence :</b> les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.</div>
+    <div class="row" style="margin:12px 0"><button class="btn" id="discAll2">Tout déconnecter</button><button class="btn" id="goUpd">Changer de chorégraphies…</button><button type="button" class="tip" data-tip="Stop et retour : les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision. Arrêt d'urgence : les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.">i</button></div>
   </section>
 </div>
 
@@ -1143,7 +1147,7 @@ $('bPause').onclick = () => send('z');
 $('bHome').onclick = () => send('h');
 $('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; manUI(); send('x'); };
 function stateLabel() {
-  const s = R.st; if (!s) return ['Non connecté', 'Connecte le véhicule 4 pour piloter.'];
+  const s = R.st; if (!s) return ['● Connecté', ''];
   const tl = R.tl, atBound = tl && tl.bounds.includes(s.w);
   const name = R.names && R.names[s.k] ? R.names[s.k] : '';
   if (s.s === 'P') return [atBound ? 'Prêt · position de départ' : 'En pause', name];
@@ -1158,9 +1162,9 @@ function updateRemote() {
   ['bPlay', 'bPause', 'bHome'].forEach(id => $(id).disabled = !on || M.active);
   $('bStop').disabled = !on;
   $('connect4').style.display = on ? 'none' : '';
-  let [a, b] = on ? stateLabel() : ['Non connecté', 'Envoie ou connecte le véhicule 4.'];
-  if (on && R.st && R.st.gen && TL && R.st.gen !== genId()) b = '⚠ Le véhicule 4 joue une autre sélection que celle de l\'onglet Programme. ' + b;
-  $('stBig').textContent = a; $('stSub').textContent = b + (on && R.st && R.st.mv ? ' · batterie V4 ' + (R.st.mv / 1000).toFixed(1) + ' V' : '');
+  let [a, b] = on ? stateLabel() : ['○ Non connecté', ''];
+  if (on && R.st && R.st.gen && TL && R.st.gen !== genId()) b = '⚠ Autre sélection que l\'onglet Programme' + (b ? ' · ' + b : '');
+  $('stBig').textContent = a; $('stSub').textContent = b;
 }
 function estW() {
   const s = R.st; if (!s) return 0;
