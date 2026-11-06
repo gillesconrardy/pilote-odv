@@ -238,8 +238,12 @@ nav button{font-size:12px;letter-spacing:0;padding:9px 2px;white-space:nowrap}
 .sunext{font-size:15px;margin:2px 0 10px}
 .surow{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:6px;border:1px solid transparent;margin-bottom:6px;background:var(--panel)}
 .surow.next{border-color:rgba(255,154,60,.55)}
-.surow.ok .st{color:var(--green)}
-.surow .st{font-size:12px;color:var(--muted);min-height:0}
+.surow .st{display:none;font-size:12px;min-height:0}
+.surow .st:has(.bad){display:block}
+.surow.ok{border-color:rgba(76,194,122,.5);background:rgba(76,194,122,.08)}
+.surow.ok b{color:var(--green)}
+.surow.ok b::after{content:"  ✓"}
+.surow b{font-size:15px}
 .surow .btn{flex:none;min-width:96px}
 .vall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chiprow{display:flex;gap:6px;align-items:flex-start}
@@ -1299,7 +1303,7 @@ const SU = { done: {} };
 function suRender() {
   const box = $('suList');
   if (!box.children.length) for (let v = 1; v <= 4; v++) {
-    const d = document.createElement('div'); d.className = 'surow'; d.style.setProperty('--vc', `var(--v${v})`);
+    const d = document.createElement('div'); d.className = 'surow'; d.id = 'surow' + v; d.style.setProperty('--vc', `var(--v${v})`);
     d.innerHTML = `<div class="tag" style="grid-row:auto">0${v}<i style="background:var(--v${v})"></i></div>
       <div style="flex:1;min-width:0"><b>Véhicule ${v}</b><div class="st" id="sust${v}"></div><div class="bar" id="subar${v}"><div></div></div></div>
       <button class="btn" id="su${v}">Recaler</button>`;
@@ -1309,10 +1313,11 @@ function suRender() {
   const next = [1, 2, 3, 4].find(v => !SU.done[v]);
   for (let v = 1; v <= 4; v++) {
     const b = $('su' + v); b.disabled = !TL || V[v].busy;
-    b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? '↻ Refaire' : 'Recaler';
+    b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? 'Refaire' : 'Recaler';
     b.parentElement.classList.toggle('next', v === next); b.parentElement.classList.toggle('ok', !!SU.done[v]);
-    if (!$('sust' + v).innerHTML) $('sust' + v).textContent = SU.done[v] ? '✓ En place' : 'À placer';
   }
+  // à placer d'abord (dans l'ordre), puis ceux déjà en place, en vert, en bas de la liste
+  for (const v of [1, 2, 3, 4].filter(v => !SU.done[v]).concat([1, 2, 3, 4].filter(v => SU.done[v]))) box.appendChild($('surow' + v));
   $('suNext').innerHTML = !TL ? 'Coche d\'abord des chorégraphies dans l\'onglet Programme.'
     : next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Recaler ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Recaler ».`)
     : '<span class="ok">✓ Les 4 véhicules sont en place.</span>';
@@ -1320,7 +1325,7 @@ function suRender() {
   $('suSel').textContent = PLAY.length ? `Programme envoyé : ${PLAY.length} chorégraphie${PLAY.length > 1 ? 's' : ''} · ${fmt(TL.total)}` : '';
 }
 async function suGo(v) {
-  $('sust' + v).textContent = '';
+  $('sust' + v).innerHTML = '';
   const ok = await sendVehicle(v, true, true);
   if (ok) SU.done[v] = true;
   suRender();
