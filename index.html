@@ -163,7 +163,7 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
     <div class="card">
       <h2>Chorégraphies à jouer</h2>
       <div id="chList"></div>
-      <div class="row" style="margin-top:10px"><button class="btn primary" id="edNew">✏️ Créer une chorégraphie</button><button class="btn" id="addBtn">Importer du code</button></div>
+      <button class="btn primary" id="edNew" style="width:100%;margin-top:10px;padding:14px">✏️ Créer une chorégraphie</button>
     </div>
     <div class="card">
       <h2>Options</h2>
@@ -754,7 +754,7 @@ $('optHoming').onchange = () => { store.set('homing', $('optHoming').checked); p
 $('toSend').onclick = () => showTab('envoi');
 
 // add custom
-$('addBtn').onclick = () => { $('dlgName').value = ''; $('dlgSrc').value = ''; $('dlgMsg').textContent = ''; $('dlg').showModal(); };
+if ($('addBtn')) $('addBtn').onclick = () => { $('dlgName').value = ''; $('dlgSrc').value = ''; $('dlgMsg').textContent = ''; $('dlg').showModal(); };
 $('dlgCancel').onclick = () => $('dlg').close();
 $('dlgOk').onclick = () => {
   const name = $('dlgName').value.trim() || 'Ma chorégraphie', src = $('dlgSrc').value;
