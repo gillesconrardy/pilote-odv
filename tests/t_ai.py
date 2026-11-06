@@ -18,7 +18,7 @@ async def main():
                                 body=json.dumps({"content": [{"type": "text", "text": "Voici :\n" + json.dumps(r)}]}))
         await pg.route('https://api.anthropic.com/**', handle)
         await pg.goto('file://' + os.path.abspath('../index.html')); await pg.wait_for_timeout(300)
-        await pg.click('#edNew')
+        await pg.click('nav button[data-tab=choix]'); await pg.click('#edNew')
         await pg.fill('#aiTxt', 'un carré qui tourne'); await pg.click('#aiGo'); await pg.wait_for_timeout(300)
         print('sans clé:', await pg.inner_text('#toast'))
         await pg.fill('#aiKey', 'sk-test'); await pg.click('#aiGo'); await pg.wait_for_timeout(1500)

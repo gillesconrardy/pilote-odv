@@ -236,8 +236,15 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 :root{color-scheme:dark}
 h1.brand{font:400 24px "Russo One",var(--sans);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 h1.brand span{color:var(--accent)}
-nav{flex-wrap:wrap}
-nav button[data-tab=stats]{flex-basis:100%}
+nav.tabbar{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:15;margin:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;
+  background:#17181a;border-radius:0;border-top:1px solid #2a2c2f;padding:6px 4px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -8px 20px rgba(0,0,0,.35)}
+nav.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;border-radius:8px;padding:6px 0 4px;
+  color:var(--muted);font:500 10.5px var(--sans);letter-spacing:0;white-space:nowrap;position:relative;box-shadow:none}
+nav.tabbar button.on{background:none;color:var(--accent);border:0;font-weight:600}
+nav.tabbar button.on::before{content:"";position:absolute;top:-7px;left:28%;right:28%;height:2px;background:var(--accent);border-radius:2px}
+.wrap{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.newver{bottom:calc(76px + env(safe-area-inset-bottom))}
+.toast{bottom:calc(84px + env(safe-area-inset-bottom))}
 .slabel{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--muted)}
 .pchips{display:flex;gap:4px;flex-wrap:wrap}
 .pchips button{border:1px solid #2f2c28;background:none;color:var(--muted);border-radius:7px;padding:5px 8px;font:500 11.5px var(--sans)}
@@ -278,7 +285,6 @@ canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-r
 .recs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
 .recs .k{font-size:10px;letter-spacing:.12em;color:var(--muted)}.recs .v{font:700 19px var(--mono);margin:2px 0}.recs .s{font-size:10.5px;color:var(--muted)}
 
-nav button{font-size:12px;letter-spacing:0;padding:9px 2px;white-space:nowrap}
 .sunext{font-size:15px;margin:2px 0 10px}
 .surow{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:6px;border:1px solid transparent;margin-bottom:6px;background:var(--panel)}
 .surow.next{border-color:rgba(255,154,60,.55)}
@@ -321,12 +327,12 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   </header>
   <div class="banner" id="nobt"></div>
 
-  <nav>
-    <button data-tab="setup">Mise en place</button>
-    <button data-tab="choix" class="on">Programme</button>
-    <button data-tab="envoi">Véhicules</button>
-    <button data-tab="tele">Pilotage</button>
-    <button data-tab="stats">Statistiques</button>
+  <nav class="tabbar" aria-label="Onglets">
+    <button data-tab="setup"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg><span>Mise en place</span></button>
+    <button data-tab="choix" class="on"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.5 1.5 2.5-3M3.5 12l1.5 1.5 2.5-3M3.5 18l1.5 1.5 2.5-3"/></svg><span>Programme</span></button>
+    <button data-tab="tele"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2"/><path d="M12 14v6.5M10.2 11.2 4 9.5M13.8 11.2 20 9.5"/></svg><span>Pilotage</span></button>
+    <button data-tab="envoi"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg><span>Véhicules</span></button>
+    <button data-tab="stats"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-5M12 16V6M17 16v-8"/></svg><span>Stats</span></button>
   </nav>
 
   <!-- ======================= 0. MISE EN PLACE (toujours avec recalage) ======================= -->

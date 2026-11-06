@@ -6,7 +6,7 @@ async def main():
         pg = await b.new_page(viewport={'width': 412, 'height': 900}, device_scale_factor=2)
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto('file://' + os.path.abspath('../index.html')); await pg.wait_for_timeout(300)
-        await pg.click('#edNew'); await pg.fill('#edName', 'Test atelier')
+        await pg.click('nav button[data-tab=choix]'); await pg.click('#edNew'); await pg.fill('#edName', 'Test atelier')
         async def drag(fr, to):
             await pg.locator('#edCv').scroll_into_view_if_needed(); box = await pg.locator('#edCv').bounding_box(); u = box['width'] / 44
             P = lambda x, y: (box['x'] + (37 - x) * u, box['y'] + (y + 7) * u)
