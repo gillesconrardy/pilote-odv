@@ -244,6 +244,15 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
     <div class="sub" id="edHint" style="margin-top:6px"></div>
   </div>
   <div class="card">
+    <h2>🤖 Inventer avec l'IA</h2>
+    <textarea id="aiTxt" style="height:84px;font:15px system-ui" placeholder="Décris ta chorégraphie, par ex. : les 4 véhicules forment un carré qui tourne deux fois, puis une vague lente de gauche à droite."></textarea>
+    <div class="row" style="margin-top:8px"><button class="btn primary" id="aiGo">✨ Inventer</button><span class="sub" id="aiSt" style="flex:1"></span></div>
+    <details id="aiCfg" style="margin-top:8px"><summary class="sub">Clé API Anthropic (gardée uniquement sur ce téléphone)</summary>
+      <input type="password" id="aiKey" placeholder="sk-ant-..." autocomplete="off" style="width:100%;font:15px system-ui;margin-top:6px;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink)">
+      <div class="sub" style="margin-top:4px">Crée la clé sur console.anthropic.com (usage facturé, quelques centimes par chorégraphie). Elle n'est jamais publiée sur GitHub. <a href="#" id="aiForget">Effacer la clé</a></div>
+    </details>
+  </div>
+  <div class="card">
     <h2>Étapes</h2>
     <div class="chips" id="edChips"></div>
     <div id="edStep"></div>
@@ -1140,6 +1149,94 @@ $('edHome').onclick = () => {
   best.filter((b, k) => k === best.length - 1 || !b.every((p, i) => p[0] === (k ? best[k - 1] : P)[i][0] && p[1] === (k ? best[k - 1] : P)[i][1]))
       .forEach(b => ED.steps.push({ pos: clone(b), speed: 100, wait: 0 }));
   ED.sel = ED.steps.length - 1; edRefresh(); toast('Retour au départ ajouté (' + best.length + ' étape' + (best.length > 1 ? 's' : '') + ')');
+};
+// ====================================================================== atelier : inventer avec l'IA (API Anthropic, clé gardée dans ce navigateur)
+const AI = { model: 'claude-sonnet-5-5', busy: false };
+const AI_WAITS = [0, 250, 500, 1000, 1500, 2000, 3000, 5000];
+const AI_SYS = `Tu crées des chorégraphies pour 4 véhicules LEGO omnidirectionnels sur un plateau carré.
+Repère : origine en haut à droite, X augmente vers la GAUCHE, Y augmente vers le BAS. Unité : le pas (1 pas = 12,25 mm).
+Chaque véhicule est un carré de 10 pas ; sa position (x, y) est son coin, avec 0 ≤ x ≤ 30 et 0 ≤ y ≤ 30.
+Départ et arrivée obligatoires : V1 (30,0), V2 (20,0), V3 (10,0), V4 (0,0) (alignés en haut, V1 à gauche, V4 à droite).
+Une étape = la nouvelle position des 4 véhicules. Entre deux étapes, les 4 véhicules partent ensemble, vont en LIGNE DROITE et arrivent ensemble.
+RÈGLE ABSOLUE : à tout instant (aux étapes ET pendant les trajets), pour chaque paire de véhicules, max(|xa−xb|, |ya−yb|) ≥ 10. 10 = côte à côte, autorisé ; moins = collision.
+Conseils : le plateau ne laisse que 30 pas de jeu, donc les véhicules doivent se déplacer de façon coordonnée (rotation des 4 coins d'un carré, glissements en file, échanges en plusieurs étapes). Pour échanger deux véhicules, passe par des étapes intermédiaires. Les positions utiles sont souvent des multiples de 5 ou de 10. Évite qu'un véhicule en traverse un autre.
+speed = vitesse en % (10 à 100, multiple de 5 ; 100 % ≈ 17 pas/s). wait = pause après l'étape en ms parmi 0, 250, 500, 1000, 1500, 2000, 3000, 5000.
+Vise 8 à 30 étapes. La dernière étape doit être exactement la position de départ.
+Réponds UNIQUEMENT par un objet JSON, sans texte autour :
+{"name":"nom court en français","steps":[{"pos":[[x1,y1],[x2,y2],[x3,y3],[x4,y4]],"speed":60,"wait":0}, ...]}
+(ne répète pas la position de départ en première étape).`;
+try { $('aiKey').value = localStorage.getItem('odv.aikey') || ''; } catch (e) {}
+if (!$('aiKey').value) $('aiCfg').open = true;
+$('aiKey').onchange = () => { try { localStorage.setItem('odv.aikey', $('aiKey').value.trim()); } catch (e) {} };
+$('aiForget').onclick = e => { e.preventDefault(); $('aiKey').value = ''; try { localStorage.removeItem('odv.aikey'); } catch (e) {} toast('Clé effacée'); };
+async function aiCall(messages) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': $('aiKey').value.trim(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+    body: JSON.stringify({ model: AI.model, max_tokens: 8000, system: AI_SYS, messages })
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const m = j.error && j.error.message || '';
+    throw new Error(r.status === 401 ? 'clé API refusée' : r.status === 429 ? 'trop de demandes, réessaie dans un moment' : r.status === 529 || r.status >= 500 ? 'service IA surchargé, réessaie' : r.status === 400 && /credit/i.test(m) ? 'crédit API épuisé' : 'erreur ' + r.status + (m ? ' : ' + m : ''));
+  }
+  return (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+}
+function aiParse(txt) {
+  const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+  if (a < 0 || b < a) throw new Error('réponse illisible');
+  const o = JSON.parse(txt.slice(a, b + 1));
+  if (!Array.isArray(o.steps) || !o.steps.length) throw new Error('aucune étape reçue');
+  const cl = v => Math.min(30, Math.max(0, Math.round((+v || 0) * 4) / 4));
+  const steps = o.steps.slice(0, 60).map(s => ({
+    pos: [0, 1, 2, 3].map(i => { const p = (s.pos || [])[i] || [0, 0]; return [cl(p[0]), cl(p[1])]; }),
+    speed: Math.min(100, Math.max(10, Math.round((+s.speed || 100) / 5) * 5)),
+    wait: AI_WAITS.reduce((b, w) => Math.abs(w - (+s.wait || 0)) < Math.abs(b - (+s.wait || 0)) ? w : b, 0)
+  }));
+  const H = homePos();
+  if (steps[0].pos.every((p, i) => p[0] === H[i][0] && p[1] === H[i][1])) steps.shift();
+  return { name: String(o.name || '').slice(0, 40), steps };
+}
+function aiProblems(v) {
+  const L = Object.entries(ED.issues).map(([k, x]) => `- étape ${k} (pos ${JSON.stringify(ED.steps[k].pos)}) : ${x.msg}`);
+  if (!v.atHome) L.push('- la dernière étape doit être exactement [[30,0],[20,0],[10,0],[0,0]]');
+  return L;
+}
+$('aiGo').onclick = async () => {
+  if (AI.busy) return;
+  const txt = $('aiTxt').value.trim(), st = $('aiSt');
+  if (!txt) { toast('Décris d\'abord la chorégraphie'); return; }
+  if (!$('aiKey').value.trim()) { $('aiCfg').open = true; $('aiKey').focus(); toast('Colle d\'abord ta clé API'); return; }
+  if (ED.steps.length > 1 && !confirm('Remplacer les étapes actuelles par la chorégraphie inventée ?')) return;
+  try { localStorage.setItem('odv.aikey', $('aiKey').value.trim()); } catch (e) {}
+  AI.busy = true; $('aiGo').disabled = true; ED.play = null;
+  const old = clone(ED.steps), msgs = [{ role: 'user', content: txt }];
+  try {
+    let res = null, v = null;
+    for (let tour = 1; tour <= 4; tour++) {
+      st.textContent = tour === 1 ? '⏳ L\'IA imagine la chorégraphie…' : `⏳ Correction ${tour - 1}/3…`;
+      const out = await aiCall(msgs);
+      msgs.push({ role: 'assistant', content: out });
+      try { res = aiParse(out); } catch (e) { if (tour === 4) throw e; msgs.push({ role: 'user', content: 'Ta réponse n\'est pas un JSON valide au format demandé. Renvoie uniquement le JSON.' }); continue; }
+      ED.steps = [{ pos: homePos(), speed: 100, wait: 0 }].concat(res.steps);
+      v = edValidate();
+      const pb = aiProblems(v);
+      if (!pb.length) break;
+      if (!v.nBad && !Object.keys(ED.issues).length) { $('edHome').onclick(); v = edValidate(); if (v.atHome && !v.nBad) break; }
+      if (tour === 4) break;
+      msgs.push({ role: 'user', content: 'Le contrôle de collision a trouvé ces problèmes :\n' + pb.join('\n') + '\nCorrige la chorégraphie (ajoute des étapes intermédiaires si besoin) et renvoie le JSON complet.' });
+    }
+    if (!v.atHome && !v.nBad) $('edHome').onclick();
+    v = edValidate();
+    if (res.name && !$('edName').value.trim()) $('edName').value = res.name;
+    ED.sel = 1; edRefresh();
+    st.textContent = v.nBad ? `⚠ ${ED.steps.length - 1} étapes, mais il reste des collisions : corrige-les à la main ou relance.`
+      : !v.atHome ? '⚠ Il manque le retour au départ : utilise le bouton ⌂.'
+      : `✓ ${ED.steps.length - 1} étapes sans collision. Regarde l'aperçu !`;
+  } catch (e) {
+    ED.steps = old; ED.sel = Math.min(ED.sel, old.length - 1); edRefresh();
+    st.textContent = '✗ ' + (e.message === 'Failed to fetch' ? 'pas de connexion internet' : e.message);
+  } finally { AI.busy = false; $('aiGo').disabled = false; }
 };
 $('edPlay').onclick = () => {
   if (ED.play) { ED.play = null; $('edPlay').textContent = '▶ Aperçu'; edDraw(); return; }

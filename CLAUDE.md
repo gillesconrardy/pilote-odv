@@ -62,7 +62,12 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    aimant 1 pas), vitesse et pause par étape, contrôle de collision (pose + trajet, via core.js),
    « Ajouter le retour au départ » (tout droit / X puis Y / Y puis X / un par un, le plus court sûr),
    aperçu, code ; enregistré dans le navigateur (localStorage `odv.custom`, champ `ed` = étapes) et
-   réouvrable avec ✏️. Les chorégraphies créées ne sont PAS dans le dépôt : pour les garder pour de
+   réouvrable avec ✏️.
+   **Inventer avec l'IA** (dans l'Atelier) : description en français → API Anthropic (`claude-sonnet-5-5`,
+   appel direct du navigateur avec `anthropic-dangerous-direct-browser-access`), réponse JSON
+   `{name, steps:[{pos,speed,wait}]}` chargée dans l'Atelier ; jusqu'à 3 corrections automatiques en renvoyant
+   les collisions ; retour au départ ajouté par ⌂ si c'est le seul manque. Clé API dans localStorage `odv.aikey`
+   uniquement (JAMAIS dans le dépôt). Test : `tests/t_ai.py` (API simulée). Les chorégraphies créées ne sont PAS dans le dépôt : pour les garder pour de
    bon, copier leur code dans `choregraphies/` et `CHORS`.
 5. **`simulateur/template.html`** : simulateur visuel (plateau blanc à picots, véhicules gris
    « 01…04 » d'après la photo du montage), lecture, détection des chevauchements, édition du code.
