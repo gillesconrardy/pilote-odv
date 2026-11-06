@@ -63,12 +63,20 @@ button{font:inherit;color:inherit;cursor:pointer}
 .sw input:checked+span{background:var(--accent)}
 .sw input:checked+span::after{transform:translateX(20px)}
 .sum{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-top:6px}
-.veh{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
-.veh:last-child{border-bottom:0}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.veh{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:var(--soft);border-top:5px solid var(--vc);box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);min-width:0;position:relative}
+.veh .hd{display:flex;align-items:center;gap:8px}
+.veh .hd b{font-size:15px;line-height:1.15}
+.veh .role{font-size:11.5px;color:var(--muted)}
+.veh .line{font-size:13px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-height:18px}
+.veh .main{width:100%;margin-top:auto}
+.veh .more{position:absolute;right:6px;top:6px;border:0;background:none;color:var(--muted);font:700 18px system-ui;padding:2px 6px;border-radius:6px}
+.veh .acts{display:none;gap:6px}
+.veh.open .acts{display:flex}
+.veh .acts .btn{flex:1;padding:6px 4px;font-size:13px}
 .tag{width:42px;height:42px;border-radius:7px;background:var(--dbg);border-bottom:3px solid var(--accent);color:#fff;display:grid;place-items:center;font:700 16px ui-monospace,monospace;grid-row:span 2;position:relative}
 .tag i{position:absolute;right:-4px;bottom:-4px;width:14px;height:14px;border-radius:4px;border:2px solid var(--card)}
-.veh .st{font-size:13px;color:var(--muted);min-height:18px}
-.veh .acts{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
+.veh .st{font-size:12.5px;color:var(--muted);min-height:34px;overflow-wrap:anywhere}
 .bar{height:5px;background:var(--soft);border-radius:4px;overflow:hidden;margin-top:4px;display:none}
 .bar>div{height:100%;width:0;background:var(--accent);transition:width .15s}
 .note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:10px}
@@ -173,7 +181,7 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
     </div>
     <div class="card">
       <h2>Envoyer aux hubs</h2>
-      <div id="vehList"></div>
+      <div id="vehList" class="vgrid"></div>
       <div class="note" id="howto"></div>
       <details style="margin-top:10px"><summary class="sub">Noms des hubs (pour trouver le bon hub automatiquement)</summary>
         <div id="names" style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-top:8px"></div>
@@ -867,10 +875,16 @@ function renderVehicles() {
   if (!box.children.length) {
     for (let v = 1; v <= 4; v++) {
       const d = document.createElement('div'); d.className = 'veh'; d.id = 'veh' + v;
-      d.innerHTML = `<div class="tag">0${v}<i style="background:var(--v${v})"></i></div>
-        <div><b>Véhicule ${v}</b>${v === 4 ? ' <span class="sub">· émetteur + télécommande</span>' : ''}<span class="sub" id="cn${v}"></span><span class="sub" id="bat${v}"></span><div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div></div>
-        <div class="acts"><button class="btn primary" id="send${v}">Envoyer et démarrer</button><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>`;
+      d.style.setProperty('--vc', `var(--v${v})`);
+      d.innerHTML = `<button class="more" id="more${v}" title="Autres actions">⋯</button>
+        <div class="hd"><div class="tag" style="grid-row:auto">0${v}<i style="background:var(--v${v})"></i></div><div><b>Véhicule ${v}</b><div class="role">${v === 4 ? 'chef d\'orchestre' : 'suit le V4'}</div></div></div>
+        <div class="line" id="cn${v}"></div>
+        <div class="line" id="bat${v}"></div>
+        <div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div>
+        <div class="acts"><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">↻ Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>
+        <button class="btn primary main" id="send${v}">🔗 Connecter</button>`;
       box.appendChild(d);
+      $('more' + v).onclick = () => d.classList.toggle('open');
       $('send' + v).onclick = () => sendVehicle(v, true);
       $('run' + v).onclick = () => sendVehicle(v, false);
       $('copy' + v).onclick = async () => { try { await navigator.clipboard.writeText(programText(v)); toast('Programme du véhicule ' + v + ' copié'); } catch { toast('Copie refusée par le navigateur'); } };
@@ -878,7 +892,7 @@ function renderVehicles() {
   }
   for (let v = 1; v <= 4; v++) { $('send' + v).disabled = !TL || V[v].busy; $('run' + v).disabled = V[v].busy; $('copy' + v).disabled = !TL; }
   $('howto').innerHTML = $('optHoming').checked
-    ? `<b>Avec recalage :</b> pose le <b>véhicule 1 seul</b> sur le plateau et appuie sur « Envoyer et démarrer » : il se cale contre la clôture puis va à sa place. Fais de même pour <b>2</b>, puis <b>3</b>, puis <b>4</b> en dernier. Les véhicules 1 à 3 attendent en vert le signal du 4, qui reste connecté au téléphone pour la télécommande.`
+    ? `<b>Avec recalage :</b> pose le <b>véhicule 1 seul</b> sur le plateau et appuie sur « 🔗 Connecter » : le programme est envoyé, il se cale contre la clôture puis va à sa place. Fais de même pour <b>2</b>, puis <b>3</b>, puis <b>4</b> en dernier. Les véhicules 1 à 3 attendent en vert le signal du 4, qui reste connecté au téléphone pour la télécommande.`
     : `<b>Sans recalage :</b> les véhicules doivent déjà être à leur place et leurs hubs ne doivent pas avoir été éteints depuis le dernier recalage. Envoie <b>1, 2, 3</b> puis <b>4</b> en dernier.`;
 }
 function setSt(v, txt, cls = '') { $('st' + v).innerHTML = cls ? `<span class="${cls}">${txt}</span>` : txt; }
@@ -901,11 +915,11 @@ function setBat(v, mv) {
 function batPct(mv) { return Math.max(0, Math.min(100, Math.round((mv - 6000) / (8400 - 6000) * 100))); }
 function showBat(v) {
   const el = $('bat' + v), b = BAT[v]; if (!el) return;
-  if (!b) { el.innerHTML = ' · <span class="batt"><i></i></span> niveau inconnu'; return; }
+  if (!b) { el.innerHTML = '<span class="batt"><i></i></span> <span class="sub">batterie inconnue</span>'; return; }
   const pc = batPct(b.mv), col = b.mv < 6500 ? 'var(--red)' : b.mv < 7000 ? '#e0a800' : 'var(--green)';
   const live = v === 4 && R.hub && R.hub.connected && Date.now() - b.at < 5000;
-  const when = live ? 'en direct' : 'mesuré le ' + new Date(b.at).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-  el.innerHTML = ` · <span class="batt" title="${(b.mv / 1000).toFixed(2).replace('.', ',')} V"><i style="width:${pc}%;background:${col}"></i></span> <b style="color:${col}">${pc} %</b> <span style="opacity:.75">(${when})</span>`;
+  const when = live ? 'en direct' : new Date(b.at).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  el.innerHTML = `<span class="batt" title="${(b.mv / 1000).toFixed(2).replace('.', ',')} V"><i style="width:${pc}%;background:${col}"></i></span> <b style="color:${col}">${pc} %</b> <span style="opacity:.75">(${when})</span>`;
 }
 
 async function getHub(v) {
@@ -980,7 +994,7 @@ async function disconnectAll() {
 }
 $('discAll').onclick = disconnectAll;
 setInterval(() => { for (let v = 1; v <= 4; v++) { showBat(v); const h = V[v].hub, el = $('cn' + v); if (!el) continue;
-  el.innerHTML = h && h.reconnecting ? ' · <span class="warn">reconnexion…</span>' : h && h.connected ? ' · <span class="ok">● connecté</span>' : ' · ○ non connecté'; } }, 1000);
+  el.innerHTML = h && h.reconnecting ? '<span class="warn">◌ reconnexion…</span>' : h && h.connected ? `<span class="ok">● connecté</span> <span class="sub">${esc(h.name)}</span>` : '<span class="sub">○ non connecté</span>'; } }, 1000);
 for (let v = 1; v <= 4; v++) {
   const lab = document.createElement('span'); lab.textContent = 'Véhicule ' + v;
   const inp = document.createElement('input'); inp.type = 'text'; inp.value = hubName(v); inp.style.margin = '0';
