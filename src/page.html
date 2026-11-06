@@ -124,6 +124,9 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
 .odo .t{width:30px;height:24px;border-radius:5px;background:var(--dbg);color:#fff;font:700 12px ui-monospace,monospace;display:grid;place-items:center;border-bottom:3px solid}
 .odo .bar{display:block;height:8px;background:var(--soft);border-radius:4px;overflow:hidden}.odo .bar>div{height:100%;width:0;transition:width .25s}
 .odo b{font-size:15px;text-align:right}.odo span.s{font-size:13px;color:var(--muted);min-width:64px;text-align:right}
+.batt{display:inline-block;vertical-align:-2px;width:30px;height:14px;border:2px solid var(--muted);border-radius:3px;position:relative;margin-right:2px;padding:1px}
+.batt::after{content:"";position:absolute;right:-5px;top:3px;width:3px;height:5px;background:var(--muted);border-radius:0 2px 2px 0}
+.batt i{display:block;height:100%;width:0;border-radius:1px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
 </style>
@@ -203,7 +206,8 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
       <h2>Conduite manuelle · véhicule 4</h2>
-      <div class="row" style="margin-top:10px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
+      <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
+      <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <div class="sub" id="manMsg" style="margin-top:8px">Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.</div>
     </div>
     <div class="row" style="margin:12px 0"><button class="btn" id="discAll2">Tout déconnecter</button><button class="btn" id="goUpd">Changer de chorégraphies…</button></div>
@@ -510,7 +514,7 @@ function renderVehicles() {
     for (let v = 1; v <= 4; v++) {
       const d = document.createElement('div'); d.className = 'veh'; d.id = 'veh' + v;
       d.innerHTML = `<div class="tag">0${v}<i style="background:var(--v${v})"></i></div>
-        <div><b>Véhicule ${v}</b>${v === 4 ? ' <span class="sub">· émetteur + télécommande</span>' : ''}<span class="sub" id="cn${v}"></span><div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div></div>
+        <div><b>Véhicule ${v}</b>${v === 4 ? ' <span class="sub">· émetteur + télécommande</span>' : ''}<span class="sub" id="cn${v}"></span><span class="sub" id="bat${v}"></span><div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div></div>
         <div class="acts"><button class="btn primary" id="send${v}">Envoyer et démarrer</button><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>`;
       box.appendChild(d);
       $('send' + v).onclick = () => sendVehicle(v, true);
@@ -535,6 +539,21 @@ function nameVariants(v) {
   if (m) { for (const base of [m[1], m[1].charAt(0).toUpperCase() + m[1].slice(1), m[1].toLowerCase()]) { out.add(base + m[2]); out.add(base + ' ' + m[2]); } }
   return [...out];
 }
+// ---------------------------------------------------------------- batterie
+const BAT = store.get('bat', {});
+function setBat(v, mv) {
+  BAT[v] = { mv, at: Date.now() }; store.set('bat', BAT); showBat(v);
+}
+function batPct(mv) { return Math.max(0, Math.min(100, Math.round((mv - 6000) / (8400 - 6000) * 100))); }
+function showBat(v) {
+  const el = $('bat' + v), b = BAT[v]; if (!el) return;
+  if (!b) { el.innerHTML = ' · <span class="batt"><i></i></span> niveau inconnu'; return; }
+  const pc = batPct(b.mv), col = b.mv < 6500 ? 'var(--red)' : b.mv < 7000 ? '#e0a800' : 'var(--green)';
+  const live = v === 4 && R.hub && R.hub.connected && Date.now() - b.at < 5000;
+  const when = live ? 'en direct' : 'mesuré le ' + new Date(b.at).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  el.innerHTML = ` · <span class="batt" title="${(b.mv / 1000).toFixed(2).replace('.', ',')} V"><i style="width:${pc}%;background:${col}"></i></span> <b style="color:${col}">${pc} %</b> <span style="opacity:.75">(${when})</span>`;
+}
+
 async function getHub(v) {
   let h = V[v].hub;
   if (!h) {
@@ -566,7 +585,10 @@ async function sendVehicle(v, doUpload, homing = $('optHoming').checked) {
       await h.upload(prog, f => { setBar(v, f); setSt(v, 'Envoi ' + Math.round(f * 100) + ' %'); });
       setBar(v, null);
     }
+    let gotBat = null;
+    if (v !== 4) h.onLine = line => { const q = line.split(/\s+/); if (q[0] === 'BAT') gotBat = +q[1]; };
     await h.start();
+    if (v !== 4) { for (let k = 0; k < 15 && gotBat === null; k++) await sleep(100); if (gotBat) setBat(v, gotBat); h.onLine = null; }
     if (v === 4) { attachRemote(h); setSt(v, `✓ En marche sur « ${esc(h.name)} » · télécommande prête`, 'ok'); toast('Véhicule 4 prêt : passe à la télécommande'); }
     else { await sleep(300); await h.close(); setSt(v, `✓ En marche sur « ${esc(h.name)} » ${homing && doUpload ? '· recalage puis attente du véhicule 4' : '· attend le véhicule 4'}`, 'ok'); }
     return true;
@@ -603,7 +625,7 @@ async function disconnectAll() {
   toast(still.length ? 'Une liaison n\'a pas pu être coupée' : 'Tous les véhicules sont déconnectés');
 }
 $('discAll').onclick = disconnectAll;
-setInterval(() => { for (let v = 1; v <= 4; v++) { const h = V[v].hub, el = $('cn' + v); if (!el) continue;
+setInterval(() => { for (let v = 1; v <= 4; v++) { showBat(v); const h = V[v].hub, el = $('cn' + v); if (!el) continue;
   el.innerHTML = h && h.reconnecting ? ' · <span class="warn">reconnexion…</span>' : h && h.connected ? ' · <span class="ok">● connecté</span>' : ' · ○ non connecté'; } }, 1000);
 for (let v = 1; v <= 4; v++) {
   const lab = document.createElement('span'); lab.textContent = 'Véhicule ' + v;
@@ -694,7 +716,9 @@ function attachRemote(h) {
   R.hub = h; R.tl = TL; R.names = PLAY.map(i => i.name);
   h.onLine = line => {
     const p = line.split(/\s+/);
-    if (p[0] === 'ST') { R.st = { s: p[1], w: +p[2], k: +p[3], pend: p[4] === '1', mv: +p[5], gen: +p[6] }; R.at = performance.now(); updateRemote(); }
+    if (p[0] === 'ST') { R.st = { s: p[1], w: +p[2], k: +p[3], pend: p[4] === '1', mv: +p[5], gen: +p[6] }; R.at = performance.now(); updateRemote();
+      if (R.st.mv && (!BAT[4] || Date.now() - BAT[4].at > 3000)) setBat(4, R.st.mv); }
+    else if (p[0] === 'BAT') setBat(4, +p[1]);
     else if (p[0] === 'BUSY') toast('Commande ignorée : attends une seconde');
     else if (p[0] === 'MAN' && M.v === 4) M.ack = p[1];
   };
@@ -717,7 +741,10 @@ async function send(ch) {
 $('bPlay').onclick = () => send('p');
 // ====================================================================== conduite manuelle
 const M = { v: 4, mode: 'joy', active: false, returning: false, hub: null, cmd: [0, 0], path: [], finger: null, joy: [0, 0], others: [], last: 0, sent: null, sendAt: 0, inflight: false, ack: null };
-const VPAGE = 6;   // pas de grille par seconde (le hub suit jusqu'à 8)
+let VPAGE = store.get('manSpeed', 6);   // pas de grille par seconde choisis au curseur (le hub suit jusqu'à 16)
+$('manSpeed').value = VPAGE;
+const showManSpeed = () => { $('manSpeedV').textContent = (VPAGE * PITCH_M * 100).toFixed(1).replace('.', ',') + ' cm/s'; };
+$('manSpeed').oninput = e => { VPAGE = +e.target.value; store.set('manSpeed', VPAGE); showManSpeed(); };
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
   M.mode = b.dataset.m; document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
   M.finger = null; M.joy = [0, 0]; manUI();
@@ -1220,7 +1247,7 @@ function drawBoard() {
 }
 (function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
-loadItems(); refresh();
+loadItems(); refresh(); showManSpeed();
 </script>
 </body>
 </html>

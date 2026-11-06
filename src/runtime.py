@@ -154,6 +154,7 @@ def emergency():
 
 # ---------------------------------------------------------------- demarrage
 hub.light.on(Color.ORANGE)
+print('BAT', hub.battery.voltage())
 if DO_HOMING:
     homing()
 x_motor.run_target(1000, HOME_X * GEAR)
@@ -168,7 +169,7 @@ from uselect import poll
 keyboard = poll()
 keyboard.register(stdin)
 line = ''
-VMAN = 0.008                  # pas de grille par ms en manuel (8 pas/s)
+VMAN = 0.016                  # pas de grille par ms en manuel (16 pas/s au maximum)
 manual = False
 blend = False                 # True : retour progressif vers la choregraphie apres Q
 mx = HOME_X
