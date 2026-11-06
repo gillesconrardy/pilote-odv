@@ -1,4 +1,4 @@
-# Pilote ODV — fiche de reprise du projet
+# F4 Square (ex-Pilote ODV) — fiche de reprise du projet
 
 Projet de Gilles : 4 véhicules LEGO omnidirectionnels (ODV, configuration 05 : base 4×4, 4 véhicules)
 pilotés par des Technic Hub sous Pybricks. **Toujours répondre en français.** Gilles est sur Windows ;
@@ -9,6 +9,7 @@ il pilote depuis Chrome sur Android (Safari/Chrome iPhone n'ont pas le Bluetooth
 - Dossier local de Gilles : `C:\Gestion\lego_Vehicle` (copie du projet dans `Pilote ODV\`)
 - Noms Bluetooth des hubs : `vehicle1`, `vehicle2`, `vehicle3`, `vehicle4` (sans espace)
 - Ne publier (git push) que quand Gilles le demande.
+- Nom de l'application : **F4 Square** (depuis v1.29 ; titre, en-tête, manifest, simulateur). Le dépôt et l'adresse restent `pilote-odv`.
 
 ## Le matériel et le code d'origine
 `choregraphies/0_origine_ODV_Cfg05_Vehicle01.py` = programme d'origine (4 fichiers identiques sauf

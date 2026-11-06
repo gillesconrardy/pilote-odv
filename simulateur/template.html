@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulateur ODV – 4 véhicules omnidirectionnels</title>
+<title>F4 Square – Simulateur</title>
 <link rel="icon" type="image/png" href="../icons/favicon-64.png">
 <meta name="theme-color" content="#121314">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,7 +82,7 @@ label.chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:va
 details{margin-top:12px}
 summary{cursor:pointer;color:var(--muted);font-size:13px}
 .startpos{display:grid;grid-template-columns:auto repeat(2,62px);gap:4px 6px;align-items:center;margin-top:8px;font-size:12.5px}
-/* ===== Thème « Holo ambre » (comme l'appli Pilote ODV) ===== */
+/* ===== Thème « Holo ambre » (comme l'appli F4 Square) ===== */
 :root{color-scheme:dark;
   --bg:#121314; --panel:#1a1c1e; --ink:#edeae4; --muted:#a8a49c; --line:#2f2c28; --soft:#232528;
   --board:#17181a; --cellA:#17181a; --cellB:#1c1d20; --fence:#4a443d;
@@ -109,7 +109,7 @@ canvas{border-radius:6px}
 </head>
 <body>
 <header>
-  <h1>Simulateur ODV : 4 véhicules omnidirectionnels <small style="font:400 11px var(--mono);letter-spacing:0;text-transform:none;color:var(--accent)">v/*VERSION*/ · /*BUILT*/</small></h1>
+  <h1>F4 Square · Simulateur <small style="font:400 11px var(--mono);letter-spacing:0;text-transform:none;color:var(--accent)">v/*VERSION*/ · /*BUILT*/</small></h1>
   <div class="sub">Rejoue exactement <code>mvc.move</code>, <code>mvc.move_circ</code> et <code>mvc.wait_sync_ms</code> (pas de 4 ms, 80°/pas, 1400°/s) et repère les chevauchements entre véhicules.</div>
 </header>
 <main>

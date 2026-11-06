@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#121314">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
-<title>Pilote ODV</title>
+<title>F4 Square</title>
 <link rel="icon" type="image/png" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -314,7 +314,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <img class="logo" src="/*ICON*/" alt="">
-    <div><h1>Pilote ODV</h1><div class="sub">4 véhicules omnidirectionnels</div></div>
+    <div><h1 style="white-space:nowrap">F4 Square</h1></div>
     <div class="ver" title="Version de l'application"><b>v/*VERSION*/</b><br>/*BUILT*/</div>
   </header>
   <div class="banner" id="nobt"></div>
@@ -1354,7 +1354,7 @@ $('edNew').onclick = () => edOpen(null);
 $('edClose').onclick = () => { ED.play = null; $('edWrap').classList.remove('on'); document.body.style.overflow = ''; };
 function edCode() {
   const name = $('edName').value.trim() || 'Ma chorégraphie';
-  const lines = ['    # ' + name.replace(/[\r\n]/g, ' ') + " (créée avec l'atelier Pilote ODV)"], lineStep = {};
+  const lines = ['    # ' + name.replace(/[\r\n]/g, ' ') + " (créée avec l'atelier F4 Square)"], lineStep = {};
   for (let k = 1; k < ED.steps.length; k++) {
     const s = ED.steps[k];
     lines.push('    mvc.move(' + s.pos.map(p => nf(p[0]) + ', ' + nf(p[1])).join(',  ') + (s.speed < 100 ? ', speed=' + s.speed : '') + ')  # étape ' + k);
