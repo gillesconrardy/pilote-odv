@@ -234,6 +234,13 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+.chiprow{display:flex;gap:6px;align-items:flex-start}
+.chiprow .chips{flex:1;min-width:0}
+.addchip{flex:none;width:46px;height:38px;margin-top:4px;border-radius:8px;border:1px dashed var(--accent);background:none;color:var(--accent);font:600 20px var(--sans)}
+.tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}
+.tools .btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;font-size:11.5px;font-weight:500}
+.tools .btn span{font-size:17px;line-height:1}
+#edWrap .edrow label{min-width:64px}
 .aiex{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
 .aiex button{flex:none;border:1px solid var(--edge);background:#1f2124;color:var(--ink);border-radius:20px;padding:6px 12px;font:500 13px var(--sans)}
 .aiex button:active{border-color:var(--accent);color:var(--accent)}
@@ -360,14 +367,14 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   </div>
   <div class="card">
     <h2>Étapes</h2>
-    <div class="chips" id="edChips"></div>
+    <div class="chiprow"><div class="chips" id="edChips"></div><button class="addchip" id="edAdd" aria-label="Ajouter une étape">＋</button></div>
     <div id="edStep"></div>
-    <div class="row" style="margin-top:8px">
-      <button class="btn primary" id="edAdd">＋ Nouvelle étape</button>
-      <button class="btn" id="edDel">Supprimer l'étape</button>
-      <button class="btn" id="edLeft" title="Avancer l'étape">◀</button><button class="btn" id="edRight" title="Reculer l'étape">▶</button>
+    <div class="tools">
+      <button class="btn" id="edLeft" aria-label="Déplacer l'étape plus tôt"><span>◀</span>Plus tôt</button>
+      <button class="btn" id="edRight" aria-label="Déplacer l'étape plus tard"><span>▶</span>Plus tard</button>
+      <button class="btn" id="edDel" aria-label="Supprimer l'étape"><span>✕</span>Supprimer</button>
+      <button class="btn" id="edHome" aria-label="Ajouter le retour au départ"><span>⌂</span>Retour</button>
     </div>
-    <div class="row" style="margin-top:8px"><button class="btn" id="edHome">⌂ Ajouter le retour au départ</button><label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="edSnap" checked> Aimanter (1 pas)</label></div>
     <div id="edCheck" style="margin-top:10px"></div>
   </div>
   <div class="card" id="aiCard">
@@ -1250,10 +1257,9 @@ function edRefresh() {
   });
   const s = ED.steps[ED.sel];
   $('edStep').innerHTML = ED.sel === 0
-    ? '<div class="sub">Le départ est fixe : (30,0) (20,0) (10,0) (0,0). Ajoute une étape pour faire bouger les véhicules.</div>'
+    ? '<div class="sub" style="margin:4px 0 2px">Départ fixe. Touche ＋ pour ajouter une étape.</div>'
     : `<div class="edrow"><label>Vitesse</label><input type="range" id="edSpeed" min="10" max="100" step="5" value="${s.speed}"><b id="edSpeedV" style="min-width:44px">${s.speed} %</b></div>
-       <div class="edrow"><label>Pause après</label><select id="edWait">${[0, 250, 500, 1000, 1500, 2000, 3000, 5000].map(w => `<option value="${w}" ${w === s.wait ? 'selected' : ''}>${w ? (w / 1000).toLocaleString('fr') + ' s' : 'aucune'}</option>`).join('')}</select></div>
-       <div class="sub">${s.pos.map((p, i) => `V${i + 1} (${nf(p[0])}, ${nf(p[1])})`).join(' · ')}</div>`;
+       <div class="edrow"><label>Pause</label><select id="edWait">${[0, 250, 500, 1000, 1500, 2000, 3000, 5000].map(w => `<option value="${w}" ${w === s.wait ? 'selected' : ''}>${w ? (w / 1000).toLocaleString('fr') + ' s' : 'aucune'}</option>`).join('')}</select></div>`;
   if (ED.sel > 0) {
     $('edSpeed').oninput = e => { s.speed = +e.target.value; $('edSpeedV').textContent = s.speed + ' %'; };
     $('edSpeed').onchange = () => edRefresh();
@@ -1263,7 +1269,7 @@ function edRefresh() {
   const total = ED.steps.length > 1 ? ODVGEN.buildTimeline([{ name: 'x', src: v.src }]).total : 0;
   const list = Object.entries(ED.issues).map(([k, x]) => `<div class="${x.lvl === 'bad' ? 'bad' : 'warn'}" style="font-size:13px">● ${+k === 0 ? 'Départ' : 'Étape ' + k} : ${x.msg}</div>`).join('');
   $('edCheck').innerHTML = (list || (ED.steps.length > 1 ? '<div class="ok" style="font-size:13px">✓ Aucune collision</div>' : ''))
-    + (ED.steps.length > 1 && !v.atHome ? '<div class="warn" style="font-size:13px">● La dernière étape doit ramener les véhicules au départ (bouton ⌂).</div>' : '')
+    + (ED.steps.length > 1 && !v.atHome ? '<div class="warn" style="font-size:13px">● Termine au départ : touche ⌂ Retour.</div>' : '')
     + (total ? `<div class="sub" style="margin-top:4px">Durée : ${fmt(total)}</div>` : '');
   $('edSave').disabled = ED.steps.length < 2 || !v.atHome || v.nBad > 0;
   $('edHint').textContent = ED.sel === 0 ? 'Choisis ou ajoute une étape pour déplacer les véhicules.' : `Étape ${ED.sel} : fais glisser un véhicule à sa nouvelle place.`;
@@ -1301,7 +1307,7 @@ $('edCv').addEventListener('pointerdown', e => {
 });
 $('edCv').addEventListener('pointermove', e => {
   if (!ED.drag) return;
-  const q = edPt(e), s = ED.steps[ED.sel], st = $('edSnap').checked ? 1 : 0.25;
+  const q = edPt(e), s = ED.steps[ED.sel], st = 1;
   const snap = v => Math.min(30, Math.max(0, Math.round(v / st) * st));
   s.pos[ED.drag.i] = [snap(q[0] + ED.drag.off[0]), snap(q[1] + ED.drag.off[1])];
   edDraw();
@@ -1362,7 +1368,7 @@ Réponds UNIQUEMENT par un objet JSON, sans texte autour :
 (ne répète pas la position de départ en première étape).`;
 try { $('aiKey').value = localStorage.getItem('odv.aikey') || ''; } catch (e) {}
 if (!$('aiKey').value) $('aiCfg').open = true;
-const aiKeyLabel = () => { $('aiKeySum').textContent = $('aiKey').value.trim() ? '🔑 Clé API enregistrée ✓' : '🔑 Ajouter ta clé API'; };
+const aiKeyLabel = () => { const k = !!$('aiKey').value.trim(); $('aiKeySum').textContent = k ? '🔑 Clé API enregistrée ✓' : '🔑 Ajouter ta clé API'; $('aiForget').style.display = k ? 'inline-block' : 'none'; };
 aiKeyLabel();
 document.querySelectorAll('#aiEx button').forEach(b => b.onclick = () => { $('aiTxt').value = b.dataset.t; $('aiTxt').focus(); });
 $('aiKey').onchange = () => { try { localStorage.setItem('odv.aikey', $('aiKey').value.trim()); } catch (e) {} aiKeyLabel(); };
