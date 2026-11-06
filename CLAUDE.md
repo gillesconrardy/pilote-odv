@@ -56,7 +56,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
     radio, paquets perdus) ; `python analyze.py` vérifie synchro, pause, retour, urgence.
   - `t_page2.py`, `t_manual.py`, `t_joy.py` : Playwright + faux Bluetooth (envoi, mise à jour, joystick).
   - `sim_model.py` : modèle Python de référence des mouvements.
-- Publier : commit de `index.html` (+ `simulateur/`) sur `main` ; en ligne en 1–2 min.
+- Publier : `python build.py --publier` (augmente la version dans `version.json` et note l'heure
+  de Bruxelles, affichées en haut à droite de l'appli et dans le simulateur), puis commit de
+  `index.html`, `simulateur/index.html`, `version.json` sur `main` ; en ligne en 1–2 min.
+- Style visuel « LEGO » : gris bleuté foncé + bande orange (comme les véhicules), fond à picots,
+  boutons aux couleurs LEGO (vert, jaune, bleu, rouge). Garder ce style pour toute nouvelle page.
 - Nouvelle chorégraphie : fichier de lignes `mvc.*` indentées de 4 espaces dans `choregraphies/`,
   partant de et revenant à (30,0)(20,0)(10,0)(0,0), sans chevauchement ; l'ajouter à `CHORS` dans
   `build.py`. `gen_cinq.py` / `gen_vague_spirale.py` montrent comment les générer et les valider.
