@@ -1,0 +1,6 @@
+tests/progs*.json
+tests/tl.json
+tests/harness_out.json
+tests/sample_vehicle1.py
+tests/*.png
+__pycache__/

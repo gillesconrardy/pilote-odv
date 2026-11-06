@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2b2c30">
+<title>Pilote ODV</title>
+<style>
+:root{--bg:#f4f2ee;--card:#fff;--ink:#1d1d1b;--muted:#6d6b66;--line:#e2dfd8;--soft:#f0eee9;
+  --accent:#d9661a;--green:#1f8f4e;--blue:#2f6fde;--red:#d92d20;--amber:#d97706;
+  --v1:#2f6fde;--v2:#e07b00;--v3:#1a9b5b;--v4:#8b5cf6}
+@media (prefers-color-scheme:dark){:root{--bg:#141414;--card:#1e1e1d;--ink:#ecebe7;--muted:#9b9a94;--line:#33322f;--soft:#292826;
+  --accent:#f08a3c;--green:#34c26b;--blue:#5b8ff0;--red:#f0544a;--amber:#f59e0b;--v1:#5b8ff0;--v2:#f59a2e;--v3:#34c26b;--v4:#a78bfa}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:560px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 40px}
+header{display:flex;align-items:center;gap:10px;padding:6px 2px 12px}
+.logo{width:34px;height:34px;border-radius:9px;background:#2b2c30;display:grid;place-items:center;color:#fff;font:700 13px ui-monospace,monospace;border-bottom:3px solid #e8731c}
+h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.01em}
+.sub{font-size:12.5px;color:var(--muted)}
+nav{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;position:sticky;top:6px;z-index:5;margin-bottom:12px}
+nav button{flex:1;border:0;background:none;padding:9px 4px;border-radius:9px;font:600 14px system-ui;color:var(--muted)}
+nav button.on{background:var(--ink);color:var(--bg)}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:13px;margin:0 0 10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:650}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:9px 13px;font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:default}
+.ch{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
+.ch:last-child{border-bottom:0}
+.ch input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.ch .nm{flex:1;min-width:0}
+.ch .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch .nm span{font-size:12.5px;color:var(--muted)}
+.ord{display:flex;gap:4px}
+.ord button{width:34px;height:34px;border:1px solid var(--line);background:var(--soft);border-radius:8px;font-size:15px}
+.badge{font-size:11.5px;font-weight:650;border-radius:6px;padding:1px 7px;margin-left:4px}
+.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px}
+.tog small{display:block;color:var(--muted);font-size:12.5px}
+.sw{position:relative;width:48px;height:28px;flex:none}
+.sw input{opacity:0;width:0;height:0}
+.sw span{position:absolute;inset:0;background:var(--line);border-radius:20px;transition:.2s}
+.sw span::after{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.sw input:checked+span{background:var(--accent)}
+.sw input:checked+span::after{transform:translateX(20px)}
+.sum{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin-top:6px}
+.veh{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--line)}
+.veh:last-child{border-bottom:0}
+.tag{width:42px;height:42px;border-radius:9px;background:#2b2c30;color:#fff;display:grid;place-items:center;font:700 16px ui-monospace,monospace;grid-row:span 2;position:relative}
+.tag i{position:absolute;right:-4px;bottom:-4px;width:14px;height:14px;border-radius:4px;border:2px solid var(--card)}
+.veh .st{font-size:13px;color:var(--muted);min-height:18px}
+.veh .acts{grid-column:2;display:flex;gap:6px;flex-wrap:wrap}
+.bar{height:5px;background:var(--soft);border-radius:4px;overflow:hidden;margin-top:4px;display:none}
+.bar>div{height:100%;width:0;background:var(--accent);transition:width .15s}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:10px;padding:10px 12px;margin-top:10px}
+.note b{color:var(--ink)}
+.remote{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rb{border:0;border-radius:16px;padding:18px 10px;font:700 17px system-ui;color:#fff;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:92px;justify-content:center}
+.rb .ic{font-size:26px;line-height:1}
+.rb:disabled{opacity:.35}
+.rb.play{background:var(--green)}.rb.pause{background:var(--amber)}.rb.home{background:var(--blue)}
+.rb.stop{background:var(--red);grid-column:span 2;min-height:64px;flex-direction:row;gap:10px}
+.state{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.state .big{font-size:20px;font-weight:700}
+.prog{height:8px;background:var(--soft);border-radius:5px;overflow:hidden;margin:8px 0 4px}
+.prog>div{height:100%;background:var(--accent);width:0}
+canvas{width:100%;height:auto;display:block;border-radius:10px;margin-top:10px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.banner{background:#fff3cd;color:#5c4400;border:1px solid #f0d58a;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-bottom:12px;display:none}
+@media (prefers-color-scheme:dark){.banner{background:#3a2f0b;color:#f7e3a5;border-color:#6b5414}}
+dialog{border:0;border-radius:16px;padding:16px;width:min(520px,94vw);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+textarea,input[type=text]{width:100%;font:12.5px/1.45 ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink)}
+input[type=text]{font:15px system-ui;margin-bottom:8px}
+textarea{height:260px}
+.log{font:11.5px/1.4 ui-monospace,monospace;color:var(--muted);max-height:120px;overflow:auto;white-space:pre-wrap;margin-top:8px}
+
+.seg{display:flex;background:var(--soft);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:8px 6px;font-weight:650;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.vpick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.vpick button{border:2px solid transparent;background:#2b2c30;color:#fff;border-radius:10px;padding:9px 0;font:700 15px ui-monospace,monospace;position:relative}
+.vpick button.on{border-color:var(--accent)}
+.vpick button i{position:absolute;right:6px;bottom:6px;width:9px;height:9px;border-radius:3px}
+.joy{width:190px;height:190px;border-radius:50%;background:var(--soft);border:2px solid var(--line);margin:12px auto 4px;position:relative;touch-action:none}
+.joy::before,.joy::after{content:"";position:absolute;background:var(--line)}
+.joy::before{left:50%;top:12%;bottom:12%;width:2px;margin-left:-1px}.joy::after{top:50%;left:12%;right:12%;height:2px;margin-top:-1px}
+.joy .knob{position:absolute;width:74px;height:74px;border-radius:50%;background:var(--accent);left:58px;top:58px;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1}
+canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">ODV</div>
+    <div><h1>Pilote ODV</h1><div class="sub">4 véhicules omnidirectionnels · Pybricks</div></div>
+  </header>
+  <div class="banner" id="nobt"></div>
+
+  <nav>
+    <button data-tab="choix" class="on">1 · Programme</button>
+    <button data-tab="envoi">2 · Envoi</button>
+    <button data-tab="tele">3 · Pilotage</button>
+  </nav>
+
+  <!-- ======================= 1. PROGRAMME ======================= -->
+  <section id="choix" class="on">
+    <div class="card">
+      <h2>Chorégraphies à jouer</h2>
+      <div id="chList"></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="addBtn">＋ Ajouter une chorégraphie</button></div>
+    </div>
+    <div class="card">
+      <h2>Options</h2>
+      <label class="tog"><div>Jouer en boucle<small>La suite recommence au début quand elle est finie.</small></div>
+        <span class="sw"><input type="checkbox" id="optLoop" checked><span></span></span></label>
+      <label class="tog"><div>Recalage au démarrage<small>Chaque véhicule se cale contre la clôture puis rejoint sa place. Désactive-le si les véhicules sont déjà en place et que les hubs n'ont pas été éteints.</small></div>
+        <span class="sw"><input type="checkbox" id="optHoming" checked><span></span></span></label>
+      <div class="sum"><span id="sumTxt">–</span><button class="btn primary" id="toSend">Suivant →</button></div>
+      <div id="sumWarn"></div>
+    </div>
+  </section>
+
+  <!-- ======================= 2. ENVOI ======================= -->
+  <section id="envoi">
+    <div class="card">
+      <h2>Changer de chorégraphies</h2>
+      <div class="row"><button class="btn primary" id="updAll">⟳ Mettre à jour les 4 véhicules</button><button class="btn" id="discAll">Tout déconnecter</button></div>
+      <div class="sub" id="updMsg" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Envoyer aux hubs</h2>
+      <div id="vehList"></div>
+      <div class="note" id="howto"></div>
+      <details style="margin-top:10px"><summary class="sub">Noms des hubs (pour trouver le bon hub automatiquement)</summary>
+        <div id="names" style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-top:8px"></div>
+        <div class="sub" style="margin-top:6px">La fenêtre Bluetooth ne propose que le hub portant ce nom. Laisse vide pour voir tous les hubs Pybricks.</div>
+      </details>
+      <div class="log" id="log"></div>
+    </div>
+  </section>
+
+  <!-- ======================= 3. TÉLÉCOMMANDE ======================= -->
+  <section id="tele">
+    <div class="card">
+      <div class="state"><div><div class="big" id="stBig">Non connecté</div><div class="sub" id="stSub">Connecte le véhicule 4 pour piloter.</div></div>
+        <button class="btn" id="connect4">Connecter V4</button></div>
+      <div class="prog"><div id="stProg"></div></div>
+      <div class="sub" id="stTime">&nbsp;</div>
+      <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
+      <div id="joyBox" style="display:none"><div class="joy" id="joy"><div class="knob" id="knob"></div></div></div>
+    </div>
+    <div class="remote">
+      <button class="rb play" id="bPlay" disabled><span class="ic">▶</span>Lecture</button>
+      <button class="rb pause" id="bPause" disabled><span class="ic">❚❚</span>Pause</button>
+      <button class="rb home" id="bHome" disabled style="grid-column:span 2"><span class="ic">⟲</span>Stop et retour au départ</button>
+      <button class="rb stop" id="bStop" disabled><span class="ic">⛔</span>Arrêt d'urgence</button>
+    </div>
+    <div class="card" style="margin-top:12px" id="manCard">
+      <h2>Conduite manuelle · véhicule 4</h2>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
+      <div class="sub" id="manMsg" style="margin-top:8px">Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.</div>
+    </div>
+    <div class="row" style="margin:12px 0"><button class="btn" id="discAll2">Tout déconnecter</button><button class="btn" id="goUpd">Changer de chorégraphies…</button></div>
+    <div class="note"><b>Stop et retour :</b> les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision.<br><b>Arrêt d'urgence :</b> les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.</div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <h2 style="margin-bottom:8px">Ajouter une chorégraphie</h2>
+  <input type="text" id="dlgName" placeholder="Nom">
+  <textarea id="dlgSrc" spellcheck="false" placeholder="Colle des lignes mvc.move(...), mvc.move_circ(...), mvc.wait_sync_ms(...) ou un fichier VehicleXX.py complet. Elle doit partir de (30,0) (20,0) (10,0) (0,0) et y revenir."></textarea>
+  <div id="dlgMsg" class="sub" style="margin:6px 0"></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" id="dlgCancel">Annuler</button><button class="btn primary" id="dlgOk">Ajouter</button></div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>/*CORE*/</script>
+<script>/*GEN*/</script>
+<script>
+const RUNTIME = /*RUNTIME*/;
+const PRESETS = /*PRESETS*/;
+</script>
+<script>
+// ====================================================================== utilities
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmt = ms => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function toast(m, ms = 2200) { const t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms); }
+function log(m) { const l = $('log'); l.textContent += new Date().toLocaleTimeString() + '  ' + m + '\n'; l.scrollTop = l.scrollHeight; }
+const store = { get(k, d) { try { const v = localStorage.getItem('odv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+                set(k, v) { try { localStorage.setItem('odv.' + k, JSON.stringify(v)); } catch {} } };
+
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(id) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
+  if (id === 'tele') drawBoard();
+}
+
+if (!navigator.bluetooth) {
+  const b = $('nobt'); b.style.display = 'block';
+  b.innerHTML = '<b>Bluetooth web indisponible ici.</b> Ouvre cette page dans <b>Chrome sur Android</b> (ou Chrome / Edge sur PC), à une adresse en <b>https</b>. Tu peux quand même préparer le programme.';
+}
+
+// ====================================================================== 1. choreographies
+const custom = store.get('custom', []);
+let items = [];   // {id, name, src, dur, col, gr, ok, msg}
+function analyse(it) {
+  try {
+    const tl = ODVGEN.buildTimeline([{ name: it.name, src: it.src }]);
+    const { prog } = ODV.parse(ODVGEN.prepare(it.src), 4);
+    const sim = ODV.simulate(prog, ODVGEN.HOME);
+    const cols = ODV.collisions(sim, 10);
+    it.dur = tl.total; it.col = cols.filter(c => c.pen > 1).length; it.gr = cols.length - it.col;
+    const back = tl.warnings.find(w => /position de départ/.test(w.msg));
+    it.ok = !back && prog.length > 0;
+    it.msg = !prog.length ? 'aucune commande reconnue' : back ? back.msg : '';
+  } catch (e) { it.ok = false; it.msg = e.message; it.dur = 0; }
+  return it;
+}
+function loadItems() {
+  const all = PRESETS.map((p, i) => ({ id: 'p' + i, name: p.name, src: p.src, def: p.def }))
+    .concat(custom.map((c, i) => ({ id: 'c' + c.id, name: c.name, src: c.src, custom: c.id })));
+  all.forEach(analyse);
+  const saved = store.get('order', null);
+  const on = store.get('on', null);
+  if (saved) all.sort((a, b) => (saved.indexOf(a.id) + 1 || 999) - (saved.indexOf(b.id) + 1 || 999));
+  all.forEach(it => it.on = on ? on.includes(it.id) : !!it.def);
+  items = all;
+}
+function persist() { store.set('order', items.map(i => i.id)); store.set('on', items.filter(i => i.on).map(i => i.id)); }
+function renderList() {
+  const box = $('chList'); box.innerHTML = '';
+  items.forEach((it, idx) => {
+    const d = document.createElement('div'); d.className = 'ch';
+    const badge = !it.ok ? `<span class="badge bad">⚠ ${it.msg}</span>`
+      : it.col ? `<span class="badge bad">${it.col} chevauchement</span>`
+      : it.gr ? `<span class="badge warn">${it.gr} frôlement${it.gr > 1 ? 's' : ''}</span>` : `<span class="badge ok">✓ sans collision</span>`;
+    d.innerHTML = `<input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
+      <div class="nm"><b>${esc(it.name)}</b><span>${fmt(it.dur)}</span>${badge}</div>
+      <div class="ord"><button title="Monter">↑</button><button title="Descendre">↓</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
+    const [cb] = d.getElementsByTagName('input');
+    cb.onchange = () => { it.on = cb.checked; persist(); refresh(); };
+    const bs = d.querySelectorAll('.ord button');
+    bs[0].onclick = () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; persist(); refresh(); } };
+    bs[1].onclick = () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; persist(); refresh(); } };
+    if (bs[2]) bs[2].onclick = () => { const k = custom.findIndex(c => c.id === it.custom); custom.splice(k, 1); store.set('custom', custom); loadItems(); refresh(); };
+    box.appendChild(d);
+  });
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+let TL = null, PLAY = [];
+function refresh() {
+  renderList();
+  PLAY = items.filter(i => i.on && i.ok);
+  TL = PLAY.length ? ODVGEN.buildTimeline(PLAY.map(i => ({ name: i.name, src: i.src }))) : null;
+  progCache = {};
+  $('sumTxt').innerHTML = PLAY.length ? `<b>${PLAY.length}</b> chorégraphie${PLAY.length > 1 ? 's' : ''} · <b>${fmt(TL.total)}</b>` : 'Coche au moins une chorégraphie';
+  const w = $('sumWarn');
+  const risky = PLAY.filter(i => i.col);
+  w.innerHTML = risky.length ? `<div class="note"><b>Attention :</b> ${risky.map(i => esc(i.name)).join(', ')} contient un chevauchement entre véhicules (vérifie-le dans le simulateur).</div>` : '';
+  $('toSend').disabled = !PLAY.length;
+  renderVehicles();
+  drawBoard();
+}
+$('optLoop').checked = store.get('loop', true);
+$('optHoming').checked = store.get('homing', true);
+$('optLoop').onchange = () => { store.set('loop', $('optLoop').checked); progCache = {}; renderVehicles(); };
+$('optHoming').onchange = () => { store.set('homing', $('optHoming').checked); progCache = {}; renderVehicles(); };
+$('toSend').onclick = () => showTab('envoi');
+
+// add custom
+$('addBtn').onclick = () => { $('dlgName').value = ''; $('dlgSrc').value = ''; $('dlgMsg').textContent = ''; $('dlg').showModal(); };
+$('dlgCancel').onclick = () => $('dlg').close();
+$('dlgOk').onclick = () => {
+  const name = $('dlgName').value.trim() || 'Ma chorégraphie', src = $('dlgSrc').value;
+  const it = analyse({ name, src });
+  if (!it.ok) { $('dlgMsg').innerHTML = '<span class="bad">' + esc(it.msg) + '</span>'; return; }
+  const id = Date.now(); custom.push({ id, name, src }); store.set('custom', custom);
+  const on = store.get('on', items.filter(i => i.on).map(i => i.id)); on.push('c' + id); store.set('on', on);
+  $('dlg').close(); loadItems(); refresh(); toast('Chorégraphie ajoutée');
+};
+
+// ====================================================================== compilation
+const MPY_VER = '2.0.0';
+const MPY_URLS = ['https://cdn.jsdelivr.net/npm/@pybricks/mpy-cross-v6@' + MPY_VER + '/+esm', 'https://esm.sh/@pybricks/mpy-cross-v6@' + MPY_VER];
+const MPY_WASM = 'https://cdn.jsdelivr.net/npm/@pybricks/mpy-cross-v6@' + MPY_VER + '/build/mpy-cross-v6.wasm';
+let mpyMod = null, progCache = {};
+async function loadCompiler() {
+  if (window.ODV_COMPILE_OVERRIDE) return { compile: window.ODV_COMPILE_OVERRIDE };
+  if (mpyMod) return mpyMod;
+  let last;
+  for (const u of MPY_URLS) {
+    try { const m = await import(u); const c = m.compile || (m.default && m.default.compile); if (c) { mpyMod = { compile: c }; return mpyMod; } }
+    catch (e) { last = e; }
+  }
+  throw new Error('Impossible de charger le compilateur Pybricks (connexion internet nécessaire) : ' + (last && last.message));
+}
+function genId() {
+  // même numéro pour les 4 véhicules d'une même sélection, différent dès que la sélection change
+  const str = JSON.stringify([TL.bounds, TL.segs, $('optLoop').checked]);
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return 1 + ((h >>> 0) % 999);
+}
+function programText(vid, homing = $('optHoming').checked) {
+  return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name) });
+}
+async function compileFor(vid, homing = $('optHoming').checked) {
+  const key = vid + (homing ? 'h' : 'n');
+  if (progCache[key]) return progCache[key];
+  const src = programText(vid, homing);
+  const m = await loadCompiler();
+  const r = await m.compile('vehicule' + vid + '.py', src, undefined, MPY_WASM);
+  if (!r || r.status !== 0 || !r.mpy) throw new Error('Erreur de compilation : ' + ((r && r.err) || []).join(' '));
+  return progCache[key] = ODVGEN.multiMpy(r.mpy);
+}
+
+// ====================================================================== Pybricks BLE
+const SVC = 'c5f50001-8280-46da-89f4-6d8051e4aeef', CHR_CMD = 'c5f50002-8280-46da-89f4-6d8051e4aeef', CHR_CAPS = 'c5f50003-8280-46da-89f4-6d8051e4aeef';
+class Hub {
+  constructor(device) { this.device = device; this.cmd = null; this.caps = null; this.running = false; this.onLine = null; this.buf = ''; this.onDisc = null;
+    this.closing = false; this.autoReconnect = false; this.reconnecting = false; this.onReconnect = null; this.onState = null;
+    device.addEventListener('gattserverdisconnected', () => {
+      this.cmd = null;
+      if (!this.closing && this.autoReconnect) this.reconnect(); else this.onDisc && this.onDisc();
+    }); }
+  async reconnect() {
+    // liaison perdue sans le vouloir : on réessaie quelques fois (le programme continue sur le hub)
+    if (this.reconnecting) return;
+    this.reconnecting = true; this.onState && this.onState('reco');
+    for (let k = 0; k < 8 && !this.closing; k++) {
+      await sleep(700 + k * 500);
+      try { await this.connect(); this.reconnecting = false; this.onReconnect && this.onReconnect(); return; } catch {}
+    }
+    this.reconnecting = false; this.onDisc && this.onDisc();
+  }
+  async close() {
+    this.closing = true; this.autoReconnect = false;
+    try { if (this.cmd) await this.cmd.stopNotifications(); } catch {}
+    try { this.device.gatt.disconnect(); } catch {}
+    this.cmd = null;
+  }
+  get name() { return this.device.name || 'Hub'; }
+  get connected() { return !!(this.cmd && this.device.gatt.connected); }
+  static async pick(names) {
+    // fenêtre de choix filtrée sur le nom du hub (variantes avec / sans espace, majuscule)
+    const filters = names && names.length ? names.map(n => ({ name: n })) : [{ services: [SVC] }];
+    const d = await navigator.bluetooth.requestDevice({ filters, optionalServices: [SVC] });
+    return new Hub(d);
+  }
+  static async known(names) {
+    // hub déjà autorisé dans ce navigateur : reconnexion sans fenêtre de choix (si Chrome le permet)
+    if (!navigator.bluetooth.getDevices) return null;
+    try {
+      const devs = await navigator.bluetooth.getDevices();
+      const d = devs.find(x => names.includes(x.name));
+      if (!d) return null;
+      if (d.watchAdvertisements) {
+        const ac = new AbortController();
+        const seen = new Promise(res => d.addEventListener('advertisementreceived', res, { once: true }));
+        try { await d.watchAdvertisements({ signal: ac.signal }); await Promise.race([seen, sleep(5000)]); } catch {}
+        ac.abort();
+      }
+      const h = new Hub(d); await h.connect(); return h;
+    } catch { return null; }
+  }
+  async connect() {
+    this.closing = false;
+    if (this.connected) return;
+    const srv = await this.device.gatt.connect();
+    const svc = await srv.getPrimaryService(SVC);
+    this.cmd = await svc.getCharacteristic(CHR_CMD);
+    try {
+      const c = await svc.getCharacteristic(CHR_CAPS); const v = await c.readValue();
+      this.caps = { maxChar: v.getUint16(0, true), flags: v.getUint32(2, true), maxProg: v.getUint32(6, true) };
+    } catch { this.caps = null; }
+    this.cmd.addEventListener('characteristicvaluechanged', e => this.event(new Uint8Array(e.target.value.buffer)));
+    await this.cmd.startNotifications();
+  }
+  event(b) {
+    if (b[0] === 0 && b.length >= 5) { this.running = !!(new DataView(b.buffer, b.byteOffset).getUint32(1, true) & (1 << 6)); }
+    else if (b[0] === 1) {
+      this.buf += new TextDecoder().decode(b.slice(1));
+      let k; while ((k = this.buf.indexOf('\n')) >= 0) { const line = this.buf.slice(0, k).trim(); this.buf = this.buf.slice(k + 1); if (line && this.onLine) this.onLine(line); }
+    }
+  }
+  write(bytes) {
+    // une seule écriture Bluetooth à la fois (sinon « GATT operation already in progress »)
+    const v = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    const run = () => this.cmd.writeValueWithResponse ? this.cmd.writeValueWithResponse(v) : this.cmd.writeValue(v);
+    const p = (this.q || Promise.resolve()).then(run, run);
+    this.q = p.catch(() => {});
+    return p;
+  }
+  async stop() { await this.write([0x00]); for (let i = 0; i < 30 && this.running; i++) await sleep(100); await sleep(150); }
+  async start() { await this.write([0x01]); }
+  async upload(prog, onProgress) {
+    if (!this.caps) throw new Error("Ce hub ne donne pas ses capacités : mets à jour le firmware Pybricks (v3.3 ou plus).");
+    if (!(this.caps.flags & 2)) throw new Error("Firmware Pybricks trop ancien (format multi-mpy6 absent) : mets-le à jour avec Pybricks Code.");
+    if (prog.length > this.caps.maxProg) throw new Error(`Programme trop gros pour ce hub (${prog.length} octets, maximum ${this.caps.maxProg}). Choisis moins de chorégraphies.`);
+    const meta = n => { const b = new Uint8Array(5); b[0] = 0x03; new DataView(b.buffer).setUint32(1, n, true); return b; };
+    await this.write(meta(0));
+    const chunk = this.caps.maxChar - 5;
+    for (let off = 0; off < prog.length; off += chunk) {
+      const part = prog.subarray(off, off + chunk), b = new Uint8Array(5 + part.length);
+      b[0] = 0x04; new DataView(b.buffer).setUint32(1, off, true); b.set(part, 5);
+      await this.write(b); onProgress && onProgress(Math.min(1, (off + part.length) / prog.length));
+    }
+    await this.write(meta(prog.length));
+  }
+  async stdin(line) { const b = new TextEncoder().encode(line + '\n'); const out = new Uint8Array(b.length + 1); out[0] = 0x06; out.set(b, 1); await this.write(out); }
+  disconnect() { try { this.device.gatt.disconnect(); } catch {} }
+}
+
+// ====================================================================== 2. vehicles
+const V = { 1: {}, 2: {}, 3: {}, 4: {} };
+function renderVehicles() {
+  const box = $('vehList');
+  if (!box.children.length) {
+    for (let v = 1; v <= 4; v++) {
+      const d = document.createElement('div'); d.className = 'veh'; d.id = 'veh' + v;
+      d.innerHTML = `<div class="tag">0${v}<i style="background:var(--v${v})"></i></div>
+        <div><b>Véhicule ${v}</b>${v === 4 ? ' <span class="sub">· émetteur + télécommande</span>' : ''}<span class="sub" id="cn${v}"></span><div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div></div>
+        <div class="acts"><button class="btn primary" id="send${v}">Envoyer et démarrer</button><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>`;
+      box.appendChild(d);
+      $('send' + v).onclick = () => sendVehicle(v, true);
+      $('run' + v).onclick = () => sendVehicle(v, false);
+      $('copy' + v).onclick = async () => { try { await navigator.clipboard.writeText(programText(v)); toast('Programme du véhicule ' + v + ' copié'); } catch { toast('Copie refusée par le navigateur'); } };
+    }
+  }
+  for (let v = 1; v <= 4; v++) { $('send' + v).disabled = !TL || V[v].busy; $('run' + v).disabled = V[v].busy; $('copy' + v).disabled = !TL; }
+  $('howto').innerHTML = $('optHoming').checked
+    ? `<b>Avec recalage :</b> pose le <b>véhicule 1 seul</b> sur le plateau et appuie sur « Envoyer et démarrer » : il se cale contre la clôture puis va à sa place. Fais de même pour <b>2</b>, puis <b>3</b>, puis <b>4</b> en dernier. Les véhicules 1 à 3 attendent en vert le signal du 4, qui reste connecté au téléphone pour la télécommande.`
+    : `<b>Sans recalage :</b> les véhicules doivent déjà être à leur place et leurs hubs ne doivent pas avoir été éteints depuis le dernier recalage. Envoie <b>1, 2, 3</b> puis <b>4</b> en dernier.`;
+}
+function setSt(v, txt, cls = '') { $('st' + v).innerHTML = cls ? `<span class="${cls}">${txt}</span>` : txt; }
+function setBar(v, f) { const b = $('bar' + v); if (f === null) { b.style.display = 'none'; return; } b.style.display = 'block'; b.firstElementChild.style.width = (f * 100) + '%'; }
+
+const DEFAULT_NAMES = { 1: 'vehicle1', 2: 'vehicle2', 3: 'vehicle3', 4: 'vehicle4' };
+const hubName = v => (store.get('hub' + v, DEFAULT_NAMES[v]) || '').trim();
+function nameVariants(v) {
+  const n = hubName(v); if (!n) return [];
+  const m = n.match(/^(.*?)\s*(\d+)$/);
+  const out = new Set([n]);
+  if (m) { for (const base of [m[1], m[1].charAt(0).toUpperCase() + m[1].slice(1), m[1].toLowerCase()]) { out.add(base + m[2]); out.add(base + ' ' + m[2]); } }
+  return [...out];
+}
+async function getHub(v) {
+  let h = V[v].hub;
+  if (!h) {
+    h = await Hub.known(nameVariants(v));
+    if (h) log(`V${v} : reconnexion automatique à « ${h.name} »`);
+    else h = await Hub.pick(nameVariants(v));
+    for (let u = 1; u <= 4; u++) if (u !== v && V[u].hub && V[u].hub.device.id === h.device.id) {
+      throw new Error(`Ce hub (${h.name}) est déjà utilisé pour le véhicule ${u}.`);
+    }
+    V[v].hub = h;
+    store.set('name' + v, h.name);
+  }
+  await h.connect();
+  return h;
+}
+async function sendVehicle(v, doUpload, homing = $('optHoming').checked) {
+  if (!navigator.bluetooth) { toast('Bluetooth web indisponible dans ce navigateur'); return false; }
+  V[v].busy = true; renderVehicles();
+  try {
+    let prog = null;
+    if (doUpload) { setSt(v, 'Préparation du programme…'); prog = await compileFor(v, homing); log(`V${v} : programme ${prog.length} octets`); }
+    setSt(v, 'Choisis le hub du véhicule ' + v + '…');
+    const h = await getHub(v);
+    log(`V${v} : connecté à « ${h.name} »` + (h.caps ? ` (max ${h.caps.maxProg} octets)` : ''));
+    setSt(v, 'Arrêt du programme en cours…');
+    await h.stop();
+    if (doUpload) {
+      setSt(v, 'Envoi…'); setBar(v, 0);
+      await h.upload(prog, f => { setBar(v, f); setSt(v, 'Envoi ' + Math.round(f * 100) + ' %'); });
+      setBar(v, null);
+    }
+    await h.start();
+    if (v === 4) { attachRemote(h); setSt(v, `✓ En marche sur « ${esc(h.name)} » · télécommande prête`, 'ok'); toast('Véhicule 4 prêt : passe à la télécommande'); }
+    else { await sleep(300); await h.close(); setSt(v, `✓ En marche sur « ${esc(h.name)} » ${homing && doUpload ? '· recalage puis attente du véhicule 4' : '· attend le véhicule 4'}`, 'ok'); }
+    return true;
+  } catch (e) {
+    setBar(v, null);
+    const msg = e && e.name === 'NotFoundError' ? `Aucun hub choisi (le hub « ${hubName(v)} » est-il allumé ? sinon vérifie son nom dans « Noms des hubs »)`
+      : e && e.name === 'SecurityError' ? 'Appuie à nouveau sur le bouton (Chrome demande un appui pour ouvrir la fenêtre Bluetooth)'
+      : (e && e.message) || String(e);
+    setSt(v, '⚠ ' + esc(msg), 'bad'); log(`V${v} : ${msg}`);
+    if (e && e.name === 'NotFoundError') V[v].hub = V[v].hub && V[v].hub.connected ? V[v].hub : null;
+    return false;
+  } finally { V[v].busy = false; renderVehicles(); }
+}
+
+// ---------------------------------------------------------------- tout déconnecter / tout mettre à jour
+async function disconnectAll() {
+  if (M.active) { M.active = false; M.returning = false; manUI(); }
+  const hubs = [];
+  for (let v = 1; v <= 4; v++) {
+    const h = V[v].hub;
+    if (h) { h.onDisc = null; h.onLine = null; h.onReconnect = null; hubs.push([v, h]); await h.close(); }
+    V[v].hub = null;
+  }
+  if (M.hub) { await M.hub.close(); M.hub = null; }
+  R.hub = null; R.st = null; updateRemote(); renderVehicles();
+  await sleep(1200);
+  const still = hubs.filter(([v, h]) => h.device.gatt.connected);
+  for (let v = 1; v <= 4; v++) if (!V[v].busy) setSt(v, still.some(x => x[0] === v) ? '⚠ toujours connecté' : 'Déconnecté (le programme continue sur le hub)', still.some(x => x[0] === v) ? 'bad' : '');
+  const msg = still.length
+    ? `<span class="bad">⚠ Le téléphone garde encore la liaison avec ${still.map(x => 'V' + x[0]).join(', ')}. Désactive puis réactive le Bluetooth du téléphone pour la couper.</span>`
+    : '✓ Les 4 véhicules sont déconnectés. Leurs programmes continuent de tourner.';
+  $('updMsg').innerHTML = msg; manMsg(msg);
+  toast(still.length ? 'Une liaison n\'a pas pu être coupée' : 'Tous les véhicules sont déconnectés');
+}
+$('discAll').onclick = disconnectAll;
+setInterval(() => { for (let v = 1; v <= 4; v++) { const h = V[v].hub, el = $('cn' + v); if (!el) continue;
+  el.innerHTML = h && h.reconnecting ? ' · <span class="warn">reconnexion…</span>' : h && h.connected ? ' · <span class="ok">● connecté</span>' : ' · ○ non connecté'; } }, 1000);
+for (let v = 1; v <= 4; v++) {
+  const lab = document.createElement('span'); lab.textContent = 'Véhicule ' + v;
+  const inp = document.createElement('input'); inp.type = 'text'; inp.value = hubName(v); inp.style.margin = '0';
+  inp.onchange = () => { store.set('hub' + v, inp.value.trim()); if (V[v].hub && V[v].hub.name !== inp.value.trim()) { V[v].hub.close(); V[v].hub = null; } };
+  $('names').append(lab, inp);
+}
+$('discAll2').onclick = disconnectAll;
+$('goUpd').onclick = () => { showTab('choix'); toast('Choisis les chorégraphies, puis « Mettre à jour les 4 véhicules » dans Envoi', 3500); };
+const atHome = () => R.st && R.tl && (R.st.s === 'P' || R.st.s === 'S') && R.tl.bounds.includes(R.st.w);
+let updating = false;
+async function updateAll() {
+  const msg = t => { $('updMsg').innerHTML = t; log(t.replace(/<[^>]+>/g, '')); };
+  if (!TL) { toast('Choisis d\'abord des chorégraphies'); showTab('choix'); return; }
+  const missing = [1, 2, 3, 4].filter(v => !V[v].hub);
+  if (missing.length) {
+    msg(`Les hubs des véhicules ${missing.join(', ')} ne sont pas encore associés dans cette session. Pour eux : fais « Stop et retour au départ », désactive « Recalage au démarrage », puis appuie sur « Envoyer et démarrer » pour 1, 2, 3 et 4 (le 4 en dernier).`);
+    return;
+  }
+  if (updating) return;
+  updating = true; $('updAll').disabled = true;
+  try {
+    // 1. ramener les véhicules au départ
+    if (R.hub && R.hub.connected && R.st) {
+      if (!atHome()) {
+        msg('Retour des véhicules au départ…');
+        R.lock = 0; await send('h');
+        const t0 = performance.now();
+        while (!atHome()) {
+          if (performance.now() - t0 > 120000) throw new Error('Les véhicules ne sont pas revenus au départ.');
+          if (!R.hub || !R.hub.connected) throw new Error('Véhicule 4 déconnecté pendant le retour.');
+          await sleep(300);
+        }
+      }
+    } else if (!confirm('Je ne peux pas vérifier où sont les véhicules (véhicule 4 non connecté). Sont-ils bien à leur position de départ ?')) {
+      msg('Mise à jour annulée.'); return;
+    }
+    // 2. arrêter le véhicule 4 pour couper l'ancienne horloge
+    msg('Arrêt du véhicule 4…');
+    const h4 = await getHub(4); h4.onLine = null; R.st = null; await h4.stop();
+    // 3. envoyer 1, 2, 3 puis 4, sans recalage (ils sont déjà en place)
+    for (const v of [1, 2, 3, 4]) {
+      msg(`Envoi au véhicule ${v} (${v} sur 4)…`);
+      if (!await sendVehicle(v, true, false)) throw new Error(`Échec de l'envoi au véhicule ${v} (voir son message ci-dessous).`);
+    }
+    msg('<span class="ok">✓ Les 4 véhicules ont la nouvelle sélection. Passe à Pilotage et appuie sur Lecture.</span>');
+    showTab('tele');
+  } catch (e) { msg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); }
+  finally { updating = false; $('updAll').disabled = false; }
+}
+$('updAll').onclick = updateAll;
+function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + $('optHoming').checked; }
+
+// ====================================================================== 3. remote
+let R = { hub: null, st: null, at: 0, last: null, lastCmd: null, lock: 0 };
+function attachRemote(h) {
+  R.hub = h; R.tl = TL; R.names = PLAY.map(i => i.name);
+  h.onLine = line => {
+    const p = line.split(/\s+/);
+    if (p[0] === 'ST') { R.st = { s: p[1], w: +p[2], k: +p[3], pend: p[4] === '1', mv: +p[5], gen: +p[6] }; R.at = performance.now(); updateRemote(); }
+    else if (p[0] === 'BUSY') toast('Commande ignorée : attends une seconde');
+    else if (p[0] === 'MAN' && M.v === 4) M.ack = p[1];
+  };
+  h.autoReconnect = true;
+  h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
+  h.onReconnect = () => { toast('Véhicule 4 reconnecté'); updateRemote(); };
+  h.onDisc = () => { R.st = null; updateRemote(); toast('Véhicule 4 déconnecté'); };
+  updateRemote();
+}
+$('connect4').onclick = async () => {
+  try { const h = await getHub(4); attachRemote(h); toast('Connecté à ' + h.name); }
+  catch (e) { if (e.name !== 'NotFoundError') toast(e.message); }
+};
+async function send(ch) {
+  if (!R.hub || !R.hub.connected) return;
+  if (ch !== 'x' && performance.now() < R.lock) { toast('Un instant…'); return; }
+  try { await R.hub.stdin(ch); R.lastCmd = ch; R.lock = performance.now() + 1100; if (navigator.vibrate) navigator.vibrate(ch === 'x' ? 200 : 30); }
+  catch (e) { toast('Envoi impossible : ' + e.message); }
+}
+$('bPlay').onclick = () => send('p');
+// ====================================================================== conduite manuelle
+const M = { v: 4, mode: 'joy', active: false, returning: false, hub: null, cmd: [0, 0], path: [], finger: null, joy: [0, 0], others: [], last: 0, sent: null, sendAt: 0, inflight: false, ack: null };
+const VPAGE = 6;   // pas de grille par seconde (le hub suit jusqu'à 8)
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+  M.mode = b.dataset.m; document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+  M.finger = null; M.joy = [0, 0]; manUI();
+  if (M.active && !M.returning) manMsg(M.mode === 'drag' ? 'Touche ou fais glisser ton doigt sur le plateau : le véhicule <b>0' + M.v + '</b> se dirige vers ton doigt.' : 'Pousse le joystick (sous le plateau) pour déplacer le véhicule <b>0' + M.v + '</b>.');
+});
+function freeAt(p) {
+  if (p[0] < 0 || p[0] > 30 || p[1] < 0 || p[1] > 30) return false;
+  return M.others.every(o => Math.max(Math.abs(p[0] - o[0]), Math.abs(p[1] - o[1])) >= 10 - 1e-6);
+}
+function manUI() {
+  const b = $('manGo');
+  b.textContent = M.returning ? 'Retour à sa place…' : M.active ? 'Rendre la main' : 'Prendre la main';
+  b.disabled = M.returning; b.className = 'btn ' + (M.active ? '' : 'primary');
+  $('joyBox').style.display = M.active && !M.returning && M.mode === 'joy' ? '' : 'none';
+  $('cv').classList.toggle('drive', M.active && !M.returning && M.mode === 'drag');
+  updateRemote();
+}
+const manMsg = t => $('manMsg').innerHTML = t;
+$('manGo').onclick = async () => {
+  if (M.active) { M.returning = true; M.finger = null; M.joy = [0, 0]; manMsg('Le véhicule repasse par son chemin jusqu\'à sa place…'); manUI(); return; }
+  if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4 (il donne la position de tous)'); return; }
+  if (!(R.st.s === 'P' || R.st.s === 'S') || R.st.pend) { toast('Mets d\'abord le spectacle en pause ou fais Stop et retour'); return; }
+  if (R.st.gen && R.st.gen !== genId()) { toast('Le véhicule 4 joue une autre sélection : mets d\'abord les 4 véhicules à jour'); return; }
+  const v = M.v, w = R.st.w;
+  try {
+    manMsg('Connexion au véhicule ' + v + '…');
+    const h = v === 4 ? R.hub : await getHub(v);
+    if (v !== 4) {
+      h.onLine = line => { const p = line.split(/\s+/); if (p[0] === 'MAN') M.ack = p[1]; };
+      h.autoReconnect = true;
+      h.onState = () => manMsg('Liaison avec le véhicule ' + v + ' perdue, reconnexion… (il reste immobile en attendant)');
+      h.onReconnect = () => manMsg('Véhicule ' + v + ' reconnecté, tu peux continuer.');
+      h.onDisc = () => { manMsg('<span class="bad">⚠ Véhicule ' + v + ' perdu. Il est resté où il était. Reconnecte-le puis rends la main.</span>'); };
+    }
+    M.hub = h; M.ack = null;
+    M.others = [1, 2, 3, 4].filter(u => u !== v).map(u => ODVGEN.posAt(R.tl, u - 1, w));
+    M.cmd = ODVGEN.posAt(R.tl, v - 1, w); M.path = [M.cmd.slice()]; M.sent = M.cmd.slice();
+    await h.stdin('M');
+    for (let k = 0; k < 20 && M.ack !== '1'; k++) await sleep(100);
+    if (M.ack !== '1') throw new Error("Le véhicule ne répond pas : son programme est-il à jour (bouton « Mettre à jour les 4 véhicules ») ?");
+    M.active = true; M.last = performance.now();
+    $('cv').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    manMsg('Pousse le joystick sous le plateau pour déplacer le véhicule <b>04</b>. Plus tu pousses loin, plus il va vite.');
+    manUI();
+  } catch (e) { manMsg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); if (M.v !== 4 && M.hub) { M.hub.close(); } M.hub = null; }
+};
+async function manualEnd() {
+  try { await M.hub.stdin('G' + Math.round(M.cmd[0] * 100) + ',' + Math.round(M.cmd[1] * 100)); await sleep(250); await M.hub.stdin('Q'); } catch {}
+  if (M.v !== 4) { await sleep(400); M.hub.onLine = null; await M.hub.close(); }
+  M.active = false; M.returning = false; M.hub = null; M.path = [];
+  manMsg('Le véhicule est revenu à sa place. Tu peux relancer la Lecture ou prendre la main sur un autre véhicule.'); manUI();
+}
+function manualTick(ts) {
+  if (!M.active) return;
+  const now = performance.now(), dt = Math.min(0.1, (now - M.last) / 1000); M.last = now;
+  let goal = null;
+  if (M.returning) {
+    while (M.path.length && Math.hypot(M.path[M.path.length - 1][0] - M.cmd[0], M.path[M.path.length - 1][1] - M.cmd[1]) < 0.02) {
+      if (M.path.length === 1) break; M.path.pop();
+    }
+    goal = M.path[M.path.length - 1];
+    if (M.path.length === 1 && Math.hypot(goal[0] - M.cmd[0], goal[1] - M.cmd[1]) < 0.02 && !M.ending) { M.ending = true; manualEnd().finally(() => M.ending = false); return; }
+  } else if (M.mode === 'drag' && M.finger) goal = M.finger;
+  else if (M.mode === 'joy' && (M.joy[0] || M.joy[1])) goal = [M.cmd[0] - M.joy[0] * 50, M.cmd[1] + M.joy[1] * 50];
+  if (goal) {
+    let dx = goal[0] - M.cmd[0], dy = goal[1] - M.cmd[1]; const d = Math.hypot(dx, dy);
+    let sp = VPAGE * dt; if (M.mode === 'joy' && !M.returning) sp *= Math.min(1, Math.hypot(M.joy[0], M.joy[1]));
+    if (d > 1e-6) {
+      const k = Math.min(1, sp / d); dx *= k; dy *= k;
+      const tries = M.returning ? [[dx, dy]] : [[dx, dy], [dx, 0], [0, dy]];
+      for (const [ax, ay] of tries) {
+        const c = [M.cmd[0] + ax, M.cmd[1] + ay];
+        if (M.returning || freeAt(c)) { M.cmd = c; break; }
+      }
+      if (!M.returning) { const lp = M.path[M.path.length - 1]; if (Math.hypot(M.cmd[0] - lp[0], M.cmd[1] - lp[1]) >= 0.3) M.path.push(M.cmd.slice()); }
+    }
+  }
+  // envoi de la cible au hub (au plus ~15 fois par seconde, une écriture à la fois)
+  if (!M.hub || !M.hub.connected) return;
+  if (!M.inflight && now >= M.sendAt && (Math.abs(M.cmd[0] - M.sent[0]) > 0.01 || Math.abs(M.cmd[1] - M.sent[1]) > 0.01)) {
+    const tgt = M.cmd.slice(); M.inflight = true; M.sendAt = now + 125;
+    M.hub.stdin('G' + Math.round(tgt[0] * 100) + ',' + Math.round(tgt[1] * 100))
+      .then(() => { M.sent = tgt; }, () => {}).finally(() => { M.inflight = false; });
+  }
+}
+// glisser sur le plateau
+function boardPt(e) { const c = $('cv'), r = c.getBoundingClientRect(), u = c.width / 44, px = (e.clientX - r.left) * c.width / r.width, py = (e.clientY - r.top) * c.height / r.height; return [Math.min(30, Math.max(0, 37 - px / u)), Math.min(30, Math.max(0, py / u - 7))]; }
+$('cv').addEventListener('pointerdown', e => { if (!M.active || M.returning || M.mode !== 'drag') return; $('cv').setPointerCapture(e.pointerId); M.finger = boardPt(e); e.preventDefault(); });
+$('cv').addEventListener('pointermove', e => { if (M.finger) M.finger = boardPt(e); });
+const fingerUp = () => { if (M.finger) M.finger = null; };
+$('cv').addEventListener('pointerup', fingerUp); $('cv').addEventListener('pointercancel', fingerUp);
+// joystick
+const joy = $('joy'), knob = $('knob');
+function joyAt(e) {
+  const r = joy.getBoundingClientRect(), cx0 = r.left + r.width / 2, cy0 = r.top + r.height / 2, R0 = r.width / 2 - 37;
+  let jx = (e.clientX - cx0) / R0, jy = (e.clientY - cy0) / R0; const n = Math.hypot(jx, jy); if (n > 1) { jx /= n; jy /= n; }
+  M.joy = [jx, jy]; knob.style.transform = `translate(${jx * R0}px,${jy * R0}px)`;
+}
+joy.addEventListener('pointerdown', e => { if (!M.active || M.returning) return; joy.setPointerCapture(e.pointerId); joyAt(e); });
+joy.addEventListener('pointermove', e => { if (joy.hasPointerCapture(e.pointerId)) joyAt(e); });
+const joyUp = () => { M.joy = [0, 0]; knob.style.transform = ''; };
+joy.addEventListener('pointerup', joyUp); joy.addEventListener('pointercancel', joyUp);
+$('bPause').onclick = () => send('z');
+$('bHome').onclick = () => send('h');
+$('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; manUI(); send('x'); };
+function stateLabel() {
+  const s = R.st; if (!s) return ['Non connecté', 'Connecte le véhicule 4 pour piloter.'];
+  const tl = R.tl, atBound = tl && tl.bounds.includes(s.w);
+  const name = R.names && R.names[s.k] ? R.names[s.k] : '';
+  if (s.s === 'P') return [atBound ? 'Prêt · position de départ' : 'En pause', name];
+  if (s.s === 'B') return ['Retour au départ…', name + ' · en arrière'];
+  if (s.s === 'F') return [R.lastCmd === 'h' ? 'Retour au départ…' : 'Lecture', name + (R.lastCmd === 'h' ? ' · jusqu\'à la fin' : '')];
+  if (s.s === 'S') return [atBound ? 'À la position de départ' : 'Arrêté', name];
+  return ['…', ''];
+}
+function updateRemote() {
+  const on = R.hub && R.hub.connected;
+  ['bPlay', 'bPause', 'bHome'].forEach(id => $(id).disabled = !on || M.active);
+  $('bStop').disabled = !on;
+  $('connect4').style.display = on ? 'none' : '';
+  let [a, b] = on ? stateLabel() : ['Non connecté', 'Envoie ou connecte le véhicule 4.'];
+  if (on && R.st && R.st.gen && TL && R.st.gen !== genId()) b = '⚠ Le véhicule 4 joue une autre sélection que celle de l\'onglet Programme. ' + b;
+  $('stBig').textContent = a; $('stSub').textContent = b + (on && R.st && R.st.mv ? ' · batterie V4 ' + (R.st.mv / 1000).toFixed(1) + ' V' : '');
+}
+function estW() {
+  const s = R.st; if (!s) return 0;
+  const dt = Math.min(500, performance.now() - R.at);
+  return s.w + (s.s === 'F' ? dt : s.s === 'B' ? -dt : 0);
+}
+
+// ====================================================================== mini board
+const cv = $('cv'), cx = cv.getContext('2d');
+function drawBoard() {
+  const tl = R.tl || TL; const W = cv.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  cx.fillStyle = dark ? '#262624' : '#efeae1'; cx.fillRect(0, 0, W, W);
+  cx.fillStyle = dark ? '#3a3936' : '#ffffff'; cx.fillRect(X(35), Y(-5), 40 * u, 40 * u);
+  cx.fillStyle = dark ? '#555' : '#c9cbcd';
+  for (let gx = -4; gx <= 34; gx += 2) for (let gy = -4; gy <= 34; gy += 2) { cx.beginPath(); cx.arc(X(gx), Y(gy), u * .22, 0, 7); cx.fill(); }
+  cx.fillStyle = '#3d3e40'; cx.fillRect(X(35), Y(-6), 41 * u, u * .45); cx.fillRect(X(-5.6), Y(-6), u * .45, 41 * u);
+  cx.fillStyle = '#d0302a'; [[-4, -5.8], [-2.6, -5.8], [-5.8, -4.2]].forEach(([a, b]) => { cx.beginPath(); cx.arc(X(a), Y(b), u * .45, 0, 7); cx.fill(); });
+  const w = R.st ? estW() : 0;
+  const cols = ['--v1', '--v2', '--v3', '--v4'].map(c => getComputedStyle(document.documentElement).getPropertyValue(c).trim());
+  if (M.active && M.path.length > 1) {
+    cx.strokeStyle = cols[M.v - 1]; cx.lineWidth = u * .35; cx.globalAlpha = .45; cx.beginPath();
+    M.path.forEach((q, k) => k ? cx.lineTo(X(q[0]), Y(q[1])) : cx.moveTo(X(q[0]), Y(q[1]))); cx.lineTo(X(M.cmd[0]), Y(M.cmd[1])); cx.stroke(); cx.globalAlpha = 1;
+  }
+  if (M.active && M.finger) { cx.strokeStyle = cols[M.v - 1]; cx.lineWidth = u * .3; cx.beginPath(); cx.arc(X(M.finger[0]), Y(M.finger[1]), u * 1.2, 0, 7); cx.stroke(); }
+  for (let i = 0; i < 4; i++) {
+    const p = M.active && M.v === i + 1 ? M.cmd : tl ? ODVGEN.posAt(tl, i, w) : ODVGEN.HOME[i];
+    const L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
+    cx.fillStyle = '#2f3033'; cx.beginPath(); cx.roundRect ? cx.roundRect(L, T, S, S, u) : cx.rect(L, T, S, S); cx.fill();
+    cx.fillStyle = cols[i]; cx.fillRect(L + u, T + S - 2.2 * u, S - 2 * u, u * .6);
+    cx.fillStyle = '#fff'; cx.font = `700 ${3.2 * u}px ui-monospace,monospace`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    cx.fillText('0' + (i + 1), X(p[0]), Y(p[1] - .6));
+    if (M.active && M.v === i + 1) { cx.strokeStyle = '#e2408a'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+  }
+  if (R.st && tl) {
+    const k = R.st.k, b0 = tl.bounds[k], b1 = tl.bounds[k + 1] || tl.total;
+    $('stProg').style.width = (100 * Math.min(1, Math.max(0, (w - b0) / (b1 - b0)))) + '%';
+    $('stTime').textContent = `${fmt(w - b0)} / ${fmt(b1 - b0)}  ·  chorégraphie ${k + 1} sur ${tl.bounds.length - 1}`;
+  }
+}
+(function loop(ts) { manualTick(ts); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
+
+loadItems(); refresh();
+</script>
+</body>
+</html>

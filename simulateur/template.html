@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur ODV – 4 véhicules omnidirectionnels</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e3e1dc; --soft:#efede8;
+  --board:#fbfaf7; --cellA:#f1efe9; --cellB:#e9e6de; --fence:#8a8578;
+  --accent:#d9661a; --red:#d92d20; --orange:#d97706; --green:#15803d;
+  --code-hl:#fff3c4;
+  --v1:#2f6fde; --v2:#e07b00; --v3:#1a9b5b; --v4:#8b5cf6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161615; --panel:#1f1f1d; --ink:#ecebe7; --muted:#9b9a94; --line:#33322f; --soft:#2a2927;
+    --board:#1b1b1a; --cellA:#242422; --cellB:#2c2b29; --fence:#7d786c;
+    --accent:#f08a3c; --red:#f0544a; --orange:#f59e0b; --green:#34c26b;
+    --code-hl:#4a3f17;
+    --v1:#5b8ff0; --v2:#f59a2e; --v3:#34c26b; --v4:#a78bfa;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 22px 6px}
+h1{font-size:19px;margin:0 0 2px;font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(320px,1fr) 440px;gap:16px;padding:12px 22px 22px;align-items:start}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stage{position:relative}
+canvas{display:block;width:100%;height:auto;border-radius:8px;touch-action:none}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+select,input[type=number]{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 7px}
+input[type=number]{width:62px}
+input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:118px;text-align:right}
+.now{margin-top:10px;font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--soft);border-radius:8px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now b{color:var(--muted);font-weight:500}
+.pos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.pos div{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--soft);border-radius:8px;padding:8px 10px}
+.stat .k{font-size:11.5px;color:var(--muted)}
+.stat .v{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
+.stat.bad .v{color:var(--red)} .stat.warn .v{color:var(--orange)} .stat.ok .v{color:var(--green)}
+h2{font-size:13px;margin:14px 0 6px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+h2:first-child{margin-top:0}
+.list{max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.list:empty::before{content:"Aucune";display:block;padding:8px 10px;color:var(--muted)}
+.item{display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12.5px}
+.item:last-child{border-bottom:0}
+.item:hover{background:var(--soft)}
+.tag{font-size:11px;font-weight:650;border-radius:5px;padding:1px 6px;color:#fff;flex:none}
+.tag.red{background:var(--red)} .tag.orange{background:var(--orange)} .tag.grey{background:var(--muted)}
+.item .t{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.code{height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--board)}
+.code .l{display:flex;white-space:pre;cursor:pointer}
+.code .l:hover{background:var(--soft)}
+.code .n{width:44px;flex:none;text-align:right;padding-right:10px;color:var(--muted);user-select:none}
+.code .l.cur{background:var(--code-hl)}
+.code .l.col .n{color:var(--red);font-weight:700}
+.code .c{color:var(--muted)}
+textarea{width:100%;height:360px;border:1px solid var(--line);border-radius:8px;background:var(--board);color:var(--ink);font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:6px 8px;resize:vertical;tab-size:4}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+label.chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+details{margin-top:12px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
+.startpos{display:grid;grid-template-columns:auto repeat(2,62px);gap:4px 6px;align-items:center;margin-top:8px;font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Simulateur ODV : 4 véhicules omnidirectionnels</h1>
+  <div class="sub">Rejoue exactement <code>mvc.move</code>, <code>mvc.move_circ</code> et <code>mvc.wait_sync_ms</code> (pas de 4 ms, 80°/pas, 1400°/s) et repère les chevauchements entre véhicules.</div>
+</header>
+<main>
+  <section class="card stage">
+    <canvas id="cv" width="800" height="800" aria-label="Vue de dessus de la zone de jeu"></canvas>
+    <div class="row" style="margin-top:10px">
+      <button id="play" class="primary" style="min-width:86px">▶ Lecture</button>
+      <button id="prev" title="Commande précédente">⏮</button>
+      <button id="next" title="Commande suivante">⏭</button>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Position dans le temps">
+      <span class="time" id="time">0.00 / 0.00 s</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <label class="chk">Vitesse
+        <select id="rate"><option>0.25</option><option>0.5</option><option selected>1</option><option>2</option><option>4</option></select>
+      </label>
+      <label class="chk">Traces
+        <select id="trail"><option value="0">aucune</option><option value="2000">2 s</option><option value="6000" selected>6 s</option><option value="1e9">tout</option></select>
+      </label>
+      <label class="chk"><input type="checkbox" id="loop" checked> En boucle</label>
+      <label class="chk"><input type="checkbox" id="follow" checked> Suivre le code</label>
+    </div>
+    <div class="now" id="now"><b>—</b></div>
+    <div class="pos" id="pos"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--red)"></span>chevauchement &gt; 1 pas</span>
+      <span><span class="dot" style="background:var(--orange)"></span>frôlement ≤ 1 pas</span>
+      <span>Origine O en haut à droite · +X vers la gauche · +Y vers le bas · unité = pas de grille</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="stats">
+      <div class="stat"><div class="k">Durée du cycle</div><div class="v" id="sDur">–</div></div>
+      <div class="stat"><div class="k">Commandes</div><div class="v" id="sCmd">–</div></div>
+      <div class="stat" id="stCol"><div class="k">Chevauchements</div><div class="v" id="sCol">–</div></div>
+      <div class="stat" id="stGr"><div class="k">Frôlements</div><div class="v" id="sGr">–</div></div>
+    </div>
+
+    <h2>Chorégraphie</h2>
+    <div class="row">
+      <select id="preset" style="flex:1"></select>
+      <button id="edit">Modifier</button>
+      <button id="copy">Copier</button>
+    </div>
+    <div id="codeWrap" style="margin-top:8px"><div class="code" id="code"></div></div>
+    <div id="editWrap" style="margin-top:8px;display:none">
+      <textarea id="ta" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px"><button class="primary" id="run">Simuler</button><button id="cancel">Annuler</button><span class="sp"></span></div>
+      <div class="hint">Colle un fichier VehicleXX.py complet (la simulation démarre après <code>mvc.init_20sec_sync_process()</code>) ou seulement des lignes <code>mvc.…</code>. Les boucles <code>for _ in range(n):</code> sont dépliées, <code>while True:</code> est joué une fois.</div>
+    </div>
+
+    <h2>Problèmes détectés</h2>
+    <div class="list" id="issues"></div>
+
+    <details>
+      <summary>Réglages</summary>
+      <div class="row" style="margin-top:8px">
+        <label class="chk">Emprise d'un véhicule (pas) <input type="number" id="fp" value="10" min="1" max="20" step="0.5"></label>
+      </div>
+      <div class="startpos" id="startpos"><span></span><span class="k" style="color:var(--muted)">X</span><span style="color:var(--muted)">Y</span></div>
+      <div class="hint">Position de départ = position après la mise en place initiale du programme. L'emprise de 10 pas correspond à l'écart entre deux véhicules voisins au départ.</div>
+    </details>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/*CORE*/
+</script>
+<script>
+const PRESETS = /*PRESETS*/;
+const N = 4;
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COLV = () => [css('--v1'), css('--v2'), css('--v3'), css('--v4')];
+
+let state = { src: '', sim: null, cols: [], warns: [], t: 0, playing: false, curLn: -1, start: [[30,0],[20,0],[10,0],[0,0]] };
+let lineEls = new Map();
+
+// ---------- presets ----------
+PRESETS.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.name; $('preset').appendChild(o); });
+$('preset').onchange = () => load(PRESETS[+$('preset').value].src);
+
+// ---------- start positions ----------
+for (let i = 0; i < N; i++) {
+  const sp = $('startpos');
+  const lab = document.createElement('span'); lab.innerHTML = `<span class="dot" style="display:inline-block;background:var(--v${i+1})"></span> V${i+1}`;
+  sp.appendChild(lab);
+  for (let a = 0; a < 2; a++) {
+    const inp = document.createElement('input'); inp.type = 'number'; inp.step = '0.5'; inp.value = state.start[i][a];
+    inp.onchange = () => { state.start[i][a] = parseFloat(inp.value) || 0; rebuild(); };
+    sp.appendChild(inp);
+  }
+}
+$('fp').onchange = () => rebuild();
+
+// ---------- build ----------
+function load(src) { state.src = src; rebuild(true); }
+function prepare(src) {
+  const lines = src.replace(/\r/g, '').split('\n');
+  const k = lines.findIndex(l => /^mvc\.init_20sec_sync_process\(\)/.test(l.trim()) && !/^\s/.test(l));
+  return (k >= 0 ? lines.map((l, i) => i <= k ? '' : l) : lines).join('\n');
+}
+function rebuild(resetTime) {
+  const { prog, warnings } = ODV.parse(prepare(state.src), N);
+  state.warns = warnings;
+  state.sim = ODV.simulate(prog, state.start);
+  state.cols = ODV.collisions(state.sim, parseFloat($('fp').value) || 10);
+  if (resetTime) state.t = 0;
+  state.t = Math.min(state.t, state.sim.duration);
+  renderCode(); renderStats(); renderIssues(); state.curLn = -1; draw();
+}
+
+function renderStats() {
+  const s = state.sim;
+  $('sDur').textContent = (s.duration / 1000).toFixed(1) + ' s';
+  $('sCmd').textContent = s.cmds.length;
+  const red = state.cols.filter(c => c.pen > 1).length, or = state.cols.length - red;
+  $('sCol').textContent = red; $('sGr').textContent = or;
+  $('stCol').className = 'stat ' + (red ? 'bad' : 'ok');
+  $('stGr').className = 'stat ' + (or ? 'warn' : 'ok');
+}
+function renderIssues() {
+  const box = $('issues'); box.innerHTML = '';
+  for (const c of state.cols) {
+    const d = document.createElement('div'); d.className = 'item';
+    const sev = c.pen > 1 ? 'red' : 'orange';
+    d.innerHTML = `<span class="tag ${sev}">${c.pen > 1 ? 'chevauch.' : 'frôlement'}</span>V${c.i} ↔ V${c.j} · ${c.pen.toFixed(2)} pas · ligne ${c.ln}<span class="t">${(c.t/1000).toFixed(2)} s</span>`;
+    d.onclick = () => { pause(); state.t = c.t; draw(); };
+    box.appendChild(d);
+  }
+  for (const w of state.warns) {
+    const d = document.createElement('div'); d.className = 'item';
+    d.innerHTML = `<span class="tag grey">info</span>ligne ${w.ln} : ${escapeHtml(w.msg)}`;
+    d.onclick = () => scrollToLine(w.ln);
+    box.appendChild(d);
+  }
+}
+function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function renderCode() {
+  const box = $('code'); box.innerHTML = ''; lineEls.clear();
+  const colLines = new Set(state.cols.map(c => c.ln));
+  const starts = new Map(); for (const c of state.sim.cmds) if (!starts.has(c.ln)) starts.set(c.ln, c.t0);
+  const frag = document.createDocumentFragment();
+  state.src.replace(/\r/g, '').split('\n').forEach((line, i) => {
+    const ln = i + 1, d = document.createElement('div');
+    d.className = 'l' + (colLines.has(ln) ? ' col' : '');
+    const h = line.indexOf('#');
+    const body = h >= 0 ? escapeHtml(line.slice(0, h)) + '<span class="c">' + escapeHtml(line.slice(h)) + '</span>' : escapeHtml(line);
+    d.innerHTML = `<span class="n">${ln}</span><span>${body || ' '}</span>`;
+    if (starts.has(ln)) d.onclick = () => { pause(); state.t = starts.get(ln); draw(); };
+    lineEls.set(ln, d); frag.appendChild(d);
+  });
+  box.appendChild(frag);
+}
+function scrollToLine(ln) {
+  const el = lineEls.get(ln), box = $('code'); if (!el) return;
+  const top = el.offsetTop - box.clientHeight / 2;
+  box.scrollTop = Math.max(0, top);
+}
+
+// ---------- editing ----------
+$('edit').onclick = () => { $('ta').value = state.src; $('codeWrap').style.display = 'none'; $('editWrap').style.display = ''; $('ta').focus(); };
+$('cancel').onclick = () => { $('codeWrap').style.display = ''; $('editWrap').style.display = 'none'; };
+$('run').onclick = () => { $('cancel').onclick(); load($('ta').value); };
+$('ta').addEventListener('keydown', e => {
+  if (e.key === 'Tab') { e.preventDefault(); const t = e.target, s = t.selectionStart; t.setRangeText('    ', s, t.selectionEnd, 'end'); }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('run').onclick();
+});
+$('copy').onclick = async () => {
+  const txt = $('editWrap').style.display === 'none' ? state.src : $('ta').value;
+  try { await navigator.clipboard.writeText(txt); toast('Code copié'); }
+  catch { toast('Copie refusée par le navigateur : sélectionne le texte dans « Modifier »'); }
+};
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1800); }
+
+// ---------- sampling ----------
+function frameIndex(t) {
+  const { frames, W, count } = state.sim;
+  let lo = 0, hi = count - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (frames[m * W] <= t) lo = m; else hi = m - 1; }
+  return lo;
+}
+function posAt(t) {
+  const { frames, W, count } = state.sim;
+  const k = frameIndex(t), o = k * W, out = [];
+  const k2 = Math.min(k + 1, count - 1), o2 = k2 * W;
+  const t0 = frames[o], t1 = frames[o2];
+  // waits are a single frame at their end: hold position until then
+  const isWaitNext = k2 > k && t1 - t0 > 6;
+  const f = (k2 > k && !isWaitNext && t1 > t0) ? (t - t0) / (t1 - t0) : 0;
+  for (let i = 0; i < N; i++) out.push([
+    frames[o + 1 + 2*i] + f * (frames[o2 + 1 + 2*i] - frames[o + 1 + 2*i]),
+    frames[o + 2 + 2*i] + f * (frames[o2 + 2 + 2*i] - frames[o + 2 + 2*i])]);
+  // line currently executing = line of next frame
+  const ln = frames[(k2 > k ? o2 : o) + W - 1];
+  return { p: out, ln, k };
+}
+
+// ---------- drawing ----------
+const cv = $('cv'), ctx = cv.getContext('2d');
+const V0 = -8.6, V1 = 37.2, SPAN = V1 - V0;
+function resize() {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.round(r.width * dpr); if (cv.width !== w) { cv.width = w; cv.height = w; }
+  draw();
+}
+new ResizeObserver(resize).observe(cv);
+const sx = x => (V1 - x) / SPAN * cv.width;      // +X to the left
+const sy = y => (y - V0) / SPAN * cv.height;     // +Y down
+const sc = d => d / SPAN * cv.width;
+
+// ---------- look based on the real build: white studded base, grey/red fence, charcoal vehicles ----------
+function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+let boardCache = null, boardW = 0;
+function boardImage(W) {
+  if (boardCache && boardW === W) return boardCache;
+  const c = document.createElement('canvas'); c.width = c.height = W;
+  const g = c.getContext('2d'), u = W / SPAN, R = rng(7);
+  const X = x => (V1 - x) * u, Y = y => (y - V0) * u;
+  // wood floor: long planks running down the view
+  g.fillStyle = '#b98a5c'; g.fillRect(0, 0, W, W);
+  const plank = 5.5 * u;
+  for (let px = -plank, k = 0; px < W + plank; px += plank, k++) {
+    const tone = [ '#bd8f60', '#b4855a', '#c29766', '#b08055', '#ba8b5e' ][k % 5];
+    g.fillStyle = tone; g.fillRect(px, 0, plank, W);
+    g.strokeStyle = 'rgba(70,40,15,.10)'; g.lineWidth = Math.max(1, u * .05);
+    for (let s = 0; s < 9; s++) {           // grain
+      const gx = px + R() * plank; g.beginPath(); g.moveTo(gx, 0);
+      for (let yy = 0; yy <= W; yy += W / 8) g.lineTo(gx + (R() - .5) * u * .6, yy);
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(60,35,15,.35)'; g.fillRect(px, 0, Math.max(1, u * .06), W);
+    const joint = R() * W; g.fillRect(px, joint, plank, Math.max(1, u * .05));
+  }
+  // studded base: one white tile per pitch, ragged far edges (interlocking plates)
+  const cells = [];
+  for (let gx = -5; gx <= 35; gx++) for (let gy = -5; gy <= 35; gy++) cells.push([gx, gy]);
+  for (let k = -5; k <= 35; k++) {          // nubs sticking out of the two far edges
+    if ((k * 7 + 3) % 5 < 2) cells.push([36, k]);
+    if ((k * 3 + 1) % 5 < 2) cells.push([k, 36]);
+  }
+  const keep = ([gx, gy]) => !((gx === 35 && (gy * 5 + 2) % 7 === 0) || (gy === 35 && (gx * 4 + 1) % 7 === 0));
+  g.save(); g.shadowColor = 'rgba(40,25,10,.45)'; g.shadowBlur = u * .9; g.shadowOffsetY = u * .25;
+  g.fillStyle = '#d9d9d6';
+  for (const cl of cells) if (keep(cl)) g.fillRect(X(cl[0] + .5), Y(cl[1] - .5), u, u);
+  g.restore();
+  for (const cl of cells) if (keep(cl)) {
+    const [gx, gy] = cl, x0 = X(gx + .5), y0 = Y(gy - .5);
+    g.fillStyle = '#f3f3f1'; g.fillRect(x0, y0, u, u);
+    g.fillStyle = 'rgba(0,0,0,.07)'; g.fillRect(x0, y0 + u * .86, u, u * .14); g.fillRect(x0 + u * .88, y0, u * .12, u);
+    g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 1; g.strokeRect(x0 + .5, y0 + .5, u - 1, u - 1);
+  }
+  // grey studs (the rack teeth the wheels run on)
+  const sr = u * .3;
+  for (const cl of cells) if (keep(cl)) {
+    const cx = X(cl[0]), cy = Y(cl[1]);
+    g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.arc(cx + sr * .25, cy + sr * .35, sr, 0, 7); g.fill();
+    const gr = g.createRadialGradient(cx - sr * .35, cy - sr * .4, sr * .1, cx, cy, sr);
+    gr.addColorStop(0, '#c9cbcd'); gr.addColorStop(.6, '#9c9fa2'); gr.addColorStop(1, '#7f8285');
+    g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, sr, 0, 7); g.fill();
+  }
+  // fence on the origin side: top edge and right edge, grey posts, red pins at the corner
+  const post = (x, y, col) => {
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.arc(X(x) + u * .12, Y(y) + u * .18, u * .42, 0, 7); g.fill();
+    const gr = g.createRadialGradient(X(x) - u * .15, Y(y) - u * .15, u * .05, X(x), Y(y), u * .42);
+    gr.addColorStop(0, col[0]); gr.addColorStop(1, col[1]);
+    g.fillStyle = gr; g.beginPath(); g.arc(X(x), Y(y), u * .42, 0, 7); g.fill();
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(X(x), Y(y), u * .14, 0, 7); g.fill();
+  };
+  g.fillStyle = '#3d3e40';
+  g.fillRect(X(35.5), Y(-6.1), (35.5 + 6.1) * u, u * .35);
+  g.fillRect(X(-5.75), Y(-6.1), u * .35, (35.5 + 6.1) * u);
+  const grey = ['#c3c5c7', '#8a8d90'], red = ['#ff6b5e', '#c4161c'];
+  for (let k = 33; k >= -3; k -= 4) post(k, -5.9, grey);
+  for (let k = -1; k <= 33; k += 4) post(-5.9, k, grey);
+  post(-4.4, -5.9, red); post(-2.8, -5.9, red); post(-5.9, -4.4, red);
+  // axis marks
+  g.fillStyle = 'rgba(45,28,12,.75)'; g.font = `600 ${u * .95}px ui-monospace,Menlo,Consolas,monospace`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const v of [0, 10, 20, 30]) { g.fillText(v, X(v), Y(-7.6)); g.fillText(v, X(-7.6), Y(v)); }
+  g.textAlign = 'left'; g.fillText('← +X', X(35.5), Y(-7.6));
+  g.textAlign = 'center'; g.fillText('+Y', X(-7.6), Y(34)); g.fillText('↓', X(-7.6), Y(35.3));
+  boardCache = c; boardW = W; return c;
+}
+
+const BALLS = [[-2.6, -2.9], [-1.3, -3.2], [-1.9, -2.0], [0.0, -2.8], [-0.7, -1.9]];
+function drawVehicle(i, x, y, fp, color, hit) {
+  const s = fp / 10, half = fp / 2 - .3 * s;
+  const L = sx(x + half), T = sy(y - half), S = sc(2 * half), u = sc(1);
+  // shadow + body
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = u * 1.2; ctx.shadowOffsetY = u * .5;
+  rr(L, T, S, S, u * .7); ctx.fillStyle = '#35363a'; ctx.fill(); ctx.restore();
+  // black frame rails around the top tray
+  ctx.lineWidth = u * .55; ctx.strokeStyle = '#141416';
+  rr(L + u * .55, T + u * .55, S - u * 1.1, S * .56, u * .5); ctx.stroke();
+  // light grey tray
+  const tx = L + u * 1.1, ty = T + u * 1.1, tw = S - u * 2.2, th = S * .56 - u * 1.1;
+  const tg = ctx.createLinearGradient(0, ty, 0, ty + th); tg.addColorStop(0, '#c8cbce'); tg.addColorStop(1, '#a9adb1');
+  ctx.fillStyle = tg; ctx.fillRect(tx, ty, tw, th);
+  ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(tx, ty + th * .45, tw, th * .08);
+  // orange balls
+  const cx = sx(x), cy = sy(y), br = u * .62 * s;
+  for (const [bx, by] of BALLS) {
+    const X = cx + sc(bx * s) * (i % 2 ? -1 : 1), Y = cy + sc(by * s);
+    const bg = ctx.createRadialGradient(X - br * .4, Y - br * .4, br * .1, X, Y, br);
+    bg.addColorStop(0, '#ffb066'); bg.addColorStop(1, '#d9600f');
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(X, Y, br, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,25,5,.7)'; ctx.lineWidth = Math.max(1, br * .14);
+    ctx.beginPath(); ctx.moveTo(X - br, Y); ctx.lineTo(X + br, Y); ctx.moveTo(X, Y - br); ctx.lineTo(X, Y + br); ctx.stroke();
+  }
+  // number plate "0i" + orange stripe
+  const ny = T + S * .66;
+  ctx.fillStyle = '#ececec'; ctx.font = `700 ${u * 2.5 * s}px ui-monospace,Menlo,Consolas,monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('0' + (i + 1), cx - u * .9 * s, ny + u * .35 * s);
+  ctx.fillStyle = '#e8731c'; ctx.fillRect(L + u * .5, T + S * .78, S - u * 1, u * .32 * s);
+  // grey liftarm details at the bottom
+  ctx.fillStyle = '#8f9396'; rr(L + S * .14, T + S * .84, S * .3, S * .1, u * .25); ctx.fill();
+  rr(L + S * .58, T + S * .84, S * .2, S * .1, u * .25); ctx.fill();
+  // identity tab (matches the trail colour)
+  rr(L + S - u * 2.4, T + S * .6, u * 1.6, u * 1.6, u * .3); ctx.fillStyle = color; ctx.fill();
+  ctx.lineWidth = u * .18; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+  // overlap highlight
+  if (hit) {
+    rr(L - u * .25, T - u * .25, S + u * .5, S + u * .5, u * .9);
+    ctx.lineWidth = u * .55; ctx.strokeStyle = hit === 2 ? css('--red') : css('--orange'); ctx.stroke();
+  }
+}
+
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+
+function draw() {
+  if (!state.sim) return;
+  const W = cv.width, fp = parseFloat($('fp').value) || 10, colors = COLV();
+  const dpr = W / 800;
+  ctx.drawImage(boardImage(W), 0, 0);
+
+  const { p, ln, k } = posAt(state.t);
+  // trails
+  const tl = +$('trail').value;
+  if (tl > 0) {
+    const { frames, W: FW } = state.sim;
+    const k0 = frameIndex(Math.max(0, state.t - tl));
+    for (let i = 0; i < N; i++) {
+      ctx.strokeStyle = colors[i]; ctx.lineWidth = 3.5 * dpr; ctx.lineJoin = 'round';
+      const segs = 24, span = k - k0;
+      for (let s = 0; s < segs; s++) {
+        const a = k0 + Math.floor(span * s / segs), b = k0 + Math.floor(span * (s + 1) / segs);
+        if (b <= a) continue;
+        ctx.globalAlpha = 0.08 + 0.6 * (s + 1) / segs;
+        ctx.beginPath();
+        for (let q = a; q <= b; q++) { const X = sx(frames[q*FW + 1 + 2*i]), Y = sy(frames[q*FW + 2 + 2*i]); q === a ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+  // overlap detection at current time
+  const hit = new Array(N).fill(0);
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    const pen = Math.min(fp - Math.abs(p[i][0] - p[j][0]), fp - Math.abs(p[i][1] - p[j][1]));
+    if (pen > 0.05) { const lv = pen > 1 ? 2 : 1; hit[i] = Math.max(hit[i], lv); hit[j] = Math.max(hit[j], lv); }
+  }
+  // vehicles
+  for (let i = 0; i < N; i++) drawVehicle(i, p[i][0], p[i][1], fp, colors[i], hit[i]);
+
+  // HUD
+  const dur = state.sim.duration;
+  $('time').textContent = `${(state.t / 1000).toFixed(2)} / ${(dur / 1000).toFixed(2)} s`;
+  $('scrub').value = dur ? Math.round(state.t / dur * 1000) : 0;
+  $('pos').innerHTML = p.map((q, i) => `<div><span class="dot" style="background:var(--v${i+1})"></span>V${i+1} (${q[0].toFixed(1)}, ${q[1].toFixed(1)})</div>`).join('');
+  if (ln !== state.curLn) {
+    const prev = lineEls.get(state.curLn); if (prev) prev.classList.remove('cur');
+    state.curLn = ln;
+    const el = lineEls.get(ln);
+    if (el) { el.classList.add('cur'); if ($('follow').checked) scrollToLine(ln); }
+    const txt = ln ? (state.src.replace(/\r/g, '').split('\n')[ln - 1] || '').trim() : 'position de départ';
+    $('now').innerHTML = `<b>${ln ? 'ligne ' + ln + ' · ' : ''}</b>${escapeHtml(txt)}`;
+  }
+}
+
+// ---------- playback ----------
+let last = 0;
+function tick(ts) {
+  if (!state.playing) return;
+  const dt = last ? Math.min(100, ts - last) : 0; last = ts;
+  state.t += dt * parseFloat($('rate').value);
+  if (state.t >= state.sim.duration) {
+    if ($('loop').checked) state.t = 0; else { state.t = state.sim.duration; pause(); }
+  }
+  draw();
+  requestAnimationFrame(tick);
+}
+function play() { if (state.t >= state.sim.duration) state.t = 0; state.playing = true; last = 0; $('play').textContent = '⏸ Pause'; requestAnimationFrame(tick); }
+function pause() { state.playing = false; $('play').textContent = '▶ Lecture'; }
+$('play').onclick = () => state.playing ? pause() : play();
+$('scrub').oninput = e => { state.t = e.target.value / 1000 * state.sim.duration; draw(); };
+$('trail').onchange = draw;
+function jumpCmd(dir) {
+  pause();
+  const cs = state.sim.cmds, t = state.t;
+  if (dir > 0) { const c = cs.find(c => c.t0 > t + 1); state.t = c ? c.t0 : state.sim.duration; }
+  else { const c = [...cs].reverse().find(c => c.t0 < t - 1); state.t = c ? c.t0 : 0; }
+  draw();
+}
+$('next').onclick = () => jumpCmd(1); $('prev').onclick = () => jumpCmd(-1);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); $('play').onclick(); }
+  if (e.key === 'ArrowRight') jumpCmd(1);
+  if (e.key === 'ArrowLeft') jumpCmd(-1);
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+
+load(PRESETS[0].src);
+resize();
+</script>
+</body>
+</html>

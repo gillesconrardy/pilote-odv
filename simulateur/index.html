@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulateur ODV – 4 véhicules omnidirectionnels</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e3e1dc; --soft:#efede8;
+  --board:#fbfaf7; --cellA:#f1efe9; --cellB:#e9e6de; --fence:#8a8578;
+  --accent:#d9661a; --red:#d92d20; --orange:#d97706; --green:#15803d;
+  --code-hl:#fff3c4;
+  --v1:#2f6fde; --v2:#e07b00; --v3:#1a9b5b; --v4:#8b5cf6;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#161615; --panel:#1f1f1d; --ink:#ecebe7; --muted:#9b9a94; --line:#33322f; --soft:#2a2927;
+    --board:#1b1b1a; --cellA:#242422; --cellB:#2c2b29; --fence:#7d786c;
+    --accent:#f08a3c; --red:#f0544a; --orange:#f59e0b; --green:#34c26b;
+    --code-hl:#4a3f17;
+    --v1:#5b8ff0; --v2:#f59a2e; --v3:#34c26b; --v4:#a78bfa;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 22px 6px}
+h1{font-size:19px;margin:0 0 2px;font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:minmax(320px,1fr) 440px;gap:16px;padding:12px 22px 22px;align-items:start}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stage{position:relative}
+canvas{display:block;width:100%;height:auto;border-radius:8px;touch-action:none}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+select,input[type=number]{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 7px}
+input[type=number]{width:62px}
+input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+.time{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);min-width:118px;text-align:right}
+.now{margin-top:10px;font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--soft);border-radius:8px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.now b{color:var(--muted);font-weight:500}
+.pos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.pos div{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--soft);border-radius:8px;padding:8px 10px}
+.stat .k{font-size:11.5px;color:var(--muted)}
+.stat .v{font-size:18px;font-weight:650;font-variant-numeric:tabular-nums}
+.stat.bad .v{color:var(--red)} .stat.warn .v{color:var(--orange)} .stat.ok .v{color:var(--green)}
+h2{font-size:13px;margin:14px 0 6px;font-weight:650;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+h2:first-child{margin-top:0}
+.list{max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+.list:empty::before{content:"Aucune";display:block;padding:8px 10px;color:var(--muted)}
+.item{display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer;font-size:12.5px}
+.item:last-child{border-bottom:0}
+.item:hover{background:var(--soft)}
+.tag{font-size:11px;font-weight:650;border-radius:5px;padding:1px 6px;color:#fff;flex:none}
+.tag.red{background:var(--red)} .tag.orange{background:var(--orange)} .tag.grey{background:var(--muted)}
+.item .t{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}
+.code{height:360px;overflow:auto;border:1px solid var(--line);border-radius:8px;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--board)}
+.code .l{display:flex;white-space:pre;cursor:pointer}
+.code .l:hover{background:var(--soft)}
+.code .n{width:44px;flex:none;text-align:right;padding-right:10px;color:var(--muted);user-select:none}
+.code .l.cur{background:var(--code-hl)}
+.code .l.col .n{color:var(--red);font-weight:700}
+.code .c{color:var(--muted)}
+textarea{width:100%;height:360px;border:1px solid var(--line);border-radius:8px;background:var(--board);color:var(--ink);font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:6px 8px;resize:vertical;tab-size:4}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+label.chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted)}
+.sp{flex:1}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+details{margin-top:12px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
+.startpos{display:grid;grid-template-columns:auto repeat(2,62px);gap:4px 6px;align-items:center;margin-top:8px;font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Simulateur ODV : 4 véhicules omnidirectionnels</h1>
+  <div class="sub">Rejoue exactement <code>mvc.move</code>, <code>mvc.move_circ</code> et <code>mvc.wait_sync_ms</code> (pas de 4 ms, 80°/pas, 1400°/s) et repère les chevauchements entre véhicules.</div>
+</header>
+<main>
+  <section class="card stage">
+    <canvas id="cv" width="800" height="800" aria-label="Vue de dessus de la zone de jeu"></canvas>
+    <div class="row" style="margin-top:10px">
+      <button id="play" class="primary" style="min-width:86px">▶ Lecture</button>
+      <button id="prev" title="Commande précédente">⏮</button>
+      <button id="next" title="Commande suivante">⏭</button>
+      <input id="scrub" type="range" min="0" max="1000" step="1" value="0" aria-label="Position dans le temps">
+      <span class="time" id="time">0.00 / 0.00 s</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <label class="chk">Vitesse
+        <select id="rate"><option>0.25</option><option>0.5</option><option selected>1</option><option>2</option><option>4</option></select>
+      </label>
+      <label class="chk">Traces
+        <select id="trail"><option value="0">aucune</option><option value="2000">2 s</option><option value="6000" selected>6 s</option><option value="1e9">tout</option></select>
+      </label>
+      <label class="chk"><input type="checkbox" id="loop" checked> En boucle</label>
+      <label class="chk"><input type="checkbox" id="follow" checked> Suivre le code</label>
+    </div>
+    <div class="now" id="now"><b>—</b></div>
+    <div class="pos" id="pos"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--red)"></span>chevauchement &gt; 1 pas</span>
+      <span><span class="dot" style="background:var(--orange)"></span>frôlement ≤ 1 pas</span>
+      <span>Origine O en haut à droite · +X vers la gauche · +Y vers le bas · unité = pas de grille</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="stats">
+      <div class="stat"><div class="k">Durée du cycle</div><div class="v" id="sDur">–</div></div>
+      <div class="stat"><div class="k">Commandes</div><div class="v" id="sCmd">–</div></div>
+      <div class="stat" id="stCol"><div class="k">Chevauchements</div><div class="v" id="sCol">–</div></div>
+      <div class="stat" id="stGr"><div class="k">Frôlements</div><div class="v" id="sGr">–</div></div>
+    </div>
+
+    <h2>Chorégraphie</h2>
+    <div class="row">
+      <select id="preset" style="flex:1"></select>
+      <button id="edit">Modifier</button>
+      <button id="copy">Copier</button>
+    </div>
+    <div id="codeWrap" style="margin-top:8px"><div class="code" id="code"></div></div>
+    <div id="editWrap" style="margin-top:8px;display:none">
+      <textarea id="ta" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px"><button class="primary" id="run">Simuler</button><button id="cancel">Annuler</button><span class="sp"></span></div>
+      <div class="hint">Colle un fichier VehicleXX.py complet (la simulation démarre après <code>mvc.init_20sec_sync_process()</code>) ou seulement des lignes <code>mvc.…</code>. Les boucles <code>for _ in range(n):</code> sont dépliées, <code>while True:</code> est joué une fois.</div>
+    </div>
+
+    <h2>Problèmes détectés</h2>
+    <div class="list" id="issues"></div>
+
+    <details>
+      <summary>Réglages</summary>
+      <div class="row" style="margin-top:8px">
+        <label class="chk">Emprise d'un véhicule (pas) <input type="number" id="fp" value="10" min="1" max="20" step="0.5"></label>
+      </div>
+      <div class="startpos" id="startpos"><span></span><span class="k" style="color:var(--muted)">X</span><span style="color:var(--muted)">Y</span></div>
+      <div class="hint">Position de départ = position après la mise en place initiale du programme. L'emprise de 10 pas correspond à l'écart entre deux véhicules voisins au départ.</div>
+    </details>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== ODV simulation core: faithful port of MultiVehicleController (move / move_circ / wait) =====
+const ODV = (() => {
+  const GEAR = 80, VMAX = 1400;
+
+  function parseArgs(a) {
+    const args = [], kw = {};
+    for (let p of a.split(',')) {
+      p = p.trim();
+      if (!p) continue;
+      const eq = p.indexOf('=');
+      if (eq > 0) kw[p.slice(0, eq).trim()] = parseFloat(p.slice(eq + 1));
+      else if (p[0] === '"' || p[0] === "'") args.push(p.replace(/["']/g, ''));
+      else {
+        const v = parseFloat(p);
+        if (isNaN(v)) throw new Error('valeur non numérique : ' + p);
+        args.push(v);
+      }
+    }
+    return { args, kw };
+  }
+
+  // Returns { prog: [{ln, cmd, args, kw}], warnings: [] }
+  function parse(src, nVeh) {
+    const items = [], warnings = [];
+    src.split('\n').forEach((raw, i) => {
+      const s = raw.split('#')[0].replace(/\s+$/, '');
+      if (!s.trim()) return;
+      items.push({ ln: i + 1, ind: s.length - s.trimStart().length, s: s.trim() });
+    });
+    function block(idx, base) {
+      let out = [];
+      while (idx < items.length) {
+        const { ln, ind, s } = items[idx];
+        if (ind < base) break;
+        const mFor = s.match(/^for\s+\w+\s+in\s+range\(\s*(\d+)\s*\)\s*:$/);
+        const mWhile = /^while\s+True\s*:$/.test(s);
+        if (mFor || mWhile) {
+          const reps = mFor ? parseInt(mFor[1]) : 1;
+          const innerBase = idx + 1 < items.length ? items[idx + 1].ind : ind + 1;
+          if (innerBase <= ind) { idx++; continue; }
+          const r = block(idx + 1, innerBase);
+          for (let k = 0; k < reps; k++) out = out.concat(r.out);
+          idx = r.idx;
+          continue;
+        }
+        const m = s.match(/^mvc\.(move_circ|move|wait_sync_ms|wait_ms)\((.*)\)$/);
+        if (m) {
+          try {
+            const { args, kw } = parseArgs(m[2]);
+            const cmd = m[1];
+            if (cmd === 'move' && args.length !== nVeh * 2)
+              warnings.push({ ln, msg: `move : ${args.length} valeurs au lieu de ${nVeh * 2}, ligne ignorée` });
+            else if (cmd === 'move_circ' && args.length !== 3 + nVeh)
+              warnings.push({ ln, msg: `move_circ : ${args.length - 3} angles au lieu de ${nVeh}, ligne ignorée` });
+            else {
+              const sp = kw.speed ?? 100;
+              if (sp < 1 || sp > 100) warnings.push({ ln, msg: `speed=${sp} hors 1..100 : le robot lèverait une erreur` });
+              out.push({ ln, cmd, args, kw });
+            }
+          } catch (e) { warnings.push({ ln, msg: e.message }); }
+        } else if (!/^(mvc\.homing|mvc\.init_20sec_sync_process|pass)\b/.test(s)) {
+          warnings.push({ ln, msg: 'ligne non simulée : ' + s.slice(0, 60) });
+        }
+        idx++;
+      }
+      return { out, idx };
+    }
+    const prog = items.length ? block(0, items[0].ind).out : [];
+    return { prog, warnings };
+  }
+
+  // frames: Float64Array rows of [t, x1,y1,...,xN,yN, ln]
+  function simulate(prog, start) {
+    const N = start.length, W = 2 + 2 * N;
+    const cx = [0, ...start.map(p => p[0] * GEAR)], cy = [0, ...start.map(p => p[1] * GEAR)];
+    let t = 0;
+    const rows = [], cmds = [];
+    const snap = (ln) => {
+      const r = [t];
+      for (let i = 1; i <= N; i++) r.push(cx[i] / GEAR, cy[i] / GEAR);
+      r.push(ln);
+      rows.push(r);
+    };
+    snap(0);
+    for (const c of prog) {
+      const t0 = t, sp = c.kw.speed ?? 100, velo = VMAX * sp * 0.01;
+      if (c.cmd === 'move') {
+        const tx = [0], ty = [0];
+        for (let i = 0; i < 2 * N; i += 2) { tx.push(c.args[i] * GEAR); ty.push(c.args[i + 1] * GEAR); }
+        const xd = [0], yd = [0];
+        let md = 0;
+        for (let i = 1; i <= N; i++) {
+          xd.push(Math.abs(tx[i] - cx[i])); yd.push(Math.abs(ty[i] - cy[i]));
+          md = Math.max(md, xd[i], yd[i]);
+        }
+        const time = md / velo * 1000;
+        if (time > 4) {
+          let steps = Math.trunc(time * 0.25);
+          const xs = xd.map(d => d / steps), ys = yd.map(d => d / steps);
+          let n = steps;
+          while (n > 0) {
+            for (let i = 1; i <= N; i++) {
+              if (cx[i] < tx[i]) cx[i] += xs[i]; else if (cx[i] > tx[i]) cx[i] -= xs[i];
+              if (cy[i] < ty[i]) cy[i] += ys[i]; else if (cy[i] > ty[i]) cy[i] -= ys[i];
+            }
+            n--;
+            t = t0 + time - 4 * n;
+            snap(c.ln);
+          }
+          t = t0 + time;
+        }
+      } else if (c.cmd === 'move_circ') {
+        const [radius, dirS, rot, ...sa] = c.args;
+        const d = String(dirS).toUpperCase() === 'CW' ? 1 : (String(dirS).toUpperCase() === 'CCW' ? 2 : (dirS <= 1 ? 1 : 2));
+        const time = 2 * Math.PI * radius * rot / 360 * GEAR / velo * 1000;
+        const steps = Math.trunc(time * 0.25);
+        const sstep = rot / steps;
+        let s = 0;
+        const st = [0, ...sa], x0 = [0], y0 = [0];
+        const rad = a => a * Math.PI / 180;
+        for (let i = 1; i <= N; i++) {
+          const a = rad(st[i] + 180 * (d - 1));
+          x0.push(cx[i] - radius * GEAR * Math.sin(a));
+          y0.push(cy[i] - radius * GEAR * Math.cos(a));
+        }
+        let n = steps;
+        while (n > 0) {
+          for (let i = 1; i <= N; i++) {
+            const a = rad(s + st[i] + 180 * (d - 1));
+            cx[i] = radius * GEAR * Math.sin(a) + x0[i];
+            cy[i] = radius * GEAR * Math.cos(a) + y0[i];
+          }
+          s = d === 1 ? s + sstep : s - sstep;
+          n--;
+          t = t0 + time - 4 * n;
+          snap(c.ln);
+        }
+        t = t0 + time;
+      } else {
+        t += c.args[0];
+        snap(c.ln);
+      }
+      cmds.push({ ln: c.ln, t0, t1: t });
+    }
+    const frames = new Float64Array(rows.length * W);
+    rows.forEach((r, k) => frames.set(r, k * W));
+    return { frames, W, N, count: rows.length, duration: t, cmds };
+  }
+
+  // Overlap of square footprints. Returns grouped events with max penetration.
+  function collisions(sim, fp) {
+    const { frames, W, N, count } = sim;
+    const groups = new Map();
+    for (let k = 0; k < count; k++) {
+      const o = k * W;
+      for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+        const dx = Math.abs(frames[o + 1 + 2 * i] - frames[o + 1 + 2 * j]);
+        const dy = Math.abs(frames[o + 2 + 2 * i] - frames[o + 2 + 2 * j]);
+        const pen = Math.min(fp - dx, fp - dy);
+        if (pen > 0.05) {
+          const ln = frames[o + W - 1], key = ln + ':' + i + ':' + j;
+          const g = groups.get(key);
+          if (!g) groups.set(key, { ln, i: i + 1, j: j + 1, pen, t: frames[o], tStart: frames[o] });
+          else if (pen > g.pen) { g.pen = pen; g.t = frames[o]; }
+        }
+      }
+    }
+    return [...groups.values()].sort((a, b) => a.t - b.t);
+  }
+
+  return { parse, simulate, collisions };
+})();
+if (typeof module !== 'undefined') module.exports = ODV;
+
+</script>
+<script>
+const PRESETS = [{"name": "1 · Carrousel", "src": "    # ======================================================================\n    # 1. CARROUSEL : 4 véhicules sur un anneau de 8 cases, pas à pas\n    #   Les véhicules occupent une case sur deux et avancent ensemble d'une case.\n    #   Lent avec des pauses, puis rapide, puis demi-tour.\n    # ======================================================================\n    # mise en place\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5)\n    mvc.wait_sync_ms(600)\n    # un tour lent, case par case\n    mvc.move(25, 15,  15, 25,  5, 15,  15, 5, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(25, 25,  5, 25,  5, 5,  25, 5, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(15, 25,  5, 15,  15, 5,  25, 15, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(5, 25,  5, 5,  25, 5,  25, 25, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(5, 15,  15, 5,  25, 15,  15, 25, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(5, 5,  25, 5,  25, 25,  5, 25, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(15, 5,  25, 15,  15, 25,  5, 15, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5, speed=45)\n    mvc.wait_sync_ms(150)\n    # un tour rapide\n    mvc.move(25, 15,  15, 25,  5, 15,  15, 5)\n    mvc.move(25, 25,  5, 25,  5, 5,  25, 5)\n    mvc.move(15, 25,  5, 15,  15, 5,  25, 15)\n    mvc.move(5, 25,  5, 5,  25, 5,  25, 25)\n    mvc.move(5, 15,  15, 5,  25, 15,  15, 25)\n    mvc.move(5, 5,  25, 5,  25, 25,  5, 25)\n    mvc.move(15, 5,  25, 15,  15, 25,  5, 15)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5)\n    mvc.wait_sync_ms(500)\n    # demi-tour : un tour dans l'autre sens\n    mvc.move(15, 5,  25, 15,  15, 25,  5, 15, speed=80)\n    mvc.move(5, 5,  25, 5,  25, 25,  5, 25, speed=80)\n    mvc.move(5, 15,  15, 5,  25, 15,  15, 25, speed=80)\n    mvc.move(5, 25,  5, 5,  25, 5,  25, 25, speed=80)\n    mvc.move(15, 25,  5, 15,  15, 5,  25, 15, speed=80)\n    mvc.move(25, 25,  5, 25,  5, 5,  25, 5, speed=80)\n    mvc.move(25, 15,  15, 25,  5, 15,  15, 5, speed=80)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5, speed=80)\n    mvc.wait_sync_ms(500)\n    # retour\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "2 · Kaléidoscope", "src": "    # ======================================================================\n    # 2. KALÉIDOSCOPE : symétries en miroir puis en rotation\n    #   V1 dessine une courbe dans son quart de plateau, les trois autres en sont\n    #   les reflets (miroir), puis les copies tournées de 90° (moulin).\n    # ======================================================================\n    # mise en place aux quatre coins\n    mvc.move(30, 0,  20, 30,  10, 30,  0, 0)\n    mvc.move(30, 0,  30, 30,  0, 30,  0, 0)\n    mvc.wait_sync_ms(600)\n    # miroir : courbe de Lissajous 2:3\n    mvc.move(29.89, 0.24,  29.89, 29.76,  0.11, 29.76,  0.11, 0.24)\n    mvc.move(29.57, 0.95,  29.57, 29.05,  0.43, 29.05,  0.43, 0.95)\n    mvc.move(29.05, 2.06,  29.05, 27.94,  0.95, 27.94,  0.95, 2.06)\n    mvc.move(28.35, 3.45,  28.35, 26.55,  1.65, 26.55,  1.65, 3.45)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(26.55, 6.55,  26.55, 23.45,  3.45, 23.45,  3.45, 6.55)\n    mvc.move(25.52, 7.94,  25.52, 22.06,  4.48, 22.06,  4.48, 7.94)\n    mvc.move(24.48, 9.05,  24.48, 20.95,  5.52, 20.95,  5.52, 9.05)\n    mvc.move(23.45, 9.76,  23.45, 20.24,  6.55, 20.24,  6.55, 9.76)\n    mvc.move(22.50, 10,  22.50, 20,  7.50, 20,  7.50, 10)\n    mvc.move(21.65, 9.76,  21.65, 20.24,  8.35, 20.24,  8.35, 9.76)\n    mvc.move(20.95, 9.05,  20.95, 20.95,  9.05, 20.95,  9.05, 9.05)\n    mvc.move(20.43, 7.94,  20.43, 22.06,  9.57, 22.06,  9.57, 7.94)\n    mvc.move(20.11, 6.55,  20.11, 23.45,  9.89, 23.45,  9.89, 6.55)\n    mvc.move(20, 5,  20, 25,  10, 25,  10, 5)\n    mvc.move(20.11, 3.45,  20.11, 26.55,  9.89, 26.55,  9.89, 3.45)\n    mvc.move(20.43, 2.06,  20.43, 27.94,  9.57, 27.94,  9.57, 2.06)\n    mvc.move(20.95, 0.95,  20.95, 29.05,  9.05, 29.05,  9.05, 0.95)\n    mvc.move(21.65, 0.24,  21.65, 29.76,  8.35, 29.76,  8.35, 0.24)\n    mvc.move(22.50, 0,  22.50, 30,  7.50, 30,  7.50, 0)\n    mvc.move(23.45, 0.24,  23.45, 29.76,  6.55, 29.76,  6.55, 0.24)\n    mvc.move(24.48, 0.95,  24.48, 29.05,  5.52, 29.05,  5.52, 0.95)\n    mvc.move(25.52, 2.06,  25.52, 27.94,  4.48, 27.94,  4.48, 2.06)\n    mvc.move(26.55, 3.45,  26.55, 26.55,  3.45, 26.55,  3.45, 3.45)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(28.35, 6.55,  28.35, 23.45,  1.65, 23.45,  1.65, 6.55)\n    mvc.move(29.05, 7.94,  29.05, 22.06,  0.95, 22.06,  0.95, 7.94)\n    mvc.move(29.57, 9.05,  29.57, 20.95,  0.43, 20.95,  0.43, 9.05)\n    mvc.move(29.89, 9.76,  29.89, 20.24,  0.11, 20.24,  0.11, 9.76)\n    mvc.move(30, 10,  30, 20,  0, 20,  0, 10)\n    mvc.move(29.89, 9.76,  29.89, 20.24,  0.11, 20.24,  0.11, 9.76)\n    mvc.move(29.57, 9.05,  29.57, 20.95,  0.43, 20.95,  0.43, 9.05)\n    mvc.move(29.05, 7.94,  29.05, 22.06,  0.95, 22.06,  0.95, 7.94)\n    mvc.move(28.35, 6.55,  28.35, 23.45,  1.65, 23.45,  1.65, 6.55)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(26.55, 3.45,  26.55, 26.55,  3.45, 26.55,  3.45, 3.45)\n    mvc.move(25.52, 2.06,  25.52, 27.94,  4.48, 27.94,  4.48, 2.06)\n    mvc.move(24.48, 0.95,  24.48, 29.05,  5.52, 29.05,  5.52, 0.95)\n    mvc.move(23.45, 0.24,  23.45, 29.76,  6.55, 29.76,  6.55, 0.24)\n    mvc.move(22.50, 0,  22.50, 30,  7.50, 30,  7.50, 0)\n    mvc.move(21.65, 0.24,  21.65, 29.76,  8.35, 29.76,  8.35, 0.24)\n    mvc.move(20.95, 0.95,  20.95, 29.05,  9.05, 29.05,  9.05, 0.95)\n    mvc.move(20.43, 2.06,  20.43, 27.94,  9.57, 27.94,  9.57, 2.06)\n    mvc.move(20.11, 3.45,  20.11, 26.55,  9.89, 26.55,  9.89, 3.45)\n    mvc.move(20, 5,  20, 25,  10, 25,  10, 5)\n    mvc.move(20.11, 6.55,  20.11, 23.45,  9.89, 23.45,  9.89, 6.55)\n    mvc.move(20.43, 7.94,  20.43, 22.06,  9.57, 22.06,  9.57, 7.94)\n    mvc.move(20.95, 9.05,  20.95, 20.95,  9.05, 20.95,  9.05, 9.05)\n    mvc.move(21.65, 9.76,  21.65, 20.24,  8.35, 20.24,  8.35, 9.76)\n    mvc.move(22.50, 10,  22.50, 20,  7.50, 20,  7.50, 10)\n    mvc.move(23.45, 9.76,  23.45, 20.24,  6.55, 20.24,  6.55, 9.76)\n    mvc.move(24.48, 9.05,  24.48, 20.95,  5.52, 20.95,  5.52, 9.05)\n    mvc.move(25.52, 7.94,  25.52, 22.06,  4.48, 22.06,  4.48, 7.94)\n    mvc.move(26.55, 6.55,  26.55, 23.45,  3.45, 23.45,  3.45, 6.55)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(28.35, 3.45,  28.35, 26.55,  1.65, 26.55,  1.65, 3.45)\n    mvc.move(29.05, 2.06,  29.05, 27.94,  0.95, 27.94,  0.95, 2.06)\n    mvc.move(29.57, 0.95,  29.57, 29.05,  0.43, 29.05,  0.43, 0.95)\n    mvc.move(29.89, 0.24,  29.89, 29.76,  0.11, 29.76,  0.11, 0.24)\n    mvc.move(30, 0,  30, 30,  0, 30,  0, 0)\n    mvc.wait_sync_ms(600)\n    # moulin : cercle de rayon 5, copies tournées de 90°, deux tours\n    mvc.move(30, 5,  25, 30,  0, 25,  5, 0)\n    mvc.move(29.92, 5.87,  24.13, 29.92,  0.08, 24.13,  5.87, 0.08)\n    mvc.move(29.70, 6.71,  23.29, 29.70,  0.30, 23.29,  6.71, 0.30)\n    mvc.move(29.33, 7.50,  22.50, 29.33,  0.67, 22.50,  7.50, 0.67)\n    mvc.move(28.83, 8.21,  21.79, 28.83,  1.17, 21.79,  8.21, 1.17)\n    mvc.move(28.21, 8.83,  21.17, 28.21,  1.79, 21.17,  8.83, 1.79)\n    mvc.move(27.50, 9.33,  20.67, 27.50,  2.50, 20.67,  9.33, 2.50)\n    mvc.move(26.71, 9.70,  20.30, 26.71,  3.29, 20.30,  9.70, 3.29)\n    mvc.move(25.87, 9.92,  20.08, 25.87,  4.13, 20.08,  9.92, 4.13)\n    mvc.move(25, 10,  20, 25,  5, 20,  10, 5)\n    mvc.move(24.13, 9.92,  20.08, 24.13,  5.87, 20.08,  9.92, 5.87)\n    mvc.move(23.29, 9.70,  20.30, 23.29,  6.71, 20.30,  9.70, 6.71)\n    mvc.move(22.50, 9.33,  20.67, 22.50,  7.50, 20.67,  9.33, 7.50)\n    mvc.move(21.79, 8.83,  21.17, 21.79,  8.21, 21.17,  8.83, 8.21)\n    mvc.move(21.17, 8.21,  21.79, 21.17,  8.83, 21.79,  8.21, 8.83)\n    mvc.move(20.67, 7.50,  22.50, 20.67,  9.33, 22.50,  7.50, 9.33)\n    mvc.move(20.30, 6.71,  23.29, 20.30,  9.70, 23.29,  6.71, 9.70)\n    mvc.move(20.08, 5.87,  24.13, 20.08,  9.92, 24.13,  5.87, 9.92)\n    mvc.move(20, 5,  25, 20,  10, 25,  5, 10)\n    mvc.move(20.08, 4.13,  25.87, 20.08,  9.92, 25.87,  4.13, 9.92)\n    mvc.move(20.30, 3.29,  26.71, 20.30,  9.70, 26.71,  3.29, 9.70)\n    mvc.move(20.67, 2.50,  27.50, 20.67,  9.33, 27.50,  2.50, 9.33)\n    mvc.move(21.17, 1.79,  28.21, 21.17,  8.83, 28.21,  1.79, 8.83)\n    mvc.move(21.79, 1.17,  28.83, 21.79,  8.21, 28.83,  1.17, 8.21)\n    mvc.move(22.50, 0.67,  29.33, 22.50,  7.50, 29.33,  0.67, 7.50)\n    mvc.move(23.29, 0.30,  29.70, 23.29,  6.71, 29.70,  0.30, 6.71)\n    mvc.move(24.13, 0.08,  29.92, 24.13,  5.87, 29.92,  0.08, 5.87)\n    mvc.move(25, 0,  30, 25,  5, 30,  0, 5)\n    mvc.move(25.87, 0.08,  29.92, 25.87,  4.13, 29.92,  0.08, 4.13)\n    mvc.move(26.71, 0.30,  29.70, 26.71,  3.29, 29.70,  0.30, 3.29)\n    mvc.move(27.50, 0.67,  29.33, 27.50,  2.50, 29.33,  0.67, 2.50)\n    mvc.move(28.21, 1.17,  28.83, 28.21,  1.79, 28.83,  1.17, 1.79)\n    mvc.move(28.83, 1.79,  28.21, 28.83,  1.17, 28.21,  1.79, 1.17)\n    mvc.move(29.33, 2.50,  27.50, 29.33,  0.67, 27.50,  2.50, 0.67)\n    mvc.move(29.70, 3.29,  26.71, 29.70,  0.30, 26.71,  3.29, 0.30)\n    mvc.move(29.92, 4.13,  25.87, 29.92,  0.08, 25.87,  4.13, 0.08)\n    mvc.move(30, 5,  25, 30,  0, 25,  5, 0)\n    mvc.move(29.92, 5.87,  24.13, 29.92,  0.08, 24.13,  5.87, 0.08)\n    mvc.move(29.70, 6.71,  23.29, 29.70,  0.30, 23.29,  6.71, 0.30)\n    mvc.move(29.33, 7.50,  22.50, 29.33,  0.67, 22.50,  7.50, 0.67)\n    mvc.move(28.83, 8.21,  21.79, 28.83,  1.17, 21.79,  8.21, 1.17)\n    mvc.move(28.21, 8.83,  21.17, 28.21,  1.79, 21.17,  8.83, 1.79)\n    mvc.move(27.50, 9.33,  20.67, 27.50,  2.50, 20.67,  9.33, 2.50)\n    mvc.move(26.71, 9.70,  20.30, 26.71,  3.29, 20.30,  9.70, 3.29)\n    mvc.move(25.87, 9.92,  20.08, 25.87,  4.13, 20.08,  9.92, 4.13)\n    mvc.move(25, 10,  20, 25,  5, 20,  10, 5)\n    mvc.move(24.13, 9.92,  20.08, 24.13,  5.87, 20.08,  9.92, 5.87)\n    mvc.move(23.29, 9.70,  20.30, 23.29,  6.71, 20.30,  9.70, 6.71)\n    mvc.move(22.50, 9.33,  20.67, 22.50,  7.50, 20.67,  9.33, 7.50)\n    mvc.move(21.79, 8.83,  21.17, 21.79,  8.21, 21.17,  8.83, 8.21)\n    mvc.move(21.17, 8.21,  21.79, 21.17,  8.83, 21.79,  8.21, 8.83)\n    mvc.move(20.67, 7.50,  22.50, 20.67,  9.33, 22.50,  7.50, 9.33)\n    mvc.move(20.30, 6.71,  23.29, 20.30,  9.70, 23.29,  6.71, 9.70)\n    mvc.move(20.08, 5.87,  24.13, 20.08,  9.92, 24.13,  5.87, 9.92)\n    mvc.move(20, 5,  25, 20,  10, 25,  5, 10)\n    mvc.move(20.08, 4.13,  25.87, 20.08,  9.92, 25.87,  4.13, 9.92)\n    mvc.move(20.30, 3.29,  26.71, 20.30,  9.70, 26.71,  3.29, 9.70)\n    mvc.move(20.67, 2.50,  27.50, 20.67,  9.33, 27.50,  2.50, 9.33)\n    mvc.move(21.17, 1.79,  28.21, 21.17,  8.83, 28.21,  1.79, 8.83)\n    mvc.move(21.79, 1.17,  28.83, 21.79,  8.21, 28.83,  1.17, 8.21)\n    mvc.move(22.50, 0.67,  29.33, 22.50,  7.50, 29.33,  0.67, 7.50)\n    mvc.move(23.29, 0.30,  29.70, 23.29,  6.71, 29.70,  0.30, 6.71)\n    mvc.move(24.13, 0.08,  29.92, 24.13,  5.87, 29.92,  0.08, 5.87)\n    mvc.move(25, 0,  30, 25,  5, 30,  0, 5)\n    mvc.move(25.87, 0.08,  29.92, 25.87,  4.13, 29.92,  0.08, 4.13)\n    mvc.move(26.71, 0.30,  29.70, 26.71,  3.29, 29.70,  0.30, 3.29)\n    mvc.move(27.50, 0.67,  29.33, 27.50,  2.50, 29.33,  0.67, 2.50)\n    mvc.move(28.21, 1.17,  28.83, 28.21,  1.79, 28.83,  1.17, 1.79)\n    mvc.move(28.83, 1.79,  28.21, 28.83,  1.17, 28.21,  1.79, 1.17)\n    mvc.move(29.33, 2.50,  27.50, 29.33,  0.67, 27.50,  2.50, 0.67)\n    mvc.move(29.70, 3.29,  26.71, 29.70,  0.30, 26.71,  3.29, 0.30)\n    mvc.move(29.92, 4.13,  25.87, 29.92,  0.08, 25.87,  4.13, 0.08)\n    mvc.move(30, 5,  25, 30,  0, 25,  5, 0)\n    mvc.wait_sync_ms(600)\n    # retour\n    mvc.move(30, 0,  30, 30,  0, 30,  0, 0)\n    mvc.move(30, 0,  20, 30,  10, 30,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "3 · Tourbillons", "src": "    # ======================================================================\n    # 3. TOURBILLONS : chaque véhicule tourne sur son propre petit cercle\n    #   Quatre cercles de rayon 5 (move_circ), d'abord en décalage de phase comme\n    #   des engrenages, puis tous en phase, puis en vague.\n    # ======================================================================\n    # mise en place\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(25, 10,  30, 25,  5, 20,  0, 5)\n    mvc.wait_sync_ms(600)\n    # engrenages : phases décalées de 90°\n    mvc.move_circ(5, \"CW\", 720, 0, 90, 180, 270, speed=70)\n    mvc.wait_sync_ms(400)\n    # tous en phase\n    mvc.move(25, 10,  25, 30,  5, 30,  5, 10)\n    mvc.wait_sync_ms(300)\n    mvc.move_circ(5, \"CW\", 720, 0, 0, 0, 0, speed=80)\n    mvc.wait_sync_ms(400)\n    # en vague (45° de décalage), sens inverse\n    mvc.move(25, 0,  21.46, 21.46,  0, 25,  1.46, 8.54)\n    mvc.wait_sync_ms(300)\n    mvc.move_circ(5, \"CCW\", 720, 0, 45, 90, 135, speed=80)\n    mvc.wait_sync_ms(400)\n    # retour\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "4 · Petit train", "src": "    # ======================================================================\n    # 4. PETIT TRAIN : les véhicules se suivent sur un circuit sinueux\n    #   Départ échelonné (écart de 20 pas pour passer les virages), deux tours,\n    #   puis les wagons se resserrent en gare au point de départ.\n    # ======================================================================\n    # départ échelonné et deux tours\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 5)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 10)\n    mvc.move(30, 0,  20, 0,  5, 0,  0, 15)\n    mvc.move(30, 0,  20, 0,  0, 0,  0, 20)\n    mvc.move(30, 0,  15, 0,  0, 5,  0, 25)\n    mvc.move(30, 0,  10, 0,  0, 10,  0, 30)\n    mvc.move(25, 0,  5, 0,  0, 15,  5, 30)\n    mvc.move(20, 0,  0, 0,  0, 20,  10, 30)\n    mvc.move(15, 0,  0, 5,  0, 25,  15, 30)\n    mvc.move(10, 0,  0, 10,  0, 30,  20, 30)\n    mvc.move(5, 0,  0, 15,  5, 30,  25, 30)\n    mvc.move(0, 0,  0, 20,  10, 30,  30, 30)\n    mvc.move(0, 5,  0, 25,  15, 30,  30, 25)\n    mvc.move(0, 10,  0, 30,  20, 30,  30, 20)\n    mvc.move(0, 15,  5, 30,  25, 30,  25, 20)\n    mvc.move(0, 20,  10, 30,  30, 30,  20, 20)\n    mvc.move(0, 25,  15, 30,  30, 25,  15, 20)\n    mvc.move(0, 30,  20, 30,  30, 20,  10, 20)\n    mvc.move(5, 30,  25, 30,  25, 20,  10, 15)\n    mvc.move(10, 30,  30, 30,  20, 20,  10, 10)\n    mvc.move(15, 30,  30, 25,  15, 20,  15, 10)\n    mvc.move(20, 30,  30, 20,  10, 20,  20, 10)\n    mvc.move(25, 30,  25, 20,  10, 15,  25, 10)\n    mvc.move(30, 30,  20, 20,  10, 10,  30, 10)\n    mvc.move(30, 25,  15, 20,  15, 10,  30, 5)\n    mvc.move(30, 20,  10, 20,  20, 10,  30, 0)\n    mvc.move(25, 20,  10, 15,  25, 10,  25, 0)\n    mvc.move(20, 20,  10, 10,  30, 10,  20, 0)\n    mvc.move(15, 20,  15, 10,  30, 5,  15, 0)\n    mvc.move(10, 20,  20, 10,  30, 0,  10, 0)\n    mvc.move(10, 15,  25, 10,  25, 0,  5, 0)\n    mvc.move(10, 10,  30, 10,  20, 0,  0, 0)\n    mvc.move(15, 10,  30, 5,  15, 0,  0, 5)\n    mvc.move(20, 10,  30, 0,  10, 0,  0, 10)\n    mvc.move(25, 10,  25, 0,  5, 0,  0, 15)\n    mvc.move(30, 10,  20, 0,  0, 0,  0, 20)\n    mvc.move(30, 5,  15, 0,  0, 5,  0, 25)\n    mvc.move(30, 0,  10, 0,  0, 10,  0, 30)\n    mvc.move(25, 0,  5, 0,  0, 15,  5, 30)\n    mvc.move(20, 0,  0, 0,  0, 20,  10, 30)\n    mvc.move(15, 0,  0, 5,  0, 25,  15, 30)\n    mvc.move(10, 0,  0, 10,  0, 30,  20, 30)\n    mvc.move(5, 0,  0, 15,  5, 30,  25, 30)\n    mvc.move(0, 0,  0, 20,  10, 30,  30, 30)\n    mvc.move(0, 5,  0, 25,  15, 30,  30, 25)\n    mvc.move(0, 10,  0, 30,  20, 30,  30, 20)\n    mvc.move(0, 15,  5, 30,  25, 30,  25, 20)\n    mvc.move(0, 20,  10, 30,  30, 30,  20, 20)\n    mvc.move(0, 25,  15, 30,  30, 25,  15, 20)\n    mvc.move(0, 30,  20, 30,  30, 20,  10, 20)\n    mvc.move(5, 30,  25, 30,  25, 20,  10, 15)\n    mvc.move(10, 30,  30, 30,  20, 20,  10, 10)\n    mvc.move(15, 30,  30, 25,  15, 20,  15, 10)\n    mvc.move(20, 30,  30, 20,  10, 20,  20, 10)\n    mvc.move(25, 30,  25, 20,  10, 15,  25, 10)\n    mvc.move(30, 30,  20, 20,  10, 10,  30, 10)\n    mvc.move(30, 25,  15, 20,  15, 10,  30, 5)\n    mvc.move(30, 20,  10, 20,  20, 10,  30, 0)\n    mvc.move(25, 20,  10, 15,  25, 10,  25, 0)\n    mvc.move(20, 20,  10, 10,  30, 10,  20, 0)\n    mvc.move(15, 20,  15, 10,  30, 5,  15, 0)\n    mvc.move(10, 20,  20, 10,  30, 0,  10, 0)\n    mvc.move(10, 15,  25, 10,  25, 0,  5, 0)\n    mvc.move(10, 10,  30, 10,  20, 0,  0, 0)\n    # arrivée en gare : les wagons se resserrent\n    mvc.move(15, 10,  30, 5,  15, 0,  0, 0)\n    mvc.move(20, 10,  30, 0,  10, 0,  0, 0)\n    mvc.move(25, 10,  25, 0,  10, 0,  0, 0)\n    mvc.move(30, 10,  20, 0,  10, 0,  0, 0)\n    mvc.move(30, 5,  20, 0,  10, 0,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "5 · Formation", "src": "    # ======================================================================\n    # 5. FORMATION : un bloc 2×2 qui voyage, explose et se reforme\n    #   Les quatre véhicules collés se déplacent comme un seul objet (carré puis\n    #   cercle avec move_circ), s'écartent vers les coins, tournent, et se regroupent.\n    # ======================================================================\n    # assemblage du bloc\n    mvc.move(30, 0,  20, 0,  10, 10,  0, 10)\n    mvc.move(30, 0,  20, 0,  30, 10,  20, 10)\n    mvc.wait_sync_ms(600)\n    # le bloc fait le tour du plateau\n    mvc.move(10, 0,  0, 0,  10, 10,  0, 10, speed=70)\n    mvc.move(10, 20,  0, 20,  10, 30,  0, 30, speed=70)\n    mvc.move(30, 20,  20, 20,  30, 30,  20, 30, speed=70)\n    mvc.move(30, 0,  20, 0,  30, 10,  20, 10, speed=70)\n    mvc.wait_sync_ms(400)\n    # le bloc décrit un cercle\n    mvc.move(30, 10,  20, 10,  30, 20,  20, 20)\n    mvc.move_circ(10, \"CW\", 360, 90, 90, 90, 90, speed=70)\n    mvc.wait_sync_ms(300)\n    # explosion vers les coins, deux fois\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20)\n    mvc.wait_sync_ms(400)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30, speed=60)\n    mvc.wait_sync_ms(400)\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20, speed=60)\n    mvc.wait_sync_ms(400)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30, speed=100)\n    mvc.wait_sync_ms(400)\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20, speed=100)\n    mvc.wait_sync_ms(300)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30)\n    # ronde des coins\n    mvc.move(0, 0,  0, 30,  30, 0,  30, 30, speed=90)\n    mvc.move(0, 30,  30, 30,  0, 0,  30, 0, speed=90)\n    mvc.move(30, 30,  30, 0,  0, 30,  0, 0, speed=90)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30, speed=90)\n    mvc.wait_sync_ms(400)\n    # regroupement et retour\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20)\n    mvc.move(30, 0,  20, 0,  30, 10,  20, 10)\n    mvc.move(30, 0,  20, 0,  10, 10,  0, 10)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "Les 5 à la suite", "src": "    # ======================================================================\n    # 1. CARROUSEL : 4 véhicules sur un anneau de 8 cases, pas à pas\n    #   Les véhicules occupent une case sur deux et avancent ensemble d'une case.\n    #   Lent avec des pauses, puis rapide, puis demi-tour.\n    # ======================================================================\n    # mise en place\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5)\n    mvc.wait_sync_ms(600)\n    # un tour lent, case par case\n    mvc.move(25, 15,  15, 25,  5, 15,  15, 5, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(25, 25,  5, 25,  5, 5,  25, 5, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(15, 25,  5, 15,  15, 5,  25, 15, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(5, 25,  5, 5,  25, 5,  25, 25, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(5, 15,  15, 5,  25, 15,  15, 25, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(5, 5,  25, 5,  25, 25,  5, 25, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(15, 5,  25, 15,  15, 25,  5, 15, speed=45)\n    mvc.wait_sync_ms(150)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5, speed=45)\n    mvc.wait_sync_ms(150)\n    # un tour rapide\n    mvc.move(25, 15,  15, 25,  5, 15,  15, 5)\n    mvc.move(25, 25,  5, 25,  5, 5,  25, 5)\n    mvc.move(15, 25,  5, 15,  15, 5,  25, 15)\n    mvc.move(5, 25,  5, 5,  25, 5,  25, 25)\n    mvc.move(5, 15,  15, 5,  25, 15,  15, 25)\n    mvc.move(5, 5,  25, 5,  25, 25,  5, 25)\n    mvc.move(15, 5,  25, 15,  15, 25,  5, 15)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5)\n    mvc.wait_sync_ms(500)\n    # demi-tour : un tour dans l'autre sens\n    mvc.move(15, 5,  25, 15,  15, 25,  5, 15, speed=80)\n    mvc.move(5, 5,  25, 5,  25, 25,  5, 25, speed=80)\n    mvc.move(5, 15,  15, 5,  25, 15,  15, 25, speed=80)\n    mvc.move(5, 25,  5, 5,  25, 5,  25, 25, speed=80)\n    mvc.move(15, 25,  5, 15,  15, 5,  25, 15, speed=80)\n    mvc.move(25, 25,  5, 25,  5, 5,  25, 5, speed=80)\n    mvc.move(25, 15,  15, 25,  5, 15,  15, 5, speed=80)\n    mvc.move(25, 5,  25, 25,  5, 25,  5, 5, speed=80)\n    mvc.wait_sync_ms(500)\n    # retour\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n\n    # ======================================================================\n    # 2. KALÉIDOSCOPE : symétries en miroir puis en rotation\n    #   V1 dessine une courbe dans son quart de plateau, les trois autres en sont\n    #   les reflets (miroir), puis les copies tournées de 90° (moulin).\n    # ======================================================================\n    # mise en place aux quatre coins\n    mvc.move(30, 0,  20, 30,  10, 30,  0, 0)\n    mvc.move(30, 0,  30, 30,  0, 30,  0, 0)\n    mvc.wait_sync_ms(600)\n    # miroir : courbe de Lissajous 2:3\n    mvc.move(29.89, 0.24,  29.89, 29.76,  0.11, 29.76,  0.11, 0.24)\n    mvc.move(29.57, 0.95,  29.57, 29.05,  0.43, 29.05,  0.43, 0.95)\n    mvc.move(29.05, 2.06,  29.05, 27.94,  0.95, 27.94,  0.95, 2.06)\n    mvc.move(28.35, 3.45,  28.35, 26.55,  1.65, 26.55,  1.65, 3.45)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(26.55, 6.55,  26.55, 23.45,  3.45, 23.45,  3.45, 6.55)\n    mvc.move(25.52, 7.94,  25.52, 22.06,  4.48, 22.06,  4.48, 7.94)\n    mvc.move(24.48, 9.05,  24.48, 20.95,  5.52, 20.95,  5.52, 9.05)\n    mvc.move(23.45, 9.76,  23.45, 20.24,  6.55, 20.24,  6.55, 9.76)\n    mvc.move(22.50, 10,  22.50, 20,  7.50, 20,  7.50, 10)\n    mvc.move(21.65, 9.76,  21.65, 20.24,  8.35, 20.24,  8.35, 9.76)\n    mvc.move(20.95, 9.05,  20.95, 20.95,  9.05, 20.95,  9.05, 9.05)\n    mvc.move(20.43, 7.94,  20.43, 22.06,  9.57, 22.06,  9.57, 7.94)\n    mvc.move(20.11, 6.55,  20.11, 23.45,  9.89, 23.45,  9.89, 6.55)\n    mvc.move(20, 5,  20, 25,  10, 25,  10, 5)\n    mvc.move(20.11, 3.45,  20.11, 26.55,  9.89, 26.55,  9.89, 3.45)\n    mvc.move(20.43, 2.06,  20.43, 27.94,  9.57, 27.94,  9.57, 2.06)\n    mvc.move(20.95, 0.95,  20.95, 29.05,  9.05, 29.05,  9.05, 0.95)\n    mvc.move(21.65, 0.24,  21.65, 29.76,  8.35, 29.76,  8.35, 0.24)\n    mvc.move(22.50, 0,  22.50, 30,  7.50, 30,  7.50, 0)\n    mvc.move(23.45, 0.24,  23.45, 29.76,  6.55, 29.76,  6.55, 0.24)\n    mvc.move(24.48, 0.95,  24.48, 29.05,  5.52, 29.05,  5.52, 0.95)\n    mvc.move(25.52, 2.06,  25.52, 27.94,  4.48, 27.94,  4.48, 2.06)\n    mvc.move(26.55, 3.45,  26.55, 26.55,  3.45, 26.55,  3.45, 3.45)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(28.35, 6.55,  28.35, 23.45,  1.65, 23.45,  1.65, 6.55)\n    mvc.move(29.05, 7.94,  29.05, 22.06,  0.95, 22.06,  0.95, 7.94)\n    mvc.move(29.57, 9.05,  29.57, 20.95,  0.43, 20.95,  0.43, 9.05)\n    mvc.move(29.89, 9.76,  29.89, 20.24,  0.11, 20.24,  0.11, 9.76)\n    mvc.move(30, 10,  30, 20,  0, 20,  0, 10)\n    mvc.move(29.89, 9.76,  29.89, 20.24,  0.11, 20.24,  0.11, 9.76)\n    mvc.move(29.57, 9.05,  29.57, 20.95,  0.43, 20.95,  0.43, 9.05)\n    mvc.move(29.05, 7.94,  29.05, 22.06,  0.95, 22.06,  0.95, 7.94)\n    mvc.move(28.35, 6.55,  28.35, 23.45,  1.65, 23.45,  1.65, 6.55)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(26.55, 3.45,  26.55, 26.55,  3.45, 26.55,  3.45, 3.45)\n    mvc.move(25.52, 2.06,  25.52, 27.94,  4.48, 27.94,  4.48, 2.06)\n    mvc.move(24.48, 0.95,  24.48, 29.05,  5.52, 29.05,  5.52, 0.95)\n    mvc.move(23.45, 0.24,  23.45, 29.76,  6.55, 29.76,  6.55, 0.24)\n    mvc.move(22.50, 0,  22.50, 30,  7.50, 30,  7.50, 0)\n    mvc.move(21.65, 0.24,  21.65, 29.76,  8.35, 29.76,  8.35, 0.24)\n    mvc.move(20.95, 0.95,  20.95, 29.05,  9.05, 29.05,  9.05, 0.95)\n    mvc.move(20.43, 2.06,  20.43, 27.94,  9.57, 27.94,  9.57, 2.06)\n    mvc.move(20.11, 3.45,  20.11, 26.55,  9.89, 26.55,  9.89, 3.45)\n    mvc.move(20, 5,  20, 25,  10, 25,  10, 5)\n    mvc.move(20.11, 6.55,  20.11, 23.45,  9.89, 23.45,  9.89, 6.55)\n    mvc.move(20.43, 7.94,  20.43, 22.06,  9.57, 22.06,  9.57, 7.94)\n    mvc.move(20.95, 9.05,  20.95, 20.95,  9.05, 20.95,  9.05, 9.05)\n    mvc.move(21.65, 9.76,  21.65, 20.24,  8.35, 20.24,  8.35, 9.76)\n    mvc.move(22.50, 10,  22.50, 20,  7.50, 20,  7.50, 10)\n    mvc.move(23.45, 9.76,  23.45, 20.24,  6.55, 20.24,  6.55, 9.76)\n    mvc.move(24.48, 9.05,  24.48, 20.95,  5.52, 20.95,  5.52, 9.05)\n    mvc.move(25.52, 7.94,  25.52, 22.06,  4.48, 22.06,  4.48, 7.94)\n    mvc.move(26.55, 6.55,  26.55, 23.45,  3.45, 23.45,  3.45, 6.55)\n    mvc.move(27.50, 5,  27.50, 25,  2.50, 25,  2.50, 5)\n    mvc.move(28.35, 3.45,  28.35, 26.55,  1.65, 26.55,  1.65, 3.45)\n    mvc.move(29.05, 2.06,  29.05, 27.94,  0.95, 27.94,  0.95, 2.06)\n    mvc.move(29.57, 0.95,  29.57, 29.05,  0.43, 29.05,  0.43, 0.95)\n    mvc.move(29.89, 0.24,  29.89, 29.76,  0.11, 29.76,  0.11, 0.24)\n    mvc.move(30, 0,  30, 30,  0, 30,  0, 0)\n    mvc.wait_sync_ms(600)\n    # moulin : cercle de rayon 5, copies tournées de 90°, deux tours\n    mvc.move(30, 5,  25, 30,  0, 25,  5, 0)\n    mvc.move(29.92, 5.87,  24.13, 29.92,  0.08, 24.13,  5.87, 0.08)\n    mvc.move(29.70, 6.71,  23.29, 29.70,  0.30, 23.29,  6.71, 0.30)\n    mvc.move(29.33, 7.50,  22.50, 29.33,  0.67, 22.50,  7.50, 0.67)\n    mvc.move(28.83, 8.21,  21.79, 28.83,  1.17, 21.79,  8.21, 1.17)\n    mvc.move(28.21, 8.83,  21.17, 28.21,  1.79, 21.17,  8.83, 1.79)\n    mvc.move(27.50, 9.33,  20.67, 27.50,  2.50, 20.67,  9.33, 2.50)\n    mvc.move(26.71, 9.70,  20.30, 26.71,  3.29, 20.30,  9.70, 3.29)\n    mvc.move(25.87, 9.92,  20.08, 25.87,  4.13, 20.08,  9.92, 4.13)\n    mvc.move(25, 10,  20, 25,  5, 20,  10, 5)\n    mvc.move(24.13, 9.92,  20.08, 24.13,  5.87, 20.08,  9.92, 5.87)\n    mvc.move(23.29, 9.70,  20.30, 23.29,  6.71, 20.30,  9.70, 6.71)\n    mvc.move(22.50, 9.33,  20.67, 22.50,  7.50, 20.67,  9.33, 7.50)\n    mvc.move(21.79, 8.83,  21.17, 21.79,  8.21, 21.17,  8.83, 8.21)\n    mvc.move(21.17, 8.21,  21.79, 21.17,  8.83, 21.79,  8.21, 8.83)\n    mvc.move(20.67, 7.50,  22.50, 20.67,  9.33, 22.50,  7.50, 9.33)\n    mvc.move(20.30, 6.71,  23.29, 20.30,  9.70, 23.29,  6.71, 9.70)\n    mvc.move(20.08, 5.87,  24.13, 20.08,  9.92, 24.13,  5.87, 9.92)\n    mvc.move(20, 5,  25, 20,  10, 25,  5, 10)\n    mvc.move(20.08, 4.13,  25.87, 20.08,  9.92, 25.87,  4.13, 9.92)\n    mvc.move(20.30, 3.29,  26.71, 20.30,  9.70, 26.71,  3.29, 9.70)\n    mvc.move(20.67, 2.50,  27.50, 20.67,  9.33, 27.50,  2.50, 9.33)\n    mvc.move(21.17, 1.79,  28.21, 21.17,  8.83, 28.21,  1.79, 8.83)\n    mvc.move(21.79, 1.17,  28.83, 21.79,  8.21, 28.83,  1.17, 8.21)\n    mvc.move(22.50, 0.67,  29.33, 22.50,  7.50, 29.33,  0.67, 7.50)\n    mvc.move(23.29, 0.30,  29.70, 23.29,  6.71, 29.70,  0.30, 6.71)\n    mvc.move(24.13, 0.08,  29.92, 24.13,  5.87, 29.92,  0.08, 5.87)\n    mvc.move(25, 0,  30, 25,  5, 30,  0, 5)\n    mvc.move(25.87, 0.08,  29.92, 25.87,  4.13, 29.92,  0.08, 4.13)\n    mvc.move(26.71, 0.30,  29.70, 26.71,  3.29, 29.70,  0.30, 3.29)\n    mvc.move(27.50, 0.67,  29.33, 27.50,  2.50, 29.33,  0.67, 2.50)\n    mvc.move(28.21, 1.17,  28.83, 28.21,  1.79, 28.83,  1.17, 1.79)\n    mvc.move(28.83, 1.79,  28.21, 28.83,  1.17, 28.21,  1.79, 1.17)\n    mvc.move(29.33, 2.50,  27.50, 29.33,  0.67, 27.50,  2.50, 0.67)\n    mvc.move(29.70, 3.29,  26.71, 29.70,  0.30, 26.71,  3.29, 0.30)\n    mvc.move(29.92, 4.13,  25.87, 29.92,  0.08, 25.87,  4.13, 0.08)\n    mvc.move(30, 5,  25, 30,  0, 25,  5, 0)\n    mvc.move(29.92, 5.87,  24.13, 29.92,  0.08, 24.13,  5.87, 0.08)\n    mvc.move(29.70, 6.71,  23.29, 29.70,  0.30, 23.29,  6.71, 0.30)\n    mvc.move(29.33, 7.50,  22.50, 29.33,  0.67, 22.50,  7.50, 0.67)\n    mvc.move(28.83, 8.21,  21.79, 28.83,  1.17, 21.79,  8.21, 1.17)\n    mvc.move(28.21, 8.83,  21.17, 28.21,  1.79, 21.17,  8.83, 1.79)\n    mvc.move(27.50, 9.33,  20.67, 27.50,  2.50, 20.67,  9.33, 2.50)\n    mvc.move(26.71, 9.70,  20.30, 26.71,  3.29, 20.30,  9.70, 3.29)\n    mvc.move(25.87, 9.92,  20.08, 25.87,  4.13, 20.08,  9.92, 4.13)\n    mvc.move(25, 10,  20, 25,  5, 20,  10, 5)\n    mvc.move(24.13, 9.92,  20.08, 24.13,  5.87, 20.08,  9.92, 5.87)\n    mvc.move(23.29, 9.70,  20.30, 23.29,  6.71, 20.30,  9.70, 6.71)\n    mvc.move(22.50, 9.33,  20.67, 22.50,  7.50, 20.67,  9.33, 7.50)\n    mvc.move(21.79, 8.83,  21.17, 21.79,  8.21, 21.17,  8.83, 8.21)\n    mvc.move(21.17, 8.21,  21.79, 21.17,  8.83, 21.79,  8.21, 8.83)\n    mvc.move(20.67, 7.50,  22.50, 20.67,  9.33, 22.50,  7.50, 9.33)\n    mvc.move(20.30, 6.71,  23.29, 20.30,  9.70, 23.29,  6.71, 9.70)\n    mvc.move(20.08, 5.87,  24.13, 20.08,  9.92, 24.13,  5.87, 9.92)\n    mvc.move(20, 5,  25, 20,  10, 25,  5, 10)\n    mvc.move(20.08, 4.13,  25.87, 20.08,  9.92, 25.87,  4.13, 9.92)\n    mvc.move(20.30, 3.29,  26.71, 20.30,  9.70, 26.71,  3.29, 9.70)\n    mvc.move(20.67, 2.50,  27.50, 20.67,  9.33, 27.50,  2.50, 9.33)\n    mvc.move(21.17, 1.79,  28.21, 21.17,  8.83, 28.21,  1.79, 8.83)\n    mvc.move(21.79, 1.17,  28.83, 21.79,  8.21, 28.83,  1.17, 8.21)\n    mvc.move(22.50, 0.67,  29.33, 22.50,  7.50, 29.33,  0.67, 7.50)\n    mvc.move(23.29, 0.30,  29.70, 23.29,  6.71, 29.70,  0.30, 6.71)\n    mvc.move(24.13, 0.08,  29.92, 24.13,  5.87, 29.92,  0.08, 5.87)\n    mvc.move(25, 0,  30, 25,  5, 30,  0, 5)\n    mvc.move(25.87, 0.08,  29.92, 25.87,  4.13, 29.92,  0.08, 4.13)\n    mvc.move(26.71, 0.30,  29.70, 26.71,  3.29, 29.70,  0.30, 3.29)\n    mvc.move(27.50, 0.67,  29.33, 27.50,  2.50, 29.33,  0.67, 2.50)\n    mvc.move(28.21, 1.17,  28.83, 28.21,  1.79, 28.83,  1.17, 1.79)\n    mvc.move(28.83, 1.79,  28.21, 28.83,  1.17, 28.21,  1.79, 1.17)\n    mvc.move(29.33, 2.50,  27.50, 29.33,  0.67, 27.50,  2.50, 0.67)\n    mvc.move(29.70, 3.29,  26.71, 29.70,  0.30, 26.71,  3.29, 0.30)\n    mvc.move(29.92, 4.13,  25.87, 29.92,  0.08, 25.87,  4.13, 0.08)\n    mvc.move(30, 5,  25, 30,  0, 25,  5, 0)\n    mvc.wait_sync_ms(600)\n    # retour\n    mvc.move(30, 0,  30, 30,  0, 30,  0, 0)\n    mvc.move(30, 0,  20, 30,  10, 30,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n\n    # ======================================================================\n    # 3. TOURBILLONS : chaque véhicule tourne sur son propre petit cercle\n    #   Quatre cercles de rayon 5 (move_circ), d'abord en décalage de phase comme\n    #   des engrenages, puis tous en phase, puis en vague.\n    # ======================================================================\n    # mise en place\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(25, 10,  30, 25,  5, 20,  0, 5)\n    mvc.wait_sync_ms(600)\n    # engrenages : phases décalées de 90°\n    mvc.move_circ(5, \"CW\", 720, 0, 90, 180, 270, speed=70)\n    mvc.wait_sync_ms(400)\n    # tous en phase\n    mvc.move(25, 10,  25, 30,  5, 30,  5, 10)\n    mvc.wait_sync_ms(300)\n    mvc.move_circ(5, \"CW\", 720, 0, 0, 0, 0, speed=80)\n    mvc.wait_sync_ms(400)\n    # en vague (45° de décalage), sens inverse\n    mvc.move(25, 0,  21.46, 21.46,  0, 25,  1.46, 8.54)\n    mvc.wait_sync_ms(300)\n    mvc.move_circ(5, \"CCW\", 720, 0, 45, 90, 135, speed=80)\n    mvc.wait_sync_ms(400)\n    # retour\n    mvc.move(30, 0,  20, 25,  10, 25,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n\n    # ======================================================================\n    # 4. PETIT TRAIN : les véhicules se suivent sur un circuit sinueux\n    #   Départ échelonné (écart de 20 pas pour passer les virages), deux tours,\n    #   puis les wagons se resserrent en gare au point de départ.\n    # ======================================================================\n    # départ échelonné et deux tours\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 5)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 10)\n    mvc.move(30, 0,  20, 0,  5, 0,  0, 15)\n    mvc.move(30, 0,  20, 0,  0, 0,  0, 20)\n    mvc.move(30, 0,  15, 0,  0, 5,  0, 25)\n    mvc.move(30, 0,  10, 0,  0, 10,  0, 30)\n    mvc.move(25, 0,  5, 0,  0, 15,  5, 30)\n    mvc.move(20, 0,  0, 0,  0, 20,  10, 30)\n    mvc.move(15, 0,  0, 5,  0, 25,  15, 30)\n    mvc.move(10, 0,  0, 10,  0, 30,  20, 30)\n    mvc.move(5, 0,  0, 15,  5, 30,  25, 30)\n    mvc.move(0, 0,  0, 20,  10, 30,  30, 30)\n    mvc.move(0, 5,  0, 25,  15, 30,  30, 25)\n    mvc.move(0, 10,  0, 30,  20, 30,  30, 20)\n    mvc.move(0, 15,  5, 30,  25, 30,  25, 20)\n    mvc.move(0, 20,  10, 30,  30, 30,  20, 20)\n    mvc.move(0, 25,  15, 30,  30, 25,  15, 20)\n    mvc.move(0, 30,  20, 30,  30, 20,  10, 20)\n    mvc.move(5, 30,  25, 30,  25, 20,  10, 15)\n    mvc.move(10, 30,  30, 30,  20, 20,  10, 10)\n    mvc.move(15, 30,  30, 25,  15, 20,  15, 10)\n    mvc.move(20, 30,  30, 20,  10, 20,  20, 10)\n    mvc.move(25, 30,  25, 20,  10, 15,  25, 10)\n    mvc.move(30, 30,  20, 20,  10, 10,  30, 10)\n    mvc.move(30, 25,  15, 20,  15, 10,  30, 5)\n    mvc.move(30, 20,  10, 20,  20, 10,  30, 0)\n    mvc.move(25, 20,  10, 15,  25, 10,  25, 0)\n    mvc.move(20, 20,  10, 10,  30, 10,  20, 0)\n    mvc.move(15, 20,  15, 10,  30, 5,  15, 0)\n    mvc.move(10, 20,  20, 10,  30, 0,  10, 0)\n    mvc.move(10, 15,  25, 10,  25, 0,  5, 0)\n    mvc.move(10, 10,  30, 10,  20, 0,  0, 0)\n    mvc.move(15, 10,  30, 5,  15, 0,  0, 5)\n    mvc.move(20, 10,  30, 0,  10, 0,  0, 10)\n    mvc.move(25, 10,  25, 0,  5, 0,  0, 15)\n    mvc.move(30, 10,  20, 0,  0, 0,  0, 20)\n    mvc.move(30, 5,  15, 0,  0, 5,  0, 25)\n    mvc.move(30, 0,  10, 0,  0, 10,  0, 30)\n    mvc.move(25, 0,  5, 0,  0, 15,  5, 30)\n    mvc.move(20, 0,  0, 0,  0, 20,  10, 30)\n    mvc.move(15, 0,  0, 5,  0, 25,  15, 30)\n    mvc.move(10, 0,  0, 10,  0, 30,  20, 30)\n    mvc.move(5, 0,  0, 15,  5, 30,  25, 30)\n    mvc.move(0, 0,  0, 20,  10, 30,  30, 30)\n    mvc.move(0, 5,  0, 25,  15, 30,  30, 25)\n    mvc.move(0, 10,  0, 30,  20, 30,  30, 20)\n    mvc.move(0, 15,  5, 30,  25, 30,  25, 20)\n    mvc.move(0, 20,  10, 30,  30, 30,  20, 20)\n    mvc.move(0, 25,  15, 30,  30, 25,  15, 20)\n    mvc.move(0, 30,  20, 30,  30, 20,  10, 20)\n    mvc.move(5, 30,  25, 30,  25, 20,  10, 15)\n    mvc.move(10, 30,  30, 30,  20, 20,  10, 10)\n    mvc.move(15, 30,  30, 25,  15, 20,  15, 10)\n    mvc.move(20, 30,  30, 20,  10, 20,  20, 10)\n    mvc.move(25, 30,  25, 20,  10, 15,  25, 10)\n    mvc.move(30, 30,  20, 20,  10, 10,  30, 10)\n    mvc.move(30, 25,  15, 20,  15, 10,  30, 5)\n    mvc.move(30, 20,  10, 20,  20, 10,  30, 0)\n    mvc.move(25, 20,  10, 15,  25, 10,  25, 0)\n    mvc.move(20, 20,  10, 10,  30, 10,  20, 0)\n    mvc.move(15, 20,  15, 10,  30, 5,  15, 0)\n    mvc.move(10, 20,  20, 10,  30, 0,  10, 0)\n    mvc.move(10, 15,  25, 10,  25, 0,  5, 0)\n    mvc.move(10, 10,  30, 10,  20, 0,  0, 0)\n    # arrivée en gare : les wagons se resserrent\n    mvc.move(15, 10,  30, 5,  15, 0,  0, 0)\n    mvc.move(20, 10,  30, 0,  10, 0,  0, 0)\n    mvc.move(25, 10,  25, 0,  10, 0,  0, 0)\n    mvc.move(30, 10,  20, 0,  10, 0,  0, 0)\n    mvc.move(30, 5,  20, 0,  10, 0,  0, 0)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n\n    # ======================================================================\n    # 5. FORMATION : un bloc 2×2 qui voyage, explose et se reforme\n    #   Les quatre véhicules collés se déplacent comme un seul objet (carré puis\n    #   cercle avec move_circ), s'écartent vers les coins, tournent, et se regroupent.\n    # ======================================================================\n    # assemblage du bloc\n    mvc.move(30, 0,  20, 0,  10, 10,  0, 10)\n    mvc.move(30, 0,  20, 0,  30, 10,  20, 10)\n    mvc.wait_sync_ms(600)\n    # le bloc fait le tour du plateau\n    mvc.move(10, 0,  0, 0,  10, 10,  0, 10, speed=70)\n    mvc.move(10, 20,  0, 20,  10, 30,  0, 30, speed=70)\n    mvc.move(30, 20,  20, 20,  30, 30,  20, 30, speed=70)\n    mvc.move(30, 0,  20, 0,  30, 10,  20, 10, speed=70)\n    mvc.wait_sync_ms(400)\n    # le bloc décrit un cercle\n    mvc.move(30, 10,  20, 10,  30, 20,  20, 20)\n    mvc.move_circ(10, \"CW\", 360, 90, 90, 90, 90, speed=70)\n    mvc.wait_sync_ms(300)\n    # explosion vers les coins, deux fois\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20)\n    mvc.wait_sync_ms(400)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30, speed=60)\n    mvc.wait_sync_ms(400)\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20, speed=60)\n    mvc.wait_sync_ms(400)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30, speed=100)\n    mvc.wait_sync_ms(400)\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20, speed=100)\n    mvc.wait_sync_ms(300)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30)\n    # ronde des coins\n    mvc.move(0, 0,  0, 30,  30, 0,  30, 30, speed=90)\n    mvc.move(0, 30,  30, 30,  0, 0,  30, 0, speed=90)\n    mvc.move(30, 30,  30, 0,  0, 30,  0, 0, speed=90)\n    mvc.move(30, 0,  0, 0,  30, 30,  0, 30, speed=90)\n    mvc.wait_sync_ms(400)\n    # regroupement et retour\n    mvc.move(20, 10,  10, 10,  20, 20,  10, 20)\n    mvc.move(30, 0,  20, 0,  30, 10,  20, 10)\n    mvc.move(30, 0,  20, 0,  10, 10,  0, 10)\n    mvc.move(30, 0,  20, 0,  10, 0,  0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "Vague + Spirale + Pulsation", "src": "    # ===== Nouvelle chorégraphie : Vague + Spirale + Pulsation =====\n    # Départ et arrivée : (30,0) (20,0) (10,0) (0,0)\n\n    # --- 1. Vague : ligne horizontale, onde progressive en Y (déphasage 90° entre véhicules)\n    mvc.move(30, 15, 20, 15, 10, 15, 0, 15)\n    mvc.wait_sync_ms(800)\n    mvc.move(30, 15.42, 20, 14.28, 10, 14.58, 0, 15.72)\n    mvc.move(30, 16.44, 20, 14.17, 10, 13.56, 0, 15.83)\n    mvc.move(30, 17.50, 20, 15, 10, 12.50, 0, 15)\n    mvc.move(30, 17.89, 20, 16.67, 10, 12.11, 0, 13.33)\n    mvc.move(30, 17.08, 20, 18.61, 10, 12.92, 0, 11.39)\n    mvc.move(30, 15, 20, 20, 10, 15, 0, 10)\n    mvc.move(30, 12.08, 20, 20.05, 10, 17.92, 0, 9.95)\n    mvc.move(30, 9.23, 20, 18.33, 10, 20.77, 0, 11.67)\n    mvc.move(30, 7.50, 20, 15, 10, 22.50, 0, 15)\n    mvc.move(30, 7.78, 20, 10.83, 10, 22.22, 0, 19.17)\n    mvc.move(30, 10.42, 20, 7.06, 10, 19.58, 0, 22.94)\n    mvc.move(30, 15, 20, 5, 10, 15, 0, 25)\n    mvc.move(30, 20, 20, 6.34, 10, 10, 0, 23.66)\n    mvc.move(30, 23.66, 20, 10, 10, 6.34, 0, 20)\n    mvc.move(30, 25, 20, 15, 10, 5, 0, 15)\n    mvc.move(30, 23.66, 20, 20, 10, 6.34, 0, 10)\n    mvc.move(30, 20, 20, 23.66, 10, 10, 0, 6.34)\n    mvc.move(30, 15, 20, 25, 10, 15, 0, 5)\n    mvc.move(30, 10, 20, 23.66, 10, 20, 0, 6.34)\n    mvc.move(30, 6.34, 20, 20, 10, 23.66, 0, 10)\n    mvc.move(30, 5, 20, 15, 10, 25, 0, 15)\n    mvc.move(30, 6.34, 20, 10, 10, 23.66, 0, 20)\n    mvc.move(30, 10, 20, 6.34, 10, 20, 0, 23.66)\n    mvc.move(30, 15, 20, 5, 10, 15, 0, 25)\n    mvc.move(30, 20, 20, 6.34, 10, 10, 0, 23.66)\n    mvc.move(30, 23.66, 20, 10, 10, 6.34, 0, 20)\n    mvc.move(30, 25, 20, 15, 10, 5, 0, 15)\n    mvc.move(30, 23.66, 20, 20, 10, 6.34, 0, 10)\n    mvc.move(30, 20, 20, 23.66, 10, 10, 0, 6.34)\n    mvc.move(30, 15, 20, 25, 10, 15, 0, 5)\n    mvc.move(30, 10, 20, 23.66, 10, 20, 0, 6.34)\n    mvc.move(30, 6.34, 20, 20, 10, 23.66, 0, 10)\n    mvc.move(30, 5, 20, 15, 10, 25, 0, 15)\n    mvc.move(30, 6.34, 20, 10, 10, 23.66, 0, 20)\n    mvc.move(30, 10, 20, 6.34, 10, 20, 0, 23.66)\n    mvc.move(30, 15, 20, 5, 10, 15, 0, 25)\n    mvc.move(30, 19.58, 20, 7.06, 10, 10.42, 0, 22.94)\n    mvc.move(30, 22.22, 20, 10.83, 10, 7.78, 0, 19.17)\n    mvc.move(30, 22.50, 20, 15, 10, 7.50, 0, 15)\n    mvc.move(30, 20.77, 20, 18.33, 10, 9.23, 0, 11.67)\n    mvc.move(30, 17.92, 20, 20.05, 10, 12.08, 0, 9.95)\n    mvc.move(30, 15, 20, 20, 10, 15, 0, 10)\n    mvc.move(30, 12.92, 20, 18.61, 10, 17.08, 0, 11.39)\n    mvc.move(30, 12.11, 20, 16.67, 10, 17.89, 0, 13.33)\n    mvc.move(30, 12.50, 20, 15, 10, 17.50, 0, 15)\n    mvc.move(30, 13.56, 20, 14.17, 10, 16.44, 0, 15.83)\n    mvc.move(30, 14.58, 20, 14.28, 10, 15.42, 0, 15.72)\n    mvc.move(30, 15, 20, 15, 10, 15, 0, 15)\n    mvc.wait_sync_ms(800)\n\n    # --- 2. Spirale : carré tournant qui se resserre (R 15 -> 10.5) puis s'ouvre, 2 tours\n    # mise en place (en deux temps pour éviter les croisements)\n    mvc.move(30, 15, 20, 30, 10, 15, 0, 0)\n    mvc.move(30, 15, 15, 30, 0, 15, 15, 0)\n    mvc.wait_sync_ms(800)\n    mvc.move(29.66, 18.12, 11.88, 29.66, 0.34, 11.88, 18.12, 0.34)\n    mvc.move(28.66, 21.08, 8.92, 28.66, 1.34, 8.92, 21.08, 1.34)\n    mvc.move(27.05, 23.75, 6.25, 27.05, 2.95, 6.25, 23.75, 2.95)\n    mvc.move(24.91, 26.00, 4.00, 24.91, 5.09, 4.00, 26.00, 5.09)\n    mvc.move(22.35, 27.73, 2.27, 22.35, 7.65, 2.27, 27.73, 7.65)\n    mvc.move(19.50, 28.86, 1.14, 19.50, 10.50, 1.14, 28.86, 10.50)\n    mvc.move(16.51, 29.34, 0.66, 16.51, 13.49, 0.66, 29.34, 13.49)\n    mvc.move(13.51, 29.18, 0.82, 13.51, 16.49, 0.82, 29.18, 16.49)\n    mvc.move(10.65, 28.38, 1.62, 10.65, 19.35, 1.62, 28.38, 19.35)\n    mvc.move(8.06, 27.02, 2.98, 8.06, 21.94, 2.98, 27.02, 21.94)\n    mvc.move(5.86, 25.16, 4.84, 5.86, 24.14, 4.84, 25.16, 24.14)\n    mvc.move(4.12, 22.90, 7.10, 4.12, 25.88, 7.10, 22.90, 25.88)\n    mvc.move(2.92, 20.38, 9.62, 2.92, 27.08, 9.62, 20.38, 27.08)\n    mvc.move(2.30, 17.70, 12.30, 2.30, 27.70, 12.30, 17.70, 27.70)\n    mvc.move(2.25, 15, 15, 2.25, 27.75, 15, 15, 27.75)\n    mvc.move(2.76, 12.40, 17.60, 2.76, 27.24, 17.60, 12.40, 27.24)\n    mvc.move(3.78, 10.00, 20.00, 3.78, 26.22, 20.00, 10.00, 26.22)\n    mvc.move(5.25, 7.91, 22.09, 5.25, 24.75, 22.09, 7.91, 24.75)\n    mvc.move(7.08, 6.20, 23.80, 7.08, 22.92, 23.80, 6.20, 22.92)\n    mvc.move(9.19, 4.93, 25.07, 9.19, 20.81, 25.07, 4.93, 20.81)\n    mvc.move(11.47, 4.13, 25.87, 11.47, 18.53, 25.87, 4.13, 18.53)\n    mvc.move(13.82, 3.82, 26.18, 13.82, 16.18, 26.18, 3.82, 16.18)\n    mvc.move(16.16, 3.98, 26.02, 16.16, 13.84, 26.02, 3.98, 13.84)\n    mvc.move(18.38, 4.61, 25.39, 18.38, 11.62, 25.39, 4.61, 11.62)\n    mvc.move(20.40, 5.65, 24.35, 20.40, 9.60, 24.35, 5.65, 9.60)\n    mvc.move(22.16, 7.05, 22.95, 22.16, 7.84, 22.95, 7.05, 7.84)\n    mvc.move(23.58, 8.76, 21.24, 23.58, 6.42, 21.24, 8.76, 6.42)\n    mvc.move(24.64, 10.71, 19.29, 24.64, 5.36, 19.29, 10.71, 5.36)\n    mvc.move(25.28, 12.81, 17.19, 25.28, 4.72, 17.19, 12.81, 4.72)\n    mvc.move(25.50, 15, 15, 25.50, 4.50, 15, 15, 4.50)\n    mvc.move(25.28, 17.19, 12.81, 25.28, 4.72, 12.81, 17.19, 4.72)\n    mvc.move(24.64, 19.29, 10.71, 24.64, 5.36, 10.71, 19.29, 5.36)\n    mvc.move(23.58, 21.24, 8.76, 23.58, 6.42, 8.76, 21.24, 6.42)\n    mvc.move(22.16, 22.95, 7.05, 22.16, 7.84, 7.05, 22.95, 7.84)\n    mvc.move(20.40, 24.35, 5.65, 20.40, 9.60, 5.65, 24.35, 9.60)\n    mvc.move(18.38, 25.39, 4.61, 18.38, 11.62, 4.61, 25.39, 11.62)\n    mvc.move(16.16, 26.02, 3.98, 16.16, 13.84, 3.98, 26.02, 13.84)\n    mvc.move(13.82, 26.18, 3.82, 13.82, 16.18, 3.82, 26.18, 16.18)\n    mvc.move(11.47, 25.87, 4.13, 11.47, 18.53, 4.13, 25.87, 18.53)\n    mvc.move(9.19, 25.07, 4.93, 9.19, 20.81, 4.93, 25.07, 20.81)\n    mvc.move(7.08, 23.80, 6.20, 7.08, 22.92, 6.20, 23.80, 22.92)\n    mvc.move(5.25, 22.09, 7.91, 5.25, 24.75, 7.91, 22.09, 24.75)\n    mvc.move(3.78, 20.00, 10.00, 3.78, 26.22, 10.00, 20.00, 26.22)\n    mvc.move(2.76, 17.60, 12.40, 2.76, 27.24, 12.40, 17.60, 27.24)\n    mvc.move(2.25, 15, 15, 2.25, 27.75, 15, 15, 27.75)\n    mvc.move(2.30, 12.30, 17.70, 2.30, 27.70, 17.70, 12.30, 27.70)\n    mvc.move(2.92, 9.62, 20.38, 2.92, 27.08, 20.38, 9.62, 27.08)\n    mvc.move(4.12, 7.10, 22.90, 4.12, 25.88, 22.90, 7.10, 25.88)\n    mvc.move(5.86, 4.84, 25.16, 5.86, 24.14, 25.16, 4.84, 24.14)\n    mvc.move(8.06, 2.98, 27.02, 8.06, 21.94, 27.02, 2.98, 21.94)\n    mvc.move(10.65, 1.62, 28.38, 10.65, 19.35, 28.38, 1.62, 19.35)\n    mvc.move(13.51, 0.82, 29.18, 13.51, 16.49, 29.18, 0.82, 16.49)\n    mvc.move(16.51, 0.66, 29.34, 16.51, 13.49, 29.34, 0.66, 13.49)\n    mvc.move(19.50, 1.14, 28.86, 19.50, 10.50, 28.86, 1.14, 10.50)\n    mvc.move(22.35, 2.27, 27.73, 22.35, 7.65, 27.73, 2.27, 7.65)\n    mvc.move(24.91, 4.00, 26.00, 24.91, 5.09, 26.00, 4.00, 5.09)\n    mvc.move(27.05, 6.25, 23.75, 27.05, 2.95, 23.75, 6.25, 2.95)\n    mvc.move(28.66, 8.92, 21.08, 28.66, 1.34, 21.08, 8.92, 1.34)\n    mvc.move(29.66, 11.88, 18.12, 29.66, 0.34, 18.12, 11.88, 0.34)\n    mvc.move(30, 15, 15, 30, 0, 15, 15, 0)\n    mvc.wait_sync_ms(800)\n\n    # --- 3. Pulsation : le carré se contracte et se dilate deux fois\n    mvc.move(25, 15, 15, 25, 5, 15, 15, 5, speed=60)\n    mvc.wait_sync_ms(300)\n    mvc.move(30, 15, 15, 30, 0, 15, 15, 0, speed=60)\n    mvc.wait_sync_ms(300)\n    mvc.move(25, 15, 15, 25, 5, 15, 15, 5, speed=60)\n    mvc.wait_sync_ms(300)\n    mvc.move(30, 15, 15, 30, 0, 15, 15, 0, speed=60)\n    mvc.wait_sync_ms(300)\n\n    # --- Retour en position de départ\n    mvc.move(30, 0, 15, 30, 0, 15, 0, 0)\n    mvc.move(30, 0, 20, 15, 10, 15, 0, 0)\n    mvc.move(30, 0, 20, 0, 10, 0, 0, 0)\n    mvc.wait_sync_ms(1000)\n"}, {"name": "Chorégraphie d'origine (8, boucles, cercles…)", "src": "# =====================================================================================================\n#  ODV(Omni-directiobal Vehicle) Configuration 05: 4×4 Base Grid, with Four vehicles \n# =====================================================================================================\n\nfrom pybricks.hubs import TechnicHub\nfrom pybricks.pupdevices import Motor\nfrom pybricks.parameters import Port, Stop, Direction, Color\nfrom pybricks.tools import wait, StopWatch\nfrom umath import pi, sin, cos, radians\n\n# === Constants specific to this vehicle ===\nVEHICLE_ID                      :int = 1        # This vehicle's unique ID (1 to N) Change this ID per vehicle\n\n# === Constants common to all vehicles ===\nVEHICLE_COUNT                   :int = 4        # Total number of vehicles (N)\nUSE_SINGLE_SENDER_VEHICLE       :bool = True    # True: one sender and rest are receivers, False: all are receivers\nSENDER_VEHICLE_ID               :int = 4        # ID (1 to N) of the vehicle used as the sender when USE_SINGLE_SENDER_VEHICLE is True\nBROADCAST_CHANNEL               :int = 1        # Using BLE broadcast channel\nBROADCAST_INTERVAL              :int = 500      # Synchronization signal broadcast interval (ms)\nSEND_DELAY_COMPENSATION_TIME    :int = 30       # Communication delay compensation time (ms) when USE_SINGLE_SENDER_VEHICLE is True\nLINEAR_ESTIMATION_START_TIME    :int = 60000    # Start time for linear estimation (ms)\nTIMESTAMP_BUF_SIZE              :int = 30       # Timestamp buffer size\nVOLTAGE_WARNING_LEVEL           :int = 7000     # Voltage warning(Yellow) threshold (mV)\nVOLTAGE_CRITICAL_LEVEL          :int = 6500     # Voltage critical(Red) threshold (mV)\nGEAR_RATIO                      :int = 80       # Motor rotation angle per grid pitch (deg/pitch)\nMAX_MOTOR_ROT_SPEED             :int = 1400     # Max motor speed (deg/s) ~1500\nHOMING_MOTOR_ROT_SPEED          :int = 200      # Homing speed (deg/s)\nHOMING_DUTY                     :int = 35       # Homing motor duty (%) (adjustment required)\nHOMING_OFFSET_ANGLE_X           :int = 110      # X-axis offset distance (deg) (adjustment required)\nHOMING_OFFSET_ANGLE_Y           :int = 110      # Y-axis offset distance (deg) (adjustment required)\n\n# Bluetooth Time Synchronization Class\nclass BluetoothTimeSync:\n\n    class FIFOBuffer:\n        def __init__(self, size):\n            self.size = size\n            self.buffer = []\n\n        def push(self, value):\n            if len(self.buffer) >= self.size:\n                self.buffer.pop(0)\n            self.buffer.append(value)\n\n        def get(self):\n            return list(self.buffer)\n\n        def length(self):\n            return len(self.buffer)\n\n        def average(self):\n            if not self.buffer:\n                return 0\n            return sum(self.buffer) / len(self.buffer)\n\n        def maximum(self):\n            if not self.buffer:\n                return None\n            return max(self.buffer)\n\n        def max_index(self):\n            if not self.buffer:\n                return None\n            max_value = max(self.buffer)\n            return self.buffer.index(max_value)\n\n        def get_at(self, index):\n            if 0 <= index < len(self.buffer):\n                return self.buffer[index]\n            else:\n                return None\n\n    def __init__(self, hub, observe_ch, buffer_size, lin_estim_start):\n        self.hub = hub\n        self.observe_ch = observe_ch\n        self.lin_estim_start = lin_estim_start\n        self.buffer_size = buffer_size\n        self.watch = StopWatch()\n\n        self.recv_time_buf = self.FIFOBuffer(self.buffer_size)\n        self.diff_time_buf = self.FIFOBuffer(self.buffer_size)\n\n        self.mstr_time = 0\n        self.send_count = 0\n        self.recv_count = 0\n        self.adjusted_time = 0\n        self.intercept = 0.0\n        self.slope = 0.0\n\n        self.initial_time_diff_recorded = False\n        self.state = \"Wait\"\n        self.initial_recv_time = 0\n        self.initial_diff_time = 0\n\n    def find_linear_function(self, x1, y1, x2, y2):\n        if x1 == x2:\n            return 0.0, y1  # avoid divide by zero\n        slope = (y2 - y1) / (x2 - x1)\n        intercept = y1 - slope * x1\n        return slope, intercept\n\n    def start_message_send(self):\n        self.watch.reset()\n        self.state=\"Run\"\n        print(\"Sending start\")\n\n    def send(self):\n        # Send synchronization signals at the configured interval\n        if  self.watch.time()>self.send_count*BROADCAST_INTERVAL:\n            data = (\"Run\",self.watch.time() + SEND_DELAY_COMPENSATION_TIME)\n            hub.ble.broadcast(data)\n            self.send_count += 1\n\n            # Indicator changes on each transmission; color depends on voltage and alternates.\n            voltage = self.hub.battery.voltage()\n            if voltage < VOLTAGE_CRITICAL_LEVEL:\n                base_color = Color.RED\n            elif voltage < VOLTAGE_WARNING_LEVEL:\n                base_color = Color.YELLOW\n            else:\n                base_color = Color.BLUE\n            self.hub.light.on(base_color if self.send_count % 2 == 0 else Color.WHITE)\n\n\n    def wait_first_message(self):\n        # Check that the initial state is 'Wait'\n        if self.state != \"Wait\":\n            raise ValueError(f\"Invalid state: expected 'Wait', but got '{self.state}'\")\n        while True:\n            self.hub.light.on(Color.GREEN)\n            data = self.hub.ble.observe(self.observe_ch)\n            if data is not None:\n                a, b = data\n                if a==\"Run\":\n                    # Ensure the received timestamp is within 10000ms (valid startup signal)\n                    if b < 10000:\n                        print(f\"Successfully received the first message: type={a}, timestamp={b}\")\n                        self.watch.reset()\n                        self.state = \"Run\"\n                        break\n                    else:\n                        print(f\"Warning: The received timestamp ({b}) is out of range. Please reset the transmitting hub.\")\n                else:\n                    print(f\"Warning: The received message is not 'Run'. Received: {a}\")\n                self.hub.light.on(Color.MAGENTA)\n                wait(1000)\n            wait(100)\n\n    def recv(self):\n        data = self.hub.ble.observe(self.observe_ch)\n        if data is not None:\n            a, b = data\n            if a==\"Run\":\n                self.state=\"Run\"\n                # Update buffers only if the received signal is newer than the previous one.\n                if b > self.mstr_time:\n                    self.recv_count += 1\n                    self.mstr_time = b\n                    current_time = self.watch.time()\n                    diff_time = self.mstr_time - current_time\n\n                    self.recv_time_buf.push(current_time)\n                    self.diff_time_buf.push(diff_time)\n\n                    # Indicator changes on each reception; color depends on voltage and alternates.\n                    voltage = self.hub.battery.voltage()\n                    if voltage < VOLTAGE_CRITICAL_LEVEL:\n                        base_color = Color.RED\n                    elif voltage < VOLTAGE_WARNING_LEVEL:\n                        base_color = Color.YELLOW\n                    else:\n                        base_color = Color.BLUE\n                    self.hub.light.on(base_color if self.recv_count % 2 == 0 else Color.WHITE)\n\n            elif a==\"Stop\":\n                self.state=\"Stop\"\n                self.hub.light.on(Color.RED)\n\n    def update_coefficient(self):\n        # Update the time correction coefficients (slope and intercept)\n        # based on the buffered reception times and time differences.\n\n        # Only proceed if at least one reception has been recorded.\n        if self.recv_time_buf.length() > 0:\n            # Use the index with the maximum time difference as the most reliable sample.\n            max_index = self.diff_time_buf.max_index()\n            latest_recv_time = self.recv_time_buf.get_at(max_index)\n            latest_diff_time = self.diff_time_buf.maximum()\n\n            # During the initial period or if the same time was received again,\n            # use only the intercept (ignore slope for now).\n            if self.watch.time() < self.lin_estim_start or self.initial_recv_time == latest_recv_time:\n                self.intercept = latest_diff_time\n                # If the buffer is full and this is the first time difference being recorded,\n                # store it as the initial point for future slope calculation.\n                if (self.recv_time_buf.length() == self.buffer_size and not self.initial_time_diff_recorded):\n                    self.initial_recv_time = latest_recv_time\n                    self.initial_diff_time = latest_diff_time\n                    self.initial_time_diff_recorded = True\n                    print(f\"Initial time difference recorded: recv_time={self.initial_recv_time}, diff_time={self.initial_diff_time}\")\n            else:\n                # Calculate the intercept and slope of the time correction line\n                # using the initial and most recent reliable data points.\n                new_slope, new_intercept = self.find_linear_function(\n                    self.initial_recv_time, self.initial_diff_time,\n                    latest_recv_time, latest_diff_time\n                )\n                # Only print and update if values have changed\n                if new_slope != self.slope or new_intercept != self.intercept:\n                    print(f\"[{self.watch.time()}ms] slope={new_slope:.6f}, intercept={new_intercept:.2f}\")\n                    self.slope = new_slope\n                    self.intercept = new_intercept\n\n    def get_adjusted_time(self):\n        # Return adjusted global time calculated from slope and intercept\n        if self.state == \"Run\":\n            self.adjusted_time = (1 + self.slope) * self.watch.time() + self.intercept\n            return self.adjusted_time\n        else:\n            return 0\n\n    def get_rawtime(self):\n        return self.watch.time()\n\n    def get_recv_count(self):\n        return self.recv_count\n\n    def get_state(self):\n        return self.state\n\n# Multi-Vehicle Control Class\nclass MultiVehicleController:\n\n    def __init__(self, vehicle_count, vehicle_id, x_motor, y_motor, bt_sync:BluetoothTimeSync):\n        self.vehicle_id = vehicle_id\n        self.x_motor = x_motor\n        self.y_motor = y_motor\n        self.vehicle_count = vehicle_count\n        self.current_x = [0] * (vehicle_count + 1)\n        self.current_y = [0] * (vehicle_count + 1)\n        self.global_time = 0\n\n    def homing(self):\n        # Slowly move until the motor stalls (hits a physical stop),\n        # then move forward by an offset distance and set that as the zero origin.\n\n        # Homing axis Y\n        self.y_motor.run_until_stalled(-HOMING_MOTOR_ROT_SPEED, duty_limit=HOMING_DUTY)\n        wait(200)\n        self.y_motor.run_angle(MAX_MOTOR_ROT_SPEED, HOMING_OFFSET_ANGLE_Y)\n        wait(200)\n        self.y_motor.reset_angle(0)\n        self.current_y = [0] * (self.vehicle_count + 1)\n\n        # Homing axis X\n        self.x_motor.run_until_stalled(-HOMING_MOTOR_ROT_SPEED, duty_limit=HOMING_DUTY)\n        wait(200)\n        self.x_motor.run_angle(MAX_MOTOR_ROT_SPEED, HOMING_OFFSET_ANGLE_X)\n        wait(200)\n        self.x_motor.reset_angle(0)\n        self.current_x = [0] * (self.vehicle_count + 1)\n\n    def init_20sec_sync_process(self):\n        # If this vehicle is the designated sender, start broadcasting messages\n        # Otherwise, wait to receive the first synchronization message from the sender\n        if USE_SINGLE_SENDER_VEHICLE and VEHICLE_ID == SENDER_VEHICLE_ID:\n            bt_sync.start_message_send()\n        else:\n            bt_sync.wait_first_message()\n\n        # Wait 20 seconds initially for synchronization and system stabilization\n        self.wait_sync_ms(20000)\n\n    def move(self, *targets, speed=100):\n        # targets: XY target absolute position (Unit: grid tooth pitch)\n        # speed: speed[%]\n\n        assert len(targets) == self.vehicle_count * 2, \"The number of targets does not match the number of vehicles\"\n\n        # Raise error if speed is out of valid range\n        if not (1 <= speed <= 100):\n            raise ValueError(\"Speed must be between 1 and 100\")\n\n        # Convert target coordinates from grid pitch to motor angle in degrees\n        target_x_deg = [0] + [targets[i] * GEAR_RATIO for i in range(0, len(targets), 2)]\n        target_y_deg = [0] + [targets[i] * GEAR_RATIO for i in range(1, len(targets), 2)]\n\n        x_dist = [0] * (self.vehicle_count + 1)  # X-axis distances to target\n        y_dist = [0] * (self.vehicle_count + 1)  # Y-axis distances to target\n        x_step = [0] * (self.vehicle_count + 1)  # X-axis step sizes\n        y_step = [0] * (self.vehicle_count + 1)  # Y-axis step sizes\n\n        # Calculate distances from current position to target\n        for i in range(1, self.vehicle_count + 1):\n            x_dist[i] = abs(target_x_deg[i] - self.current_x[i])\n            y_dist[i] = abs(target_y_deg[i] - self.current_y[i])\n\n        # Calculate movement duration based on max distance and speed\n        velo = MAX_MOTOR_ROT_SPEED * speed * 0.01\n        max_dist = max(x_dist[1:] + y_dist[1:])\n        time = max_dist / velo * 1000  # [ms]\n\n        if time > 4:\n            self.global_time += time\n\n            # Determine number of steps\n            step_num = int(time * 0.25)\n\n            # Calculate step size for each vehicle\n            for i in range(1, self.vehicle_count + 1):\n                x_step[i] = x_dist[i] / step_num\n                y_step[i] = y_dist[i] / step_num\n\n            # Perform stepwise movement\n            while step_num > 0:\n                for i in range(1, self.vehicle_count + 1):\n                    if self.current_x[i] < target_x_deg[i]:\n                        self.current_x[i] += x_step[i]\n                    elif self.current_x[i] > target_x_deg[i]:\n                        self.current_x[i] -= x_step[i]\n\n                    if self.current_y[i] < target_y_deg[i]:\n                        self.current_y[i] += y_step[i]\n                    elif self.current_y[i] > target_y_deg[i]:\n                        self.current_y[i] -= y_step[i]\n\n                # Track the position of the controlled vehicle\n                self.x_motor.track_target(self.current_x[self.vehicle_id])\n                self.y_motor.track_target(self.current_y[self.vehicle_id])\n\n                step_num -= 1\n\n                # Check received data during the 4 ms wait period\n                if bt_sync.get_state() == \"Run\":\n                    if USE_SINGLE_SENDER_VEHICLE and VEHICLE_ID == SENDER_VEHICLE_ID:\n                        while (self.global_time - bt_sync.get_rawtime()) > (4 * step_num):\n                            bt_sync.send()\n                            wait(1)\n                    else:\n                        while (self.global_time - bt_sync.get_adjusted_time()) > (4 * step_num):\n                            bt_sync.recv()\n                            if bt_sync.get_state() == \"Stop\":\n                                self.emergency_stop_forever()\n                            bt_sync.update_coefficient()\n                            wait(1)\n                else:\n                    wait(4)\n   \n    def move_circ(self, radius, direction, rot_angle, *start_angles, speed=100):\n        # radius     : rotation radius [grid tooth pitch]\n        # direction  : rotation direction (\"CW\" or \"CCW\")\n        # rot_angle   : total rotation angle [deg]\n        # start_angles: initial velocity vector direction [deg] for each vehicle (0:X+, 90:Y-, 180:X-, 270:Y+)\n        # speed      : motor speed as a percentage [%]\n\n        assert len(start_angles) == self.vehicle_count, \"Number of initial angles does not match vehicle count\"\n\n        # Raise error if radius or rot_angle is not positive\n        if radius <= 0 or rot_angle <= 0:\n            raise ValueError(\"Both radius and rot_angle must be positive\")\n\n        # Raise error if speed is out of valid range\n        if not (1 <= speed <= 100):\n            raise ValueError(\"Speed must be between 1 and 100\")\n\n        # Convert direction string to numerical value\n        if isinstance(direction, str):\n            direction = direction.upper()\n            if direction == \"CW\":\n                direction = 1\n            elif direction == \"CCW\":\n                direction = 2\n            else:\n                raise ValueError(\"direction must be 'CW' or 'CCW'\")\n        else:\n            direction = 1 if direction <= 1 else 2\n\n        start_angle = [0] + list(start_angles)\n        x_start = [0] * (self.vehicle_count + 1)\n        y_start = [0] * (self.vehicle_count + 1)\n\n        # Calculate movement duration and number of steps\n        velo = MAX_MOTOR_ROT_SPEED * speed * 0.01\n        max_dist = 2 * pi * radius * rot_angle / 360 * GEAR_RATIO\n        time = max_dist / velo * 1000  # [ms]\n        self.global_time += time\n        step_num = int(time * 0.25)\n        s_step = rot_angle / step_num\n        s = 0\n\n        # Compute the circular trajectory origin for each vehicle\n        for i in range(1, self.vehicle_count + 1):\n            angle = radians(start_angle[i] + 180 * (direction - 1))\n            x_start[i] = self.current_x[i] - radius * GEAR_RATIO * sin(angle)\n            y_start[i] = self.current_y[i] - radius * GEAR_RATIO * cos(angle)\n\n        # Execute circular movement step by step\n        while step_num > 0:\n            for i in range(1, self.vehicle_count + 1):\n                angle = radians(s + start_angle[i] + 180 * (direction - 1))\n                self.current_x[i] = radius * GEAR_RATIO * sin(angle) + x_start[i]\n                self.current_y[i] = radius * GEAR_RATIO * cos(angle) + y_start[i]\n\n            self.x_motor.track_target(self.current_x[self.vehicle_id])\n            self.y_motor.track_target(self.current_y[self.vehicle_id])\n\n            s = s + s_step if direction == 1 else s - s_step\n            step_num -= 1\n\n            # Check received data during the 4 ms wait period\n            if bt_sync.get_state() == \"Run\":\n                if USE_SINGLE_SENDER_VEHICLE and VEHICLE_ID == SENDER_VEHICLE_ID:\n                    while (self.global_time - bt_sync.get_rawtime()) > (4 * step_num):\n                        bt_sync.send()\n                        wait(10)\n                else:\n                    while (self.global_time - bt_sync.get_adjusted_time()) > (4 * step_num):\n                        bt_sync.recv()\n                        if bt_sync.get_state() == \"Stop\":\n                            self.emergency_stop_forever()\n                        bt_sync.update_coefficient()\n                        wait(1)\n            else:\n                wait(4)\n\n    def emergency_stop_forever(self):\n        # Immediately stop both X and Y motors and enter an infinite wait loop\n        self.x_motor.stop()\n        self.y_motor.stop()\n        while True:\n            wait(1000)\n\n    def get_position(self):\n        return self.current_x[self.vehicle_id], self.current_y[self.vehicle_id]\n\n    def get_global_time(self):\n        return self.global_time\n\n    def wait_ms(self,time):\n        # Used to pause the vehicle for a fixed duration without synchronization\n        self.global_time+=time\n        wait(time)\n\n    def wait_sync_ms(self,time):\n        # Wait for the specified time with synchronization if active, otherwise perform simple wait\n        self.global_time+=time\n        if bt_sync.get_state()==\"Run\":\n            if USE_SINGLE_SENDER_VEHICLE and VEHICLE_ID == SENDER_VEHICLE_ID:\n                while (bt_sync.get_rawtime()<self.global_time):\n                    bt_sync.send()\n                    wait(10)\n            else:\n                while (bt_sync.get_adjusted_time()<self.global_time):\n                    bt_sync.recv()\n                    if bt_sync.get_state()==\"Stop\":\n                        self.emergency_stop_forever()\n                    bt_sync.update_coefficient()\n                    wait(10)\n        else:\n            wait(time)\n\n# Initialize the hub.\nif USE_SINGLE_SENDER_VEHICLE and VEHICLE_ID == SENDER_VEHICLE_ID:\n    hub = TechnicHub(broadcast_channel=BROADCAST_CHANNEL)\nelse:\n    hub = TechnicHub(observe_channels=[BROADCAST_CHANNEL])\n\n# Create an instance for communication handling\nbt_sync=BluetoothTimeSync(hub,BROADCAST_CHANNEL,TIMESTAMP_BUF_SIZE,LINEAR_ESTIMATION_START_TIME)\n\n# Initialize motors on port A,C.\nx_motor = Motor(Port.C, Direction.CLOCKWISE)\ny_motor = Motor(Port.A, Direction.CLOCKWISE)\n\n# Create an instance for multi-vehicle control\nmvc = MultiVehicleController(VEHICLE_COUNT,VEHICLE_ID,x_motor,y_motor,bt_sync)\n\n# Move this vehicle to the fence and reset its origin (home position)\nmvc.homing()\n\n# Movement instruction description below (main program)\n# Coordinate system\n#      fence\n#   +X ← O fence\n#        ↓\n#       +Y\n\n# Move to the initial position (initial position must be adjusted depending on the movement plan)\n# The path must avoid already placed vehicles. This can be achieved by combining multiple movement commands.\nmvc.move(10, 0,  10, 0,  10, 0,   0, 0)\nmvc.move(20, 0,  20, 0,  10, 0,   0, 0)\nmvc.move(30, 0,  20, 0,  10, 0,   0, 0)\n\n# Start communication and wait for 20 seconds (initialization phase)\nmvc.init_20sec_sync_process()\n\nwhile True:\n\n    # Demo of figure-eight (infinity symbol) movement\n    mvc.move(30,15,  20, 30,  10, 0,   0, 0)\n    for _ in range(2):\n        mvc.move(15.00,15.00,1.56,25.74,28.44,4.26,18.44,0.00)\n        mvc.move(16.06,16.91,0.90,23.66,27.35,2.39,17.35,0.00)\n        mvc.move(17.14,18.80,0.47,21.52,25.45,1.51,15.45,0.00)\n        mvc.move(18.24,20.69,0.20,19.36,23.49,2.40,13.49,0.00)\n        mvc.move(19.38,22.54,0.05,17.18,21.94,3.93,11.94,0.00)\n        mvc.move(20.60,24.35,0.00,15.00,20.60,5.65,10.60,0.00)\n        mvc.move(21.94,26.07,0.05,12.82,19.38,7.46,9.38,0.00)\n        mvc.move(23.49,27.60,0.20,10.64,18.24,9.31,8.24,0.00)\n        mvc.move(25.45,28.49,0.47,8.48,17.14,11.20,10.47,0.00)\n        mvc.move(27.35,27.61,0.90,6.34,16.06,13.09,10.90,0.00)\n        mvc.move(28.44,25.74,1.56,4.26,15.00,15.00,11.56,0.00)\n        mvc.move(29.10,23.66,2.65,2.39,13.94,16.91,12.65,0.00)\n        mvc.move(29.53,21.52,4.55,1.51,12.86,18.80,14.55,0.00)\n        mvc.move(29.80,19.36,6.51,2.40,11.76,20.69,16.51,0.00)\n        mvc.move(29.95,17.18,8.06,3.93,10.62,22.54,18.06,0.00)\n        mvc.move(30.00,15.00,9.40,5.65,9.40,24.35,19.40,0.00)\n        mvc.move(29.95,12.82,10.62,7.46,8.06,26.07,20.62,0.00)\n        mvc.move(29.80,10.64,11.76,9.31,6.51,27.60,21.76,0.00)\n        mvc.move(29.53,8.48,12.86,11.20,4.55,28.49,19.53,0.00)\n        mvc.move(29.10,6.34,13.94,13.09,2.65,27.61,19.10,0.00)\n        mvc.move(28.44,4.26,15.00,15.00,1.56,25.74,18.44,0.00)\n        mvc.move(27.35,2.39,16.06,16.91,0.90,23.66,17.35,0.00)\n        mvc.move(25.45,1.51,17.14,18.80,0.47,21.52,15.45,0.00)\n        mvc.move(23.49,2.40,18.24,20.69,0.20,19.36,13.49,0.00)\n        mvc.move(21.94,3.93,19.38,22.54,0.05,17.18,11.94,0.00)\n        mvc.move(20.60,5.65,20.60,24.35,0.00,15.00,10.60,0.00)\n        mvc.move(19.38,7.46,21.94,26.07,0.05,12.82,9.38,0.00)\n        mvc.move(18.24,9.31,23.49,27.60,0.20,10.64,8.24,0.00)\n        mvc.move(17.14,11.20,25.45,28.49,0.47,8.48,10.47,0.00)\n        mvc.move(16.06,13.09,27.35,27.61,0.90,6.34,10.90,0.00)\n        mvc.move(15.00,15.00,28.44,25.74,1.56,4.26,11.56,0.00)\n        mvc.move(13.94,16.91,29.10,23.66,2.65,2.39,12.65,0.00)\n        mvc.move(12.86,18.80,29.53,21.52,4.55,1.51,14.55,0.00)\n        mvc.move(11.76,20.69,29.80,19.36,6.51,2.40,16.51,0.00)\n        mvc.move(10.62,22.54,29.95,17.18,8.06,3.93,18.06,0.00)\n        mvc.move(9.40,24.35,30.00,15.00,9.40,5.65,19.40,0.00)\n        mvc.move(8.06,26.07,29.95,12.82,10.62,7.46,20.62,0.00)\n        mvc.move(6.51,27.60,29.80,10.64,11.76,9.31,21.76,0.00)\n        mvc.move(4.55,28.49,29.53,8.48,12.86,11.20,19.53,0.00)\n        mvc.move(2.65,27.61,29.10,6.34,13.94,13.09,19.10,0.00)\n        mvc.move(1.56,25.74,28.44,4.26,15.00,15.00,18.44,0.00)\n        mvc.move(0.90,23.66,27.35,2.39,16.06,16.91,17.35,0.00)\n        mvc.move(0.47,21.52,25.45,1.51,17.14,18.80,15.45,0.00)\n        mvc.move(0.20,19.36,23.49,2.40,18.24,20.69,13.49,0.00)\n        mvc.move(0.05,17.18,21.94,3.93,19.38,22.54,11.94,0.00)\n        mvc.move(0.00,15.00,20.60,5.65,20.60,24.35,10.60,0.00)\n        mvc.move(0.05,12.82,19.38,7.46,21.94,26.07,9.38,0.00)\n        mvc.move(0.20,10.64,18.24,9.31,23.49,27.60,8.24,0.00)\n        mvc.move(0.47,8.48,17.14,11.20,25.45,28.49,10.47,0.00)\n        mvc.move(0.90,6.34,16.06,13.09,27.35,27.61,10.90,0.00)\n        mvc.move(1.56,4.26,15.00,15.00,28.44,25.74,11.56,0.00)\n        mvc.move(2.65,2.39,13.94,16.91,29.10,23.66,12.65,0.00)\n        mvc.move(4.55,1.51,12.86,18.80,29.53,21.52,14.55,0.00)\n        mvc.move(6.51,2.40,11.76,20.69,29.80,19.36,16.51,0.00)\n        mvc.move(8.06,3.93,10.62,22.54,29.95,17.18,18.06,0.00)\n        mvc.move(9.40,5.65,9.40,24.35,30.00,15.00,19.40,0.00)\n        mvc.move(10.62,7.46,8.06,26.07,29.95,12.82,20.62,0.00)\n        mvc.move(11.76,9.31,6.51,27.60,29.80,10.64,21.76,0.00)\n        mvc.move(12.86,11.20,4.55,28.49,29.53,8.48,19.53,0.00)\n        mvc.move(13.94,13.09,2.65,27.61,29.10,6.34,19.10,0.00)\n\n    mvc.move(30,15,  20, 30,  10, 0,   0, 0)\n\n    # Demo of looping\n    mvc.move( 30, 15, 20, 15, 10, 15,  0, 15)\n    mvc.wait_sync_ms(1000)\n    mvc.move( 31,  5, 21, 15, 11, 15,  1, 15)\n    mvc.move( -1,  5, 29, 15, 19, 15,  9, 15)\n    mvc.move(  1, 15, 31,  5, 21, 15, 11, 15)\n    mvc.move(  9, 15, -1,  5, 29, 15, 19, 15)\n    mvc.move( 11, 15,  1, 15, 31,  5, 21, 15)\n    mvc.move( 19, 15,  9, 15, -1,  5, 29, 15)\n    mvc.move( 21, 15, 11, 15,  1, 15, 31,  5)\n    mvc.move( 29, 15, 19, 15,  9, 15, -1,  5)\n    mvc.move( 31, 15, 21, 15, 11, 15,  1, 15)\n    mvc.move( 30, 15, 20, 15, 10, 15,  0, 15)\n    mvc.wait_sync_ms(1000)\n    mvc.move( 30, 10, 20, 20, 10, 10,  0, 20)\n    mvc.move( 20, 10, 30, 20,  0, 10, 10, 20)\n    mvc.move( 20, 15, 30, 15,  0, 15, 10, 15)\n    mvc.wait_sync_ms(500)\n    mvc.move( 20, 10, 30, 20,  0, 10, 10, 20)\n    mvc.move( 10,  0, 20, 10, 10, 20, 20, 30)\n    mvc.move( 15,  0, 15, 10, 15, 20, 15, 30)\n    mvc.wait_sync_ms(1000)\n    mvc.move( 25,  0, 25, 10, 25, 20, 25, 30)\n    mvc.move(  5,  0,  5, 10,  5, 20,  5, 30)\n    mvc.move( 15,  0, 15, 10, 15, 20, 15, 30)\n    mvc.wait_sync_ms(500)\n    mvc.move( 20,  0, 10, 10, 20, 20, 10, 30)\n    mvc.move( 20, 10, 10,  0, 20, 30, 10, 20)\n    mvc.move( 15, 10, 15,  0, 15, 30, 15, 20)\n    mvc.wait_sync_ms(500)\n    mvc.move( 20, 10, 10,  0, 20, 30, 10, 20)\n    mvc.move( 20, 10, 10, 10, 20, 20, 10, 20)\n    mvc.wait_sync_ms(1000)\n    mvc.move( 30,  0,  0,  0, 30, 30,  0, 30)\n    mvc.wait_sync_ms(500)\n    mvc.move( 20, 10, 10, 10, 20, 20, 10, 20)\n    mvc.wait_sync_ms(500)\n    mvc.move( 30, 20, 20,  0, 10, 30,  0, 10)\n    mvc.wait_sync_ms(500)\n    mvc.move( 20, 10, 10, 10, 20, 20, 10, 20)\n    mvc.wait_sync_ms(500)\n    mvc.move( 30,  0,  0,  0, 30, 30,  0, 30)\n    mvc.wait_sync_ms(500)\n    mvc.move( 30,  0, 20,  0, 10, 10,  0, 10)\n    mvc.move( 30,  0, 20,  0, 10,  0,  0,  0)\n    mvc.wait_sync_ms(1000)\n\n    # Demo of circular movement\n    mvc.wait_sync_ms(1000)\n    mvc.move(30, 5,  20, 15,  10,25,  0,15)\n    mvc.move(15, 5,  25, 15,  15,25,  5,15)\n    mvc.wait_sync_ms(1000)\n    mvc.move_circ(10,\"CW\",585,180,90,0,270)\n    mvc.move(20,10,  10,10,  10, 0,  20, 0)\n    mvc.wait_sync_ms(1500)\n    mvc.move_circ(10,\"CW\",270,180,180,180,180)\n    mvc.move(20,30,  10,20,  10,10,  20, 0)\n    mvc.move(15,30,  15,20,  15,10,  15, 0)\n\n    # Demo of vehicles aligning in a straight line\n    mvc.wait_sync_ms(1000)\n    mvc.move(30,30,  20,20,  10,10,   0, 0)\n    mvc.move( 0,30,  10,20,  20,10,  30, 0)\n    mvc.move( 0, 0,  10,10,  20,20,  30,30)\n    mvc.move(30, 0,  20,10,  10,20,   0,30)\n    mvc.move(30,15,  20,15,  10,15,   0,15)\n    mvc.move(30, 0,  20, 0,  10, 0,   0, 0)\n\n    # Demo of a lap around the workspace\n    mvc.wait_sync_ms(2000)\n    mvc.move(30,10,  20, 0,  10, 0,   0, 0)\n    mvc.move(30,20,  30,10,  20, 0,  10, 0,speed=80)\n    mvc.move(20,30,  30,20,  30,10,  20, 0,speed=80)\n    mvc.move(10,30,  20,30,  30,20,  30,10,speed=80)\n    mvc.move( 0,20,  10,30,  20,30,  30,20,speed=80)\n    mvc.move( 0,10,   0,20,  10,30,  20,30,speed=80)\n    mvc.move(10, 0,   0,10,   0,20,  10,30,speed=80)\n    mvc.move(20, 0,  10, 0,   0,10,   0,20,speed=80)\n    mvc.move(30, 0,  20, 0,  10, 0,   0,10,speed=80)\n    mvc.move(30, 0,  20, 0,  10, 0,   0, 0,speed=80)\n\n    mvc.wait_sync_ms(1000)\n\n\n"}];
+const N = 4;
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COLV = () => [css('--v1'), css('--v2'), css('--v3'), css('--v4')];
+
+let state = { src: '', sim: null, cols: [], warns: [], t: 0, playing: false, curLn: -1, start: [[30,0],[20,0],[10,0],[0,0]] };
+let lineEls = new Map();
+
+// ---------- presets ----------
+PRESETS.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.name; $('preset').appendChild(o); });
+$('preset').onchange = () => load(PRESETS[+$('preset').value].src);
+
+// ---------- start positions ----------
+for (let i = 0; i < N; i++) {
+  const sp = $('startpos');
+  const lab = document.createElement('span'); lab.innerHTML = `<span class="dot" style="display:inline-block;background:var(--v${i+1})"></span> V${i+1}`;
+  sp.appendChild(lab);
+  for (let a = 0; a < 2; a++) {
+    const inp = document.createElement('input'); inp.type = 'number'; inp.step = '0.5'; inp.value = state.start[i][a];
+    inp.onchange = () => { state.start[i][a] = parseFloat(inp.value) || 0; rebuild(); };
+    sp.appendChild(inp);
+  }
+}
+$('fp').onchange = () => rebuild();
+
+// ---------- build ----------
+function load(src) { state.src = src; rebuild(true); }
+function prepare(src) {
+  const lines = src.replace(/\r/g, '').split('\n');
+  const k = lines.findIndex(l => /^mvc\.init_20sec_sync_process\(\)/.test(l.trim()) && !/^\s/.test(l));
+  return (k >= 0 ? lines.map((l, i) => i <= k ? '' : l) : lines).join('\n');
+}
+function rebuild(resetTime) {
+  const { prog, warnings } = ODV.parse(prepare(state.src), N);
+  state.warns = warnings;
+  state.sim = ODV.simulate(prog, state.start);
+  state.cols = ODV.collisions(state.sim, parseFloat($('fp').value) || 10);
+  if (resetTime) state.t = 0;
+  state.t = Math.min(state.t, state.sim.duration);
+  renderCode(); renderStats(); renderIssues(); state.curLn = -1; draw();
+}
+
+function renderStats() {
+  const s = state.sim;
+  $('sDur').textContent = (s.duration / 1000).toFixed(1) + ' s';
+  $('sCmd').textContent = s.cmds.length;
+  const red = state.cols.filter(c => c.pen > 1).length, or = state.cols.length - red;
+  $('sCol').textContent = red; $('sGr').textContent = or;
+  $('stCol').className = 'stat ' + (red ? 'bad' : 'ok');
+  $('stGr').className = 'stat ' + (or ? 'warn' : 'ok');
+}
+function renderIssues() {
+  const box = $('issues'); box.innerHTML = '';
+  for (const c of state.cols) {
+    const d = document.createElement('div'); d.className = 'item';
+    const sev = c.pen > 1 ? 'red' : 'orange';
+    d.innerHTML = `<span class="tag ${sev}">${c.pen > 1 ? 'chevauch.' : 'frôlement'}</span>V${c.i} ↔ V${c.j} · ${c.pen.toFixed(2)} pas · ligne ${c.ln}<span class="t">${(c.t/1000).toFixed(2)} s</span>`;
+    d.onclick = () => { pause(); state.t = c.t; draw(); };
+    box.appendChild(d);
+  }
+  for (const w of state.warns) {
+    const d = document.createElement('div'); d.className = 'item';
+    d.innerHTML = `<span class="tag grey">info</span>ligne ${w.ln} : ${escapeHtml(w.msg)}`;
+    d.onclick = () => scrollToLine(w.ln);
+    box.appendChild(d);
+  }
+}
+function escapeHtml(s) { return s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function renderCode() {
+  const box = $('code'); box.innerHTML = ''; lineEls.clear();
+  const colLines = new Set(state.cols.map(c => c.ln));
+  const starts = new Map(); for (const c of state.sim.cmds) if (!starts.has(c.ln)) starts.set(c.ln, c.t0);
+  const frag = document.createDocumentFragment();
+  state.src.replace(/\r/g, '').split('\n').forEach((line, i) => {
+    const ln = i + 1, d = document.createElement('div');
+    d.className = 'l' + (colLines.has(ln) ? ' col' : '');
+    const h = line.indexOf('#');
+    const body = h >= 0 ? escapeHtml(line.slice(0, h)) + '<span class="c">' + escapeHtml(line.slice(h)) + '</span>' : escapeHtml(line);
+    d.innerHTML = `<span class="n">${ln}</span><span>${body || ' '}</span>`;
+    if (starts.has(ln)) d.onclick = () => { pause(); state.t = starts.get(ln); draw(); };
+    lineEls.set(ln, d); frag.appendChild(d);
+  });
+  box.appendChild(frag);
+}
+function scrollToLine(ln) {
+  const el = lineEls.get(ln), box = $('code'); if (!el) return;
+  const top = el.offsetTop - box.clientHeight / 2;
+  box.scrollTop = Math.max(0, top);
+}
+
+// ---------- editing ----------
+$('edit').onclick = () => { $('ta').value = state.src; $('codeWrap').style.display = 'none'; $('editWrap').style.display = ''; $('ta').focus(); };
+$('cancel').onclick = () => { $('codeWrap').style.display = ''; $('editWrap').style.display = 'none'; };
+$('run').onclick = () => { $('cancel').onclick(); load($('ta').value); };
+$('ta').addEventListener('keydown', e => {
+  if (e.key === 'Tab') { e.preventDefault(); const t = e.target, s = t.selectionStart; t.setRangeText('    ', s, t.selectionEnd, 'end'); }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('run').onclick();
+});
+$('copy').onclick = async () => {
+  const txt = $('editWrap').style.display === 'none' ? state.src : $('ta').value;
+  try { await navigator.clipboard.writeText(txt); toast('Code copié'); }
+  catch { toast('Copie refusée par le navigateur : sélectionne le texte dans « Modifier »'); }
+};
+function toast(m) { const t = $('toast'); t.textContent = m; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1800); }
+
+// ---------- sampling ----------
+function frameIndex(t) {
+  const { frames, W, count } = state.sim;
+  let lo = 0, hi = count - 1;
+  while (lo < hi) { const m = (lo + hi + 1) >> 1; if (frames[m * W] <= t) lo = m; else hi = m - 1; }
+  return lo;
+}
+function posAt(t) {
+  const { frames, W, count } = state.sim;
+  const k = frameIndex(t), o = k * W, out = [];
+  const k2 = Math.min(k + 1, count - 1), o2 = k2 * W;
+  const t0 = frames[o], t1 = frames[o2];
+  // waits are a single frame at their end: hold position until then
+  const isWaitNext = k2 > k && t1 - t0 > 6;
+  const f = (k2 > k && !isWaitNext && t1 > t0) ? (t - t0) / (t1 - t0) : 0;
+  for (let i = 0; i < N; i++) out.push([
+    frames[o + 1 + 2*i] + f * (frames[o2 + 1 + 2*i] - frames[o + 1 + 2*i]),
+    frames[o + 2 + 2*i] + f * (frames[o2 + 2 + 2*i] - frames[o + 2 + 2*i])]);
+  // line currently executing = line of next frame
+  const ln = frames[(k2 > k ? o2 : o) + W - 1];
+  return { p: out, ln, k };
+}
+
+// ---------- drawing ----------
+const cv = $('cv'), ctx = cv.getContext('2d');
+const V0 = -8.6, V1 = 37.2, SPAN = V1 - V0;
+function resize() {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  const w = Math.round(r.width * dpr); if (cv.width !== w) { cv.width = w; cv.height = w; }
+  draw();
+}
+new ResizeObserver(resize).observe(cv);
+const sx = x => (V1 - x) / SPAN * cv.width;      // +X to the left
+const sy = y => (y - V0) / SPAN * cv.height;     // +Y down
+const sc = d => d / SPAN * cv.width;
+
+// ---------- look based on the real build: white studded base, grey/red fence, charcoal vehicles ----------
+function rng(seed) { return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
+let boardCache = null, boardW = 0;
+function boardImage(W) {
+  if (boardCache && boardW === W) return boardCache;
+  const c = document.createElement('canvas'); c.width = c.height = W;
+  const g = c.getContext('2d'), u = W / SPAN, R = rng(7);
+  const X = x => (V1 - x) * u, Y = y => (y - V0) * u;
+  // wood floor: long planks running down the view
+  g.fillStyle = '#b98a5c'; g.fillRect(0, 0, W, W);
+  const plank = 5.5 * u;
+  for (let px = -plank, k = 0; px < W + plank; px += plank, k++) {
+    const tone = [ '#bd8f60', '#b4855a', '#c29766', '#b08055', '#ba8b5e' ][k % 5];
+    g.fillStyle = tone; g.fillRect(px, 0, plank, W);
+    g.strokeStyle = 'rgba(70,40,15,.10)'; g.lineWidth = Math.max(1, u * .05);
+    for (let s = 0; s < 9; s++) {           // grain
+      const gx = px + R() * plank; g.beginPath(); g.moveTo(gx, 0);
+      for (let yy = 0; yy <= W; yy += W / 8) g.lineTo(gx + (R() - .5) * u * .6, yy);
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(60,35,15,.35)'; g.fillRect(px, 0, Math.max(1, u * .06), W);
+    const joint = R() * W; g.fillRect(px, joint, plank, Math.max(1, u * .05));
+  }
+  // studded base: one white tile per pitch, ragged far edges (interlocking plates)
+  const cells = [];
+  for (let gx = -5; gx <= 35; gx++) for (let gy = -5; gy <= 35; gy++) cells.push([gx, gy]);
+  for (let k = -5; k <= 35; k++) {          // nubs sticking out of the two far edges
+    if ((k * 7 + 3) % 5 < 2) cells.push([36, k]);
+    if ((k * 3 + 1) % 5 < 2) cells.push([k, 36]);
+  }
+  const keep = ([gx, gy]) => !((gx === 35 && (gy * 5 + 2) % 7 === 0) || (gy === 35 && (gx * 4 + 1) % 7 === 0));
+  g.save(); g.shadowColor = 'rgba(40,25,10,.45)'; g.shadowBlur = u * .9; g.shadowOffsetY = u * .25;
+  g.fillStyle = '#d9d9d6';
+  for (const cl of cells) if (keep(cl)) g.fillRect(X(cl[0] + .5), Y(cl[1] - .5), u, u);
+  g.restore();
+  for (const cl of cells) if (keep(cl)) {
+    const [gx, gy] = cl, x0 = X(gx + .5), y0 = Y(gy - .5);
+    g.fillStyle = '#f3f3f1'; g.fillRect(x0, y0, u, u);
+    g.fillStyle = 'rgba(0,0,0,.07)'; g.fillRect(x0, y0 + u * .86, u, u * .14); g.fillRect(x0 + u * .88, y0, u * .12, u);
+    g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 1; g.strokeRect(x0 + .5, y0 + .5, u - 1, u - 1);
+  }
+  // grey studs (the rack teeth the wheels run on)
+  const sr = u * .3;
+  for (const cl of cells) if (keep(cl)) {
+    const cx = X(cl[0]), cy = Y(cl[1]);
+    g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.arc(cx + sr * .25, cy + sr * .35, sr, 0, 7); g.fill();
+    const gr = g.createRadialGradient(cx - sr * .35, cy - sr * .4, sr * .1, cx, cy, sr);
+    gr.addColorStop(0, '#c9cbcd'); gr.addColorStop(.6, '#9c9fa2'); gr.addColorStop(1, '#7f8285');
+    g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, sr, 0, 7); g.fill();
+  }
+  // fence on the origin side: top edge and right edge, grey posts, red pins at the corner
+  const post = (x, y, col) => {
+    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.arc(X(x) + u * .12, Y(y) + u * .18, u * .42, 0, 7); g.fill();
+    const gr = g.createRadialGradient(X(x) - u * .15, Y(y) - u * .15, u * .05, X(x), Y(y), u * .42);
+    gr.addColorStop(0, col[0]); gr.addColorStop(1, col[1]);
+    g.fillStyle = gr; g.beginPath(); g.arc(X(x), Y(y), u * .42, 0, 7); g.fill();
+    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(X(x), Y(y), u * .14, 0, 7); g.fill();
+  };
+  g.fillStyle = '#3d3e40';
+  g.fillRect(X(35.5), Y(-6.1), (35.5 + 6.1) * u, u * .35);
+  g.fillRect(X(-5.75), Y(-6.1), u * .35, (35.5 + 6.1) * u);
+  const grey = ['#c3c5c7', '#8a8d90'], red = ['#ff6b5e', '#c4161c'];
+  for (let k = 33; k >= -3; k -= 4) post(k, -5.9, grey);
+  for (let k = -1; k <= 33; k += 4) post(-5.9, k, grey);
+  post(-4.4, -5.9, red); post(-2.8, -5.9, red); post(-5.9, -4.4, red);
+  // axis marks
+  g.fillStyle = 'rgba(45,28,12,.75)'; g.font = `600 ${u * .95}px ui-monospace,Menlo,Consolas,monospace`;
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const v of [0, 10, 20, 30]) { g.fillText(v, X(v), Y(-7.6)); g.fillText(v, X(-7.6), Y(v)); }
+  g.textAlign = 'left'; g.fillText('← +X', X(35.5), Y(-7.6));
+  g.textAlign = 'center'; g.fillText('+Y', X(-7.6), Y(34)); g.fillText('↓', X(-7.6), Y(35.3));
+  boardCache = c; boardW = W; return c;
+}
+
+const BALLS = [[-2.6, -2.9], [-1.3, -3.2], [-1.9, -2.0], [0.0, -2.8], [-0.7, -1.9]];
+function drawVehicle(i, x, y, fp, color, hit) {
+  const s = fp / 10, half = fp / 2 - .3 * s;
+  const L = sx(x + half), T = sy(y - half), S = sc(2 * half), u = sc(1);
+  // shadow + body
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = u * 1.2; ctx.shadowOffsetY = u * .5;
+  rr(L, T, S, S, u * .7); ctx.fillStyle = '#35363a'; ctx.fill(); ctx.restore();
+  // black frame rails around the top tray
+  ctx.lineWidth = u * .55; ctx.strokeStyle = '#141416';
+  rr(L + u * .55, T + u * .55, S - u * 1.1, S * .56, u * .5); ctx.stroke();
+  // light grey tray
+  const tx = L + u * 1.1, ty = T + u * 1.1, tw = S - u * 2.2, th = S * .56 - u * 1.1;
+  const tg = ctx.createLinearGradient(0, ty, 0, ty + th); tg.addColorStop(0, '#c8cbce'); tg.addColorStop(1, '#a9adb1');
+  ctx.fillStyle = tg; ctx.fillRect(tx, ty, tw, th);
+  ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(tx, ty + th * .45, tw, th * .08);
+  // orange balls
+  const cx = sx(x), cy = sy(y), br = u * .62 * s;
+  for (const [bx, by] of BALLS) {
+    const X = cx + sc(bx * s) * (i % 2 ? -1 : 1), Y = cy + sc(by * s);
+    const bg = ctx.createRadialGradient(X - br * .4, Y - br * .4, br * .1, X, Y, br);
+    bg.addColorStop(0, '#ffb066'); bg.addColorStop(1, '#d9600f');
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(X, Y, br, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,25,5,.7)'; ctx.lineWidth = Math.max(1, br * .14);
+    ctx.beginPath(); ctx.moveTo(X - br, Y); ctx.lineTo(X + br, Y); ctx.moveTo(X, Y - br); ctx.lineTo(X, Y + br); ctx.stroke();
+  }
+  // number plate "0i" + orange stripe
+  const ny = T + S * .66;
+  ctx.fillStyle = '#ececec'; ctx.font = `700 ${u * 2.5 * s}px ui-monospace,Menlo,Consolas,monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('0' + (i + 1), cx - u * .9 * s, ny + u * .35 * s);
+  ctx.fillStyle = '#e8731c'; ctx.fillRect(L + u * .5, T + S * .78, S - u * 1, u * .32 * s);
+  // grey liftarm details at the bottom
+  ctx.fillStyle = '#8f9396'; rr(L + S * .14, T + S * .84, S * .3, S * .1, u * .25); ctx.fill();
+  rr(L + S * .58, T + S * .84, S * .2, S * .1, u * .25); ctx.fill();
+  // identity tab (matches the trail colour)
+  rr(L + S - u * 2.4, T + S * .6, u * 1.6, u * 1.6, u * .3); ctx.fillStyle = color; ctx.fill();
+  ctx.lineWidth = u * .18; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+  // overlap highlight
+  if (hit) {
+    rr(L - u * .25, T - u * .25, S + u * .5, S + u * .5, u * .9);
+    ctx.lineWidth = u * .55; ctx.strokeStyle = hit === 2 ? css('--red') : css('--orange'); ctx.stroke();
+  }
+}
+
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+
+function draw() {
+  if (!state.sim) return;
+  const W = cv.width, fp = parseFloat($('fp').value) || 10, colors = COLV();
+  const dpr = W / 800;
+  ctx.drawImage(boardImage(W), 0, 0);
+
+  const { p, ln, k } = posAt(state.t);
+  // trails
+  const tl = +$('trail').value;
+  if (tl > 0) {
+    const { frames, W: FW } = state.sim;
+    const k0 = frameIndex(Math.max(0, state.t - tl));
+    for (let i = 0; i < N; i++) {
+      ctx.strokeStyle = colors[i]; ctx.lineWidth = 3.5 * dpr; ctx.lineJoin = 'round';
+      const segs = 24, span = k - k0;
+      for (let s = 0; s < segs; s++) {
+        const a = k0 + Math.floor(span * s / segs), b = k0 + Math.floor(span * (s + 1) / segs);
+        if (b <= a) continue;
+        ctx.globalAlpha = 0.08 + 0.6 * (s + 1) / segs;
+        ctx.beginPath();
+        for (let q = a; q <= b; q++) { const X = sx(frames[q*FW + 1 + 2*i]), Y = sy(frames[q*FW + 2 + 2*i]); q === a ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y); }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+  // overlap detection at current time
+  const hit = new Array(N).fill(0);
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    const pen = Math.min(fp - Math.abs(p[i][0] - p[j][0]), fp - Math.abs(p[i][1] - p[j][1]));
+    if (pen > 0.05) { const lv = pen > 1 ? 2 : 1; hit[i] = Math.max(hit[i], lv); hit[j] = Math.max(hit[j], lv); }
+  }
+  // vehicles
+  for (let i = 0; i < N; i++) drawVehicle(i, p[i][0], p[i][1], fp, colors[i], hit[i]);
+
+  // HUD
+  const dur = state.sim.duration;
+  $('time').textContent = `${(state.t / 1000).toFixed(2)} / ${(dur / 1000).toFixed(2)} s`;
+  $('scrub').value = dur ? Math.round(state.t / dur * 1000) : 0;
+  $('pos').innerHTML = p.map((q, i) => `<div><span class="dot" style="background:var(--v${i+1})"></span>V${i+1} (${q[0].toFixed(1)}, ${q[1].toFixed(1)})</div>`).join('');
+  if (ln !== state.curLn) {
+    const prev = lineEls.get(state.curLn); if (prev) prev.classList.remove('cur');
+    state.curLn = ln;
+    const el = lineEls.get(ln);
+    if (el) { el.classList.add('cur'); if ($('follow').checked) scrollToLine(ln); }
+    const txt = ln ? (state.src.replace(/\r/g, '').split('\n')[ln - 1] || '').trim() : 'position de départ';
+    $('now').innerHTML = `<b>${ln ? 'ligne ' + ln + ' · ' : ''}</b>${escapeHtml(txt)}`;
+  }
+}
+
+// ---------- playback ----------
+let last = 0;
+function tick(ts) {
+  if (!state.playing) return;
+  const dt = last ? Math.min(100, ts - last) : 0; last = ts;
+  state.t += dt * parseFloat($('rate').value);
+  if (state.t >= state.sim.duration) {
+    if ($('loop').checked) state.t = 0; else { state.t = state.sim.duration; pause(); }
+  }
+  draw();
+  requestAnimationFrame(tick);
+}
+function play() { if (state.t >= state.sim.duration) state.t = 0; state.playing = true; last = 0; $('play').textContent = '⏸ Pause'; requestAnimationFrame(tick); }
+function pause() { state.playing = false; $('play').textContent = '▶ Lecture'; }
+$('play').onclick = () => state.playing ? pause() : play();
+$('scrub').oninput = e => { state.t = e.target.value / 1000 * state.sim.duration; draw(); };
+$('trail').onchange = draw;
+function jumpCmd(dir) {
+  pause();
+  const cs = state.sim.cmds, t = state.t;
+  if (dir > 0) { const c = cs.find(c => c.t0 > t + 1); state.t = c ? c.t0 : state.sim.duration; }
+  else { const c = [...cs].reverse().find(c => c.t0 < t - 1); state.t = c ? c.t0 : 0; }
+  draw();
+}
+$('next').onclick = () => jumpCmd(1); $('prev').onclick = () => jumpCmd(-1);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); $('play').onclick(); }
+  if (e.key === 'ArrowRight') jumpCmd(1);
+  if (e.key === 'ArrowLeft') jumpCmd(-1);
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', draw);
+
+load(PRESETS[0].src);
+resize();
+</script>
+</body>
+</html>
