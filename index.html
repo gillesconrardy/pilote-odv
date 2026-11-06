@@ -98,6 +98,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .rb:disabled{opacity:.35}
 .rb.play{background:var(--green)}.rb.pause{background:var(--yellow,#f2cd37);color:#3a2a00}.rb.home{background:var(--blue)}
 .rb.stop{background:var(--red);grid-column:span 2;min-height:64px;flex-direction:row;gap:10px}
+.remote.top{grid-template-columns:repeat(4,1fr);gap:7px;margin-top:8px}
+.remote.top .rb{min-height:66px;padding:8px 4px;font-size:13px;line-height:1.15;text-align:center;grid-column:auto;flex-direction:column;gap:3px}
+.remote.top .rb .ic{font-size:21px}
 .state{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .state .big{font-size:20px;font-weight:700}
 .prog{height:8px;background:var(--soft);border-radius:5px;overflow:hidden;margin:8px 0 4px}
@@ -208,6 +211,12 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
         <button class="btn" id="connect4">Connecter V4</button></div>
       <div class="prog"><div id="stProg"></div></div>
       <div class="sub" id="stTime">&nbsp;</div>
+      <div class="remote top">
+        <button class="rb play" id="bPlay" disabled><span class="ic">▶</span>Lecture</button>
+        <button class="rb pause" id="bPause" disabled><span class="ic">❚❚</span>Pause</button>
+        <button class="rb home" id="bHome" disabled title="Stop et retour au départ"><span class="ic">⟲</span>Stop et retour</button>
+        <button class="rb stop" id="bStop" disabled title="Arrêt d'urgence"><span class="ic">⛔</span>Urgence</button>
+      </div>
       <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
       <div id="joyBox" style="display:none"><div class="joy" id="joy"><div class="knob" id="knob"></div></div></div>
     </div>
@@ -215,12 +224,6 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
       <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs</h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
       <div id="odo" style="margin-top:8px"></div>
       <div class="sub" style="margin-top:6px">Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas de grille = 12,25 mm).</div>
-    </div>
-    <div class="remote">
-      <button class="rb play" id="bPlay" disabled><span class="ic">▶</span>Lecture</button>
-      <button class="rb pause" id="bPause" disabled><span class="ic">❚❚</span>Pause</button>
-      <button class="rb home" id="bHome" disabled style="grid-column:span 2"><span class="ic">⟲</span>Stop et retour au départ</button>
-      <button class="rb stop" id="bStop" disabled><span class="ic">⛔</span>Arrêt d'urgence</button>
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
       <h2>Conduite manuelle · véhicule 4</h2>
