@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulateur ODV – 4 véhicules omnidirectionnels</title>
 <link rel="icon" type="image/png" href="../icons/favicon-64.png">
+<meta name="theme-color" content="#121314">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap">
 <style>
 :root{
   --bg:#f6f5f2; --panel:#ffffff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e3e1dc; --soft:#efede8;
@@ -79,11 +82,34 @@ label.chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:va
 details{margin-top:12px}
 summary{cursor:pointer;color:var(--muted);font-size:13px}
 .startpos{display:grid;grid-template-columns:auto repeat(2,62px);gap:4px 6px;align-items:center;margin-top:8px;font-size:12.5px}
+/* ===== Thème « Holo ambre » (comme l'appli Pilote ODV) ===== */
+:root{color-scheme:dark;
+  --bg:#121314; --panel:#1a1c1e; --ink:#edeae4; --muted:#a8a49c; --line:#2f2c28; --soft:#232528;
+  --board:#17181a; --cellA:#17181a; --cellB:#1c1d20; --fence:#4a443d;
+  --accent:#ff9a3c; --red:#e5483a; --orange:#ffc24a; --green:#4cc27a; --code-hl:#3a2a14;
+  --v1:#3b7ddd; --v2:#f08a30; --v3:#3da663; --v4:#9b6bd6;
+  --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace; --sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+h1{font:500 18px var(--sans);letter-spacing:.12em;text-transform:uppercase}
+h2{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--accent)}
+h2::before{content:"> "}
+.card{position:relative;border-radius:4px;border-color:#232528}
+.card::before{content:"";position:absolute;left:-1px;top:-1px;width:12px;height:12px;border-left:2px solid var(--accent);border-top:2px solid var(--accent)}
+.card::after{content:"";position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent)}
+button{background:#1f2124;border-color:#4a443d;border-radius:8px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a1208;font-weight:600}
+select,input[type=number]{background:var(--board);border-color:#4a443d}
+.now,.code,textarea,.time,.stat .v{font-family:var(--mono)}
+.stat{background:var(--board);border:1px solid #232528;border-radius:4px}
+.stat .v{font-weight:400}
+.toast{background:#24262a;color:var(--ink);border:1px solid #4a443d;border-bottom:3px solid var(--accent)}
+canvas{border-radius:6px}
 </style>
 </head>
 <body>
 <header>
-  <h1>Simulateur ODV : 4 véhicules omnidirectionnels <small style="font:600 12px ui-monospace,monospace;color:var(--muted)">v1.21 · publiée le 06/11/2026 18:10</small></h1>
+  <h1>Simulateur ODV : 4 véhicules omnidirectionnels <small style="font:400 11px var(--mono);letter-spacing:0;text-transform:none;color:var(--accent)">v1.21 · publiée le 06/11/2026 18:10</small></h1>
   <div class="sub">Rejoue exactement <code>mvc.move</code>, <code>mvc.move_circ</code> et <code>mvc.wait_sync_ms</code> (pas de 4 ms, 80°/pas, 1400°/s) et repère les chevauchements entre véhicules.</div>
 </header>
 <main>
@@ -476,67 +502,17 @@ let boardCache = null, boardW = 0;
 function boardImage(W) {
   if (boardCache && boardW === W) return boardCache;
   const c = document.createElement('canvas'); c.width = c.height = W;
-  const g = c.getContext('2d'), u = W / SPAN, R = rng(7);
+  const g = c.getContext('2d'), u = W / SPAN;
   const X = x => (V1 - x) * u, Y = y => (y - V0) * u;
-  // wood floor: long planks running down the view
-  g.fillStyle = '#b98a5c'; g.fillRect(0, 0, W, W);
-  const plank = 5.5 * u;
-  for (let px = -plank, k = 0; px < W + plank; px += plank, k++) {
-    const tone = [ '#bd8f60', '#b4855a', '#c29766', '#b08055', '#ba8b5e' ][k % 5];
-    g.fillStyle = tone; g.fillRect(px, 0, plank, W);
-    g.strokeStyle = 'rgba(70,40,15,.10)'; g.lineWidth = Math.max(1, u * .05);
-    for (let s = 0; s < 9; s++) {           // grain
-      const gx = px + R() * plank; g.beginPath(); g.moveTo(gx, 0);
-      for (let yy = 0; yy <= W; yy += W / 8) g.lineTo(gx + (R() - .5) * u * .6, yy);
-      g.stroke();
-    }
-    g.fillStyle = 'rgba(60,35,15,.35)'; g.fillRect(px, 0, Math.max(1, u * .06), W);
-    const joint = R() * W; g.fillRect(px, joint, plank, Math.max(1, u * .05));
-  }
-  // studded base: one white tile per pitch, ragged far edges (interlocking plates)
-  const cells = [];
-  for (let gx = -5; gx <= 35; gx++) for (let gy = -5; gy <= 35; gy++) cells.push([gx, gy]);
-  for (let k = -5; k <= 35; k++) {          // nubs sticking out of the two far edges
-    if ((k * 7 + 3) % 5 < 2) cells.push([36, k]);
-    if ((k * 3 + 1) % 5 < 2) cells.push([k, 36]);
-  }
-  const keep = ([gx, gy]) => !((gx === 35 && (gy * 5 + 2) % 7 === 0) || (gy === 35 && (gx * 4 + 1) % 7 === 0));
-  g.save(); g.shadowColor = 'rgba(40,25,10,.45)'; g.shadowBlur = u * .9; g.shadowOffsetY = u * .25;
-  g.fillStyle = '#d9d9d6';
-  for (const cl of cells) if (keep(cl)) g.fillRect(X(cl[0] + .5), Y(cl[1] - .5), u, u);
-  g.restore();
-  for (const cl of cells) if (keep(cl)) {
-    const [gx, gy] = cl, x0 = X(gx + .5), y0 = Y(gy - .5);
-    g.fillStyle = '#f3f3f1'; g.fillRect(x0, y0, u, u);
-    g.fillStyle = 'rgba(0,0,0,.07)'; g.fillRect(x0, y0 + u * .86, u, u * .14); g.fillRect(x0 + u * .88, y0, u * .12, u);
-    g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 1; g.strokeRect(x0 + .5, y0 + .5, u - 1, u - 1);
-  }
-  // grey studs (the rack teeth the wheels run on)
-  const sr = u * .3;
-  for (const cl of cells) if (keep(cl)) {
-    const cx = X(cl[0]), cy = Y(cl[1]);
-    g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.arc(cx + sr * .25, cy + sr * .35, sr, 0, 7); g.fill();
-    const gr = g.createRadialGradient(cx - sr * .35, cy - sr * .4, sr * .1, cx, cy, sr);
-    gr.addColorStop(0, '#c9cbcd'); gr.addColorStop(.6, '#9c9fa2'); gr.addColorStop(1, '#7f8285');
-    g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, sr, 0, 7); g.fill();
-  }
-  // fence on the origin side: top edge and right edge, grey posts, red pins at the corner
-  const post = (x, y, col) => {
-    g.fillStyle = 'rgba(0,0,0,.3)'; g.beginPath(); g.arc(X(x) + u * .12, Y(y) + u * .18, u * .42, 0, 7); g.fill();
-    const gr = g.createRadialGradient(X(x) - u * .15, Y(y) - u * .15, u * .05, X(x), Y(y), u * .42);
-    gr.addColorStop(0, col[0]); gr.addColorStop(1, col[1]);
-    g.fillStyle = gr; g.beginPath(); g.arc(X(x), Y(y), u * .42, 0, 7); g.fill();
-    g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(X(x), Y(y), u * .14, 0, 7); g.fill();
-  };
-  g.fillStyle = '#3d3e40';
-  g.fillRect(X(35.5), Y(-6.1), (35.5 + 6.1) * u, u * .35);
-  g.fillRect(X(-5.75), Y(-6.1), u * .35, (35.5 + 6.1) * u);
-  const grey = ['#c3c5c7', '#8a8d90'], red = ['#ff6b5e', '#c4161c'];
-  for (let k = 33; k >= -3; k -= 4) post(k, -5.9, grey);
-  for (let k = -1; k <= 33; k += 4) post(-5.9, k, grey);
-  post(-4.4, -5.9, red); post(-2.8, -5.9, red); post(-5.9, -4.4, red);
-  // axis marks
-  g.fillStyle = 'rgba(45,28,12,.75)'; g.font = `600 ${u * .95}px ui-monospace,Menlo,Consolas,monospace`;
+  g.fillStyle = '#121314'; g.fillRect(0, 0, W, W);
+  g.fillStyle = '#17181a'; g.fillRect(X(35.5), Y(-5.5), 41 * u, 41 * u);
+  g.fillStyle = '#3a3631';
+  for (let gx = -5; gx <= 35; gx++) for (let gy = -5; gy <= 35; gy++) { g.beginPath(); g.arc(X(gx), Y(gy), u * (gx % 5 || gy % 5 ? .1 : .18), 0, 7); g.fill(); }
+  g.fillStyle = '#4a443d';
+  g.fillRect(X(35.5), Y(-6.1), (35.5 + 6.1) * u, u * .3);
+  g.fillRect(X(-5.8), Y(-6.1), u * .3, (35.5 + 6.1) * u);
+  g.fillStyle = '#ff9a3c'; g.beginPath(); g.arc(X(-5.65), Y(-5.95), u * .55, 0, 7); g.fill();
+  g.fillStyle = '#a8a49c'; g.font = `400 ${u * .95}px "Space Mono",ui-monospace,Menlo,Consolas,monospace`;
   g.textAlign = 'center'; g.textBaseline = 'middle';
   for (const v of [0, 10, 20, 30]) { g.fillText(v, X(v), Y(-7.6)); g.fillText(v, X(-7.6), Y(v)); }
   g.textAlign = 'left'; g.fillText('← +X', X(35.5), Y(-7.6));
@@ -548,40 +524,12 @@ const BALLS = [[-2.6, -2.9], [-1.3, -3.2], [-1.9, -2.0], [0.0, -2.8], [-0.7, -1.
 function drawVehicle(i, x, y, fp, color, hit) {
   const s = fp / 10, half = fp / 2 - .3 * s;
   const L = sx(x + half), T = sy(y - half), S = sc(2 * half), u = sc(1);
-  // shadow + body
-  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = u * 1.2; ctx.shadowOffsetY = u * .5;
-  rr(L, T, S, S, u * .7); ctx.fillStyle = '#35363a'; ctx.fill(); ctx.restore();
-  // black frame rails around the top tray
-  ctx.lineWidth = u * .55; ctx.strokeStyle = '#141416';
-  rr(L + u * .55, T + u * .55, S - u * 1.1, S * .56, u * .5); ctx.stroke();
-  // light grey tray
-  const tx = L + u * 1.1, ty = T + u * 1.1, tw = S - u * 2.2, th = S * .56 - u * 1.1;
-  const tg = ctx.createLinearGradient(0, ty, 0, ty + th); tg.addColorStop(0, '#c8cbce'); tg.addColorStop(1, '#a9adb1');
-  ctx.fillStyle = tg; ctx.fillRect(tx, ty, tw, th);
-  ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(tx, ty + th * .45, tw, th * .08);
-  // orange balls
-  const cx = sx(x), cy = sy(y), br = u * .62 * s;
-  for (const [bx, by] of BALLS) {
-    const X = cx + sc(bx * s) * (i % 2 ? -1 : 1), Y = cy + sc(by * s);
-    const bg = ctx.createRadialGradient(X - br * .4, Y - br * .4, br * .1, X, Y, br);
-    bg.addColorStop(0, '#ffb066'); bg.addColorStop(1, '#d9600f');
-    ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(X, Y, br, 0, 7); ctx.fill();
-    ctx.strokeStyle = 'rgba(60,25,5,.7)'; ctx.lineWidth = Math.max(1, br * .14);
-    ctx.beginPath(); ctx.moveTo(X - br, Y); ctx.lineTo(X + br, Y); ctx.moveTo(X, Y - br); ctx.lineTo(X, Y + br); ctx.stroke();
-  }
-  // number plate "0i" + orange stripe
-  const ny = T + S * .66;
-  ctx.fillStyle = '#ececec'; ctx.font = `700 ${u * 2.5 * s}px ui-monospace,Menlo,Consolas,monospace`;
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = u * 1.2; ctx.shadowOffsetY = u * .4;
+  rr(L, T, S, S, u * .8); ctx.fillStyle = '#24262a'; ctx.fill(); ctx.restore();
+  ctx.fillStyle = color; ctx.fillRect(L + u * .8, T + S - 1.3 * u, S - 1.6 * u, u * .9);
+  ctx.fillStyle = '#edeae4'; ctx.font = `700 ${u * 3 * s}px "Space Mono",ui-monospace,Menlo,Consolas,monospace`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('0' + (i + 1), cx - u * .9 * s, ny + u * .35 * s);
-  ctx.fillStyle = '#e8731c'; ctx.fillRect(L + u * .5, T + S * .78, S - u * 1, u * .32 * s);
-  // grey liftarm details at the bottom
-  ctx.fillStyle = '#8f9396'; rr(L + S * .14, T + S * .84, S * .3, S * .1, u * .25); ctx.fill();
-  rr(L + S * .58, T + S * .84, S * .2, S * .1, u * .25); ctx.fill();
-  // identity tab (matches the trail colour)
-  rr(L + S - u * 2.4, T + S * .6, u * 1.6, u * 1.6, u * .3); ctx.fillStyle = color; ctx.fill();
-  ctx.lineWidth = u * .18; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
-  // overlap highlight
+  ctx.fillText('0' + (i + 1), sx(x), sy(y) - u * .6 * s);
   if (hit) {
     rr(L - u * .25, T - u * .25, S + u * .5, S + u * .5, u * .9);
     ctx.lineWidth = u * .55; ctx.strokeStyle = hit === 2 ? css('--red') : css('--orange'); ctx.stroke();

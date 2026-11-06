@@ -69,7 +69,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    les collisions ; retour au départ ajouté par ⌂ si c'est le seul manque. Clé API dans localStorage `odv.aikey`
    uniquement (JAMAIS dans le dépôt). Test : `tests/t_ai.py` (API simulée). Les chorégraphies créées ne sont PAS dans le dépôt : pour les garder pour de
    bon, copier leur code dans `choregraphies/` et `CHORS`.
-5. **`simulateur/template.html`** : simulateur visuel (plateau blanc à picots, véhicules gris
+5. **`simulateur/template.html`** : simulateur visuel (plateau sombre à points, véhicules en blocs sombres
    « 01…04 » d'après la photo du montage), lecture, détection des chevauchements, édition du code.
 
 ## Construire, tester, publier
@@ -90,7 +90,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   minimaliste — fond graphite #121314, cartes #1a1c1e, accent ambre #ff9a3c, texte #edeae4, polices Space Grotesk
   + Space Mono (Google Fonts), coins « crochets » ambre sur les cartes, titres `> EN CAPITALES` en mono, plateau
   sombre à points avec règle 0–40. Bloc CSS « Thème Holo ambre » en fin de `<style>` dans `src/page.html`.
-  Le simulateur garde encore l'ancien style LEGO (gris + bande orange, fond à picots).
+  Le simulateur a le même thème (bloc « Thème Holo ambre » en fin de `<style>` de `simulateur/template.html`).
 - Nouvelle chorégraphie : fichier de lignes `mvc.*` indentées de 4 espaces dans `choregraphies/`,
   partant de et revenant à (30,0)(20,0)(10,0)(0,0), sans chevauchement ; l'ajouter à `CHORS` dans
   `build.py`. `gen_cinq.py` / `gen_vague_spirale.py` montrent comment les générer et les valider.
