@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#121314">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Russo+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Russo+One&family=Tomorrow:wght@700&display=swap">
 <title>F4 Square</title>
 <link rel="icon" type="image/png" href="icons/favicon-64.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -234,6 +234,15 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+/* ===== véhicule (design 1 hachuré, police Tomorrow) : étiquettes HTML ===== */
+.vbk{position:relative;border:0!important;border-radius:0!important;box-shadow:none;color:#edeae4!important;font-family:"Tomorrow",var(--mono)!important;font-weight:700!important;padding-bottom:3px;
+  background:linear-gradient(#ff9a3c,#ff9a3c) 50% calc(100% - 3px)/64% 3px no-repeat,repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 32%,transparent) 0 1.5px,transparent 1.5px 5px),#1f2124!important}
+.vbk::before,.vbk::after{content:"";position:absolute;width:7px;height:7px}
+.vbk::before{left:-1px;top:-1px;border-left:2px solid var(--c);border-top:2px solid var(--c)}
+.vbk::after{right:-1px;bottom:-1px;border-right:2px solid var(--c);border-bottom:2px solid var(--c)}
+.vbk i{display:none}
+.pt.vbk{font-size:22px}.pt.vbk.gold{box-shadow:0 0 0 2px var(--accent),0 0 22px rgba(255,154,60,.35)}
+.tag.vbk{font-size:17px}
 /* ===== écran de démarrage (5 s, touche pour passer) ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#121314;display:grid;place-items:center;transition:opacity .35s}
 #splash.out{opacity:0;pointer-events:none}
@@ -250,8 +259,8 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 #spStage .c2{border-right:3px solid #ff9a3c;border-bottom:3px solid #ff9a3c;animation:spC2 .6s 1s cubic-bezier(.3,.9,.3,1) both}
 @keyframes spC1{from{left:139px;top:169px;opacity:0}to{left:38px;top:68px;opacity:1}}
 @keyframes spC2{from{left:139px;top:169px;opacity:0}to{left:240px;top:270px;opacity:1}}
-#spStage .v{width:46px;height:46px;border-radius:0;font:700 15px var(--mono);color:#edeae4;display:grid;place-items:center;padding-bottom:6px;
-  background:linear-gradient(#ff9a3c,#ff9a3c) 6px calc(100% - 5px)/calc(100% - 12px) 4px no-repeat,#1a1c1e}
+#spStage .v{width:46px;height:46px;border-radius:0;font:700 18px "Tomorrow",var(--mono);color:#edeae4;display:grid;place-items:center;padding-bottom:6px;
+  background:linear-gradient(#ff9a3c,#ff9a3c) 6px calc(100% - 5px)/calc(100% - 12px) 4px no-repeat,repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 32%,transparent) 0 2px,transparent 2px 7px),#1f2124}
 #spStage .v::before,#spStage .v::after{content:"";position:absolute;width:9px;height:9px}
 #spStage .v::before{left:-1px;top:-1px;border-left:2px solid var(--c);border-top:2px solid var(--c)}
 #spStage .v::after{right:-1px;bottom:-1px;border-right:2px solid var(--c);border-bottom:2px solid var(--c)}
@@ -901,7 +910,7 @@ function renderVehicles() {
     for (let v = 1; v <= 4; v++) {
       const d = document.createElement('div'); d.className = 'veh'; d.id = 'veh' + v;
       d.style.setProperty('--vc', `var(--v${v})`);
-      d.innerHTML = `<div class="hd"><div class="tag" style="grid-row:auto">0${v}<i style="background:var(--v${v})"></i></div><div><b>Véhicule ${v}</b><div class="role">${v === 4 ? 'chef d\'orchestre' : 'suit le V4'}</div></div></div>
+      d.innerHTML = `<div class="hd"><div class="tag vbk" style="grid-row:auto;--c:var(--v${v})">0${v}</div><div><b>Véhicule ${v}</b><div class="role">${v === 4 ? 'chef d\'orchestre' : 'suit le V4'}</div></div></div>
         <div class="line" id="cn${v}"></div>
         <div class="line" id="bat${v}"></div>
         <div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div>
@@ -1118,7 +1127,7 @@ function suRender() {
   const box = $('suList');
   if (!box.children.length) for (let v = 1; v <= 4; v++) {
     const d = document.createElement('div'); d.className = 'surow'; d.id = 'surow' + v; d.style.setProperty('--vc', `var(--v${v})`);
-    d.innerHTML = `<div class="tag" style="grid-row:auto">0${v}<i style="background:var(--v${v})"></i></div>
+    d.innerHTML = `<div class="tag vbk" style="grid-row:auto;--c:var(--v${v})">0${v}</div>
       <div style="flex:1;min-width:0"><b>Véhicule ${v}</b><div class="st" id="sust${v}"></div><div class="bar" id="subar${v}"><div></div></div></div>
       <button class="btn" id="su${v}">Recaler</button>`;
     box.appendChild(d);
@@ -1798,7 +1807,7 @@ function odoDraw(now) {
   const vmax = 17.5;                          // vitesse max moteur en pas/s
   if (!box.children.length) {
     box.className = 'odo';
-    for (let i = 0; i < 4; i++) box.insertAdjacentHTML('beforeend', `<div class="t" style="border-color:var(--v${i + 1})">0${i + 1}</div><div class="bar"><div id="odoBar${i}" style="background:var(--v${i + 1})"></div></div><b id="odoD${i}">0 m</b><span class="s" id="odoS${i}">0 cm/s</span>`);
+    for (let i = 0; i < 4; i++) box.insertAdjacentHTML('beforeend', `<div class="t vbk" style="--c:var(--v${i + 1})">0${i + 1}</div><div class="bar"><div id="odoBar${i}" style="background:var(--v${i + 1})"></div></div><b id="odoD${i}">0 m</b><span class="s" id="odoS${i}">0 cm/s</span>`);
     box.insertAdjacentHTML('beforeend', `<div></div><div class="sub">Total</div><b id="odoT">0 m</b><span class="s"></span>`);
   }
   const fm = m => m < 10 ? m.toFixed(2).replace('.', ',') + ' m' : m < 1000 ? m.toFixed(1).replace('.', ',') + ' m' : (m / 1000).toFixed(2).replace('.', ',') + ' km';
@@ -1905,7 +1914,7 @@ function statRender() {
   const rk = [0, 1, 2, 3].sort((x, y) => b.dist[y] - b.dist[x]);
   if (tot <= 0) $('stPod').innerHTML = '<div class="sub">Pas encore de déplacement mesuré : connecte le véhicule 4 et lance un spectacle.</div>';
   else {
-    const H = [118, 90, 68], step = (i, p) => `<div class="pod"><div class="pt${p === 1 ? ' gold' : ''}" style="border-bottom-color:${col[i]}">0${i + 1}</div><div class="pm">${fdist(b.dist[i])} m</div><div class="ps${p === 1 ? ' gold' : ''}" style="height:${H[p - 1]}px">${p}</div></div>`;
+    const H = [118, 90, 68], step = (i, p) => `<div class="pod"><div class="pt vbk${p === 1 ? ' gold' : ''}" style="--c:${col[i]}">0${i + 1}</div><div class="pm">${fdist(b.dist[i])} m</div><div class="ps${p === 1 ? ' gold' : ''}" style="height:${H[p - 1]}px">${p}</div></div>`;
     $('stPod').innerHTML = `<div class="pods">${step(rk[1], 2)}${step(rk[0], 1)}${step(rk[2], 3)}</div><div class="p4"><span>4ᵉ · véhicule ${rk[3] + 1}</span><span>${fdist(b.dist[rk[3]])} m</span></div>`;
   }
   // carte de chaleur
@@ -1924,7 +1933,7 @@ function statRender() {
   const mx = Math.max(1e-6, ...b.dist);
   const spark = i => { const a = STAT.spd[i]; if (a.length < 2) return '<svg width="110" height="28" aria-hidden="true"></svg>'; const m = Math.max(31, ...a);
     return `<svg width="110" height="28" viewBox="0 0 110 28" aria-hidden="true"><polyline points="${a.map((v, k) => (k * 110 / (a.length - 1)).toFixed(1) + ',' + (27 - v / m * 25).toFixed(1)).join(' ')}" fill="none" stroke="${col[i]}" stroke-width="1.5" stroke-linejoin="round"/></svg>`; };
-  $('stVeh').innerHTML = '<div class="vrow head"><span></span><span>DISTANCE</span><span>VITESSE (SESSION)</span></div>' + [0, 1, 2, 3].map(i => `<div class="vrow"><div class="t" style="border-color:${col[i]}">0${i + 1}</div><div><div class="vl"><span>${fdist(b.dist[i])} m</span><span>max ${f1(b.vmax[i])} cm/s</span></div><div class="vb"><div style="width:${b.dist[i] / mx * 100}%;background:${col[i]}"></div></div></div>${spark(i)}</div>`).join('');
+  $('stVeh').innerHTML = '<div class="vrow head"><span></span><span>DISTANCE</span><span>VITESSE (SESSION)</span></div>' + [0, 1, 2, 3].map(i => `<div class="vrow"><div class="t vbk" style="--c:${col[i]}">0${i + 1}</div><div><div class="vl"><span>${fdist(b.dist[i])} m</span><span>max ${f1(b.vmax[i])} cm/s</span></div><div class="vb"><div style="width:${b.dist[i] / mx * 100}%;background:${col[i]}"></div></div></div>${spark(i)}</div>`).join('');
   // batterie
   { const lim = STAT.per === 's' ? STAT.t0 - 3600000 : STAT.per === 'w' ? Date.now() - 7 * 864e5 : 0, W = 330, H = 140;
     const ser = STAT.batt.map(a => a.filter(p => p[0] >= lim)); const all = ser.flat();
@@ -1958,6 +1967,22 @@ addEventListener('pagehide', statSave);
 setInterval(() => { if ($('stats').classList.contains('on')) statRender(); }, 2000);
 // ====================================================================== mini board
 const cv = $('cv');
+// véhicule : bloc sombre hachuré à la couleur du véhicule, coins colorés, ligne orange, numéro en Tomorrow
+function vehDraw(cx, L, T, S, u, col, label) {
+  cx.save();
+  cx.fillStyle = '#1f2124'; cx.fillRect(L, T, S, S);
+  cx.beginPath(); cx.rect(L, T, S, S); cx.clip();
+  cx.strokeStyle = col; cx.globalAlpha = .32; cx.lineWidth = u * .2; cx.beginPath();
+  for (let d = -S; d < S; d += u * .85) { cx.moveTo(L + d, T + S); cx.lineTo(L + d + S, T); }
+  cx.stroke(); cx.restore();
+  cx.save(); cx.strokeStyle = col; cx.lineWidth = u * .3; const k = u * 1.5, o = u * .15;
+  cx.beginPath(); cx.moveTo(L + o, T + o + k); cx.lineTo(L + o, T + o); cx.lineTo(L + o + k, T + o);
+  cx.moveTo(L + S - o - k, T + S - o); cx.lineTo(L + S - o, T + S - o); cx.lineTo(L + S - o, T + S - o - k); cx.stroke();
+  cx.fillStyle = '#ff9a3c'; cx.fillRect(L + S * .18, T + S - u * 1.25, S * .64, u * .45);
+  cx.fillStyle = '#edeae4'; cx.font = `700 ${3.6 * u}px Tomorrow,"Space Mono",ui-monospace,monospace`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  cx.fillText(label, L + S / 2, T + S / 2 - u * .45); cx.restore();
+}
+if (document.fonts && document.fonts.load) document.fonts.load('700 20px Tomorrow').then(() => { try { if ($('edWrap').classList.contains('on')) edDraw(); } catch (e) {} });
 function drawPlate(c, tl, w, man, trails, ovr) {
   const cx = c.getContext('2d'), W = c.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
   cx.fillStyle = '#121314'; cx.fillRect(0, 0, W, W);
@@ -1991,10 +2016,7 @@ function drawPlate(c, tl, w, man, trails, ovr) {
     const p = P[i], L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
     let hit = false;
     for (let j = 0; j < 4; j++) if (j !== i && Math.max(Math.abs(p[0] - P[j][0]), Math.abs(p[1] - P[j][1])) < 9) hit = true;
-    cx.fillStyle = '#24262a'; cx.beginPath(); cx.roundRect ? cx.roundRect(L, T, S, S, u * .8) : cx.rect(L, T, S, S); cx.fill();
-    cx.fillStyle = cols[i]; cx.fillRect(L + u * .8, T + S - 1.3 * u, S - 1.6 * u, u * .9);
-    cx.fillStyle = '#edeae4'; cx.font = `700 ${3 * u}px "Space Mono",ui-monospace,monospace`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
-    cx.fillText('0' + (i + 1), X(p[0]), Y(p[1] - .6));
+    vehDraw(cx, L, T, S, u, cols[i], '0' + (i + 1));
     if (man && man.v === i + 1) { cx.strokeStyle = '#ff9a3c'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
     if (hit) { cx.strokeStyle = '#e5483a'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
   }

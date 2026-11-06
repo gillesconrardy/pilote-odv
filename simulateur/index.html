@@ -7,7 +7,7 @@
 <link rel="icon" type="image/png" href="../icons/favicon-64.png">
 <meta name="theme-color" content="#121314">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Russo+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Russo+One&family=Tomorrow:wght@700&display=swap">
 <style>
 :root{
   --bg:#f6f5f2; --panel:#ffffff; --ink:#1d1d1b; --muted:#6b6a66; --line:#e3e1dc; --soft:#efede8;
@@ -520,24 +520,31 @@ function boardImage(W) {
   boardCache = c; boardW = W; return c;
 }
 
-const BALLS = [[-2.6, -2.9], [-1.3, -3.2], [-1.9, -2.0], [0.0, -2.8], [-0.7, -1.9]];
 function drawVehicle(i, x, y, fp, color, hit) {
+  // bloc sombre hachuré à la couleur du véhicule, coins colorés, ligne orange, numéro en Tomorrow (comme l'appli)
   const s = fp / 10, half = fp / 2 - .3 * s;
   const L = sx(x + half), T = sy(y - half), S = sc(2 * half), u = sc(1);
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = u * 1.2; ctx.shadowOffsetY = u * .4;
-  rr(L, T, S, S, u * .8); ctx.fillStyle = '#24262a'; ctx.fill(); ctx.restore();
-  ctx.fillStyle = color; ctx.fillRect(L + u * .8, T + S - 1.3 * u, S - 1.6 * u, u * .9);
-  ctx.fillStyle = '#edeae4'; ctx.font = `700 ${u * 3 * s}px "Space Mono",ui-monospace,Menlo,Consolas,monospace`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('0' + (i + 1), sx(x), sy(y) - u * .6 * s);
+  ctx.fillStyle = '#1f2124'; ctx.fillRect(L, T, S, S); ctx.restore();
+  ctx.save(); ctx.beginPath(); ctx.rect(L, T, S, S); ctx.clip();
+  ctx.strokeStyle = color; ctx.globalAlpha = .32; ctx.lineWidth = u * .2; ctx.beginPath();
+  for (let d = -S; d < S; d += u * .85) { ctx.moveTo(L + d, T + S); ctx.lineTo(L + d + S, T); }
+  ctx.stroke(); ctx.restore();
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = u * .3; const k = u * 1.5 * s, o = u * .15;
+  ctx.beginPath(); ctx.moveTo(L + o, T + o + k); ctx.lineTo(L + o, T + o); ctx.lineTo(L + o + k, T + o);
+  ctx.moveTo(L + S - o - k, T + S - o); ctx.lineTo(L + S - o, T + S - o); ctx.lineTo(L + S - o, T + S - o - k); ctx.stroke();
+  ctx.fillStyle = '#ff9a3c'; ctx.fillRect(L + S * .18, T + S - u * 1.25 * s, S * .64, u * .45 * s);
+  ctx.fillStyle = '#edeae4'; ctx.font = `700 ${u * 3.6 * s}px Tomorrow,"Space Mono",ui-monospace,monospace`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('0' + (i + 1), L + S / 2, T + S / 2 - u * .45 * s); ctx.restore();
   if (hit) {
-    rr(L - u * .25, T - u * .25, S + u * .5, S + u * .5, u * .9);
+    rr(L - u * .25, T - u * .25, S + u * .5, S + u * .5, u * .4);
     ctx.lineWidth = u * .55; ctx.strokeStyle = hit === 2 ? css('--red') : css('--orange'); ctx.stroke();
   }
 }
 
 function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
 
+if (document.fonts && document.fonts.load) document.fonts.load('700 20px Tomorrow').then(() => { try { draw(); } catch (e) {} });
 function draw() {
   if (!state.sim) return;
   const W = cv.width, fp = parseFloat($('fp').value) || 10, colors = COLV();
