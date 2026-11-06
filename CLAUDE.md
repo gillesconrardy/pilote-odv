@@ -61,7 +61,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    **Atelier** (« Créer une chorégraphie ») : étapes = poses des 4 véhicules (glisser sur le plateau,
    aimant 1 pas), vitesse et pause par étape, contrôle de collision (pose + trajet, via core.js),
    « Ajouter le retour au départ » (tout droit / X puis Y / Y puis X / un par un, le plus court sûr),
-   aperçu, code ; enregistré dans le navigateur (localStorage `odv.custom`, champ `ed` = étapes) et
+   aperçu (sous le plateau) ; enregistré dans le navigateur (localStorage `odv.custom`, champ `ed` = étapes) et
    réouvrable avec ✏️.
    **Inventer avec l'IA** (dans l'Atelier, sous les Étapes ; exemples en pastilles, bouton ✨, clé repliée) : description en français → API Anthropic (`claude-sonnet-5-5`,
    appel direct du navigateur avec `anthropic-dangerous-direct-browser-access`), réponse JSON

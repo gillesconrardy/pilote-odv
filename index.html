@@ -396,10 +396,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <a href="#" id="aiForget" class="sub" style="display:inline-block;margin-top:6px">Effacer la clé</a>
     </details>
   </div>
-  <div class="row" style="margin-bottom:12px">
-    <button class="btn" id="edCode" style="flex:1">Code</button>
-    <button class="btn primary" id="edSave" style="flex:1.4">💾 Enregistrer</button>
-  </div>
+  <button class="btn primary" id="edSave" style="width:100%;padding:14px;margin-bottom:12px">💾 Enregistrer</button>
   <pre class="code" id="edCodeBox" style="display:none"></pre>
 </div></div>
 <button class="newver" id="newVer"><span style="font-size:22px">⟳</span><span><span id="newVerTxt">Nouvelle version disponible</span><small>Touche ici pour mettre à jour</small></span></button>
@@ -1782,7 +1779,7 @@ function edTick() {
   if (ED.play.w > ED.play.tl.total + 600) { ED.play = null; $('edPlay').textContent = '▶ Aperçu'; edDraw(); return; }
   edDraw();
 }
-$('edCode').onclick = () => { const b = $('edCodeBox'); b.style.display = b.style.display === 'none' ? '' : 'none'; b.textContent = edCode().src; };
+if ($('edCode')) $('edCode').onclick = () => { const b = $('edCodeBox'); b.style.display = b.style.display === 'none' ? '' : 'none'; b.textContent = edCode().src; };
 $('edSave').onclick = () => {
   const v = edValidate(); if (!v.atHome || v.nBad) return;
   const name = $('edName').value.trim() || 'Ma chorégraphie';
