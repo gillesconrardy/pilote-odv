@@ -240,7 +240,13 @@ nav.tabbar{position:sticky;top:0;z-index:15;margin:0 -2px 14px;display:grid;grid
   background:var(--bg);border:0;border-radius:0;padding:6px 2px 8px;box-shadow:0 10px 12px -8px rgba(0,0,0,.6)}
 nav.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;background:#24262a;border:0;border-bottom:4px solid var(--accent);border-radius:7px;
   padding:7px 0 5px;color:var(--muted);font:500 10.5px var(--sans);letter-spacing:0;white-space:nowrap;box-shadow:none}
-nav.tabbar button.on{background:var(--accent);color:#121314;border-bottom-color:#c96d1c;font-weight:700}
+nav.tabbar button{position:relative;overflow:hidden;transition:color .25s,border-color .25s}
+nav.tabbar button::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translateY(101%);transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+nav.tabbar button>*{position:relative}
+nav.tabbar button.on{color:#121314;border-bottom-color:#c96d1c;font-weight:700}
+nav.tabbar button.on::before{transform:none}
+@keyframes tabspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+nav.tabbar button.spin svg{animation:tabspin .55s cubic-bezier(.3,.9,.3,1)}
 .slabel{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--muted)}
 .pchips{display:flex;gap:4px;flex-wrap:wrap}
 .pchips button{border:1px solid #2f2c28;background:none;color:var(--muted);border-radius:7px;padding:5px 8px;font:500 11.5px var(--sans)}
@@ -854,7 +860,7 @@ function log(m) { const l = $('log'); l.textContent += new Date().toLocaleTimeSt
 const store = { get(k, d) { try { const v = localStorage.getItem('odv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
                 set(k, v) { try { localStorage.setItem('odv.' + k, JSON.stringify(v)); } catch {} } };
 
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => { b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); showTab(b.dataset.tab); });
 function showTab(id) {
   try { localStorage.setItem('odv.tab', id); } catch (e) {}
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
