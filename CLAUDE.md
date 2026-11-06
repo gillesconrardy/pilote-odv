@@ -41,6 +41,12 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      la position des 3 autres (anti-collision côté hub), `V<pas/s×100>` la vitesse ; boutons gauche = moteur
      port C (X : + → +X), droite = port A (Y : + → −Y), comme le programme télécommande de Gilles ; une cible
      `G` de l'appli est prioritaire 400 ms ; le V4 imprime `POS x y <bouge>` (×100) et `RC 0|1`.
+   - **Jeu de poursuite** (V4 en manuel) : `D<pas/s×100>` vitesse des chasseurs, `J` départ, `K` fin. Le V4
+     calcule les chasseurs V1..V3 (vont vers le joueur, jamais < 10 pas, marge 11 entre chasseurs / 10,5 du
+     joueur sauf pour s'éloigner ; prise si < 10,8 → `CATCH n ms`, pause 2,5 s où ils reculent), diffuse
+     `(t, 7+16·GEN, octets x1 y1 x2 y2 x3 y3 (×8) vitesse)` toutes les 150 ms ; les V1..V3 suivent ces
+     cibles. Fin : retour un par un par chemin dégagé (`JOK`, ou `JSTUCK`), puis l'appli ramène le V4 et `Q`.
+     Le V4 imprime `JP x1 y1 … x4 y4 phase prises` (×100) toutes les 250 ms.
    - Au démarrage, chaque hub imprime `BAT <mV>` (niveau affiché dans Envoi : 6,0 V = 0 %, 8,4 V = 100 %).
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
 4. **`src/page.html`** : Pilote ODV (onglets Programme / Envoi / Pilotage). Compile avec

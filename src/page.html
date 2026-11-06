@@ -211,6 +211,18 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
       <div class="row" style="margin-top:8px"><button class="btn" id="rcGo" disabled>🎮 Connecter la télécommande</button><span class="sub" id="rcSt">Télécommande : non connectée</span></div>
       <div class="sub" id="manMsg" style="margin-top:8px">Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.</div>
     </div>
+    <div class="card" id="gameCard">
+      <h2>🎯 Jeu de poursuite</h2>
+      <div class="sub">Tu conduis le véhicule 4 (joystick ou télécommande) ; les véhicules 1, 2 et 3 te chassent. Ils ne te percutent jamais : s'ils viennent se coller à toi, tu es attrapé.</div>
+      <div class="edrow"><label>Difficulté</label><div class="seg" id="gDiff" style="flex:1"><button data-s="3">Facile</button><button data-s="5" class="on">Moyen</button><button data-s="7">Difficile</button></div></div>
+      <div class="row" style="justify-content:space-around;margin:8px 0;text-align:center">
+        <div><div class="sub">Survie</div><b id="gTime" style="font-size:22px">0,0 s</b></div>
+        <div><div class="sub">Attrapé</div><b id="gCatch" style="font-size:22px">0</b></div>
+        <div><div class="sub">Record</div><b id="gBest" style="font-size:22px">–</b></div>
+      </div>
+      <button class="btn primary" id="gGo" style="width:100%">▶ Lancer la poursuite</button>
+      <div class="sub" id="gMsg" style="margin-top:8px"></div>
+    </div>
     <div class="row" style="margin:12px 0"><button class="btn" id="discAll2">Tout déconnecter</button><button class="btn" id="goUpd">Changer de chorégraphies…</button></div>
     <div class="note"><b>Stop et retour :</b> les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision.<br><b>Arrêt d'urgence :</b> les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.</div>
   </section>
@@ -727,6 +739,8 @@ function attachRemote(h) {
     else if (p[0] === 'MAN' && M.v === 4) M.ack = p[1];
     else if (p[0] === 'RC') { M.rc = p[1] === '1'; M.rcBusy = false; rcUI(); toast(M.rc ? 'Télécommande connectée' : 'Télécommande introuvable ou déconnectée'); }
     else if (p[0] === 'POS') onPos(+p[1] / 100, +p[2] / 100, p[3] === '1');
+    else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
+    else if (p[0] === 'JON' || p[0] === 'JNO' || p[0] === 'JRET' || p[0] === 'JOK' || p[0] === 'JSTUCK' || p[0] === 'CATCH') onGameEvent(p);
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
@@ -764,7 +778,7 @@ function freeAt(p) {
 function manUI() {
   const b = $('manGo');
   b.textContent = M.returning ? 'Retour à sa place…' : M.active ? 'Rendre la main' : 'Prendre la main';
-  b.disabled = M.returning; b.className = 'btn ' + (M.active ? '' : 'primary');
+  b.disabled = M.returning || GM.on; b.className = 'btn ' + (M.active ? '' : 'primary');
   $('joyBox').style.display = M.active && !M.returning && M.mode === 'joy' ? '' : 'none';
   rcUI();
   $('cv').classList.toggle('drive', M.active && !M.returning && M.mode === 'drag');
@@ -1177,6 +1191,67 @@ function previewTick() {
   const c = $('pvCv');
   drawPlate(c, PV.tl, PV.w, null, true);
 }
+// ====================================================================== jeu de poursuite
+const GM = { on: false, phase: 0, speed: 5, pos: null, home: null, catches: 0, roundAt: 0, best: store.get('best', 0), wait: null };
+document.querySelectorAll('#gDiff button').forEach(b => b.onclick = () => {
+  if (GM.on) return; GM.speed = +b.dataset.s; document.querySelectorAll('#gDiff button').forEach(x => x.classList.toggle('on', x === b));
+});
+const gMsg = t => $('gMsg').innerHTML = t;
+const fsec = ms => (Math.max(0, ms) / 1000).toFixed(1).replace('.', ',') + ' s';
+function gameUI() {
+  const b = $('gGo');
+  b.textContent = !GM.on ? '▶ Lancer la poursuite' : GM.phase === 1 ? '■ Arrêter la poursuite' : 'Retour des véhicules…';
+  b.className = 'btn ' + (GM.on ? '' : 'primary'); b.disabled = GM.on && GM.phase !== 1;
+  $('gCatch').textContent = GM.catches; $('gBest').textContent = GM.best ? fsec(GM.best) : '–';
+}
+function gameTick() {
+  if (GM.on && GM.phase === 1) $('gTime').textContent = fsec(performance.now() - GM.roundAt);
+}
+function onGamePos(a) {
+  if (a.length < 8) return;
+  GM.pos = [[a[0] / 100, a[1] / 100], [a[2] / 100, a[3] / 100], [a[4] / 100, a[5] / 100]];
+  if (M.active) M.others = GM.pos.map(q => q.slice());      // le joystick évite les chasseurs là où ils sont
+}
+function onGameEvent(p) {
+  const k = p[0];
+  if (GM.wait && GM.wait.k.includes(k)) { const w = GM.wait; GM.wait = null; w.res(k); }
+  if (k === 'CATCH') {
+    GM.catches = +p[1]; const surv = +p[2];
+    if (surv > GM.best) { GM.best = surv; store.set('best', surv); toast('Attrapé ! Nouveau record : ' + fsec(surv), 3000); }
+    else toast('Attrapé ! Tu as tenu ' + fsec(surv), 2500);
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+    GM.roundAt = performance.now() + 2500; gameUI();
+  }
+  if (k === 'JSTUCK') gMsg('Un chasseur ne trouve pas de passage : écarte un peu le véhicule 4 avec le joystick ou la télécommande.');
+}
+const gWait = (keys, ms) => new Promise(res => { GM.wait = { k: keys, res }; setTimeout(() => { if (GM.wait && GM.wait.res === res) { GM.wait = null; res(null); } }, ms); });
+$('gGo').onclick = async () => {
+  if (GM.on && GM.phase === 1) return gameStop();
+  if (GM.on) return;
+  if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4'); return; }
+  if (!(R.st.s === 'P' || R.st.s === 'S') || R.st.pend) { toast('Mets d\'abord le spectacle en pause ou fais Stop et retour'); return; }
+  if (!M.active) { await $('manGo').onclick(); if (!M.active) { gMsg('<span class="bad">Impossible de prendre la main sur le véhicule 4.</span>'); return; } }
+  GM.home = M.others.map(q => q.slice());
+  await M.hub.stdin('D' + Math.round(GM.speed * 100));
+  const r = gWait(['JON', 'JNO'], 3000); await M.hub.stdin('J');
+  if (await r !== 'JON') { gMsg('<span class="bad">Le véhicule 4 ne connaît pas encore le jeu : fais « Mettre à jour les 4 véhicules ».</span>'); return; }
+  GM.on = true; GM.phase = 1; GM.catches = 0; GM.roundAt = performance.now() + 1500; GM.pos = GM.home.map(q => q.slice());
+  gMsg('C\'est parti ! Fuis avec le joystick (sous le plateau) ou la télécommande.'); gameUI(); manUI();
+};
+async function gameStop() {
+  const cur = performance.now() - GM.roundAt;      // la manche en cours compte aussi pour le record
+  if (cur > GM.best) { GM.best = Math.round(cur); store.set('best', GM.best); toast('Nouveau record : ' + fsec(cur), 3000); }
+  GM.phase = 2; gameUI(); gMsg('Les chasseurs rentrent à leur place, un par un…');
+  const r = gWait(['JOK'], 120000); await M.hub.stdin('K');
+  if (await r !== 'JOK') { gMsg('<span class="bad">Les chasseurs ne sont pas tous rentrés. Écarte le véhicule 4 puis réessaie.</span>'); GM.phase = 1; gameUI(); return; }
+  // le véhicule 4 rentre à son tour par le plus court chemin
+  M.others = GM.home.map(q => q.slice()); GM.pos = GM.home.map(q => q.slice());
+  GM.phase = 3; gameUI(); gMsg('Le véhicule 4 rentre à sa place…');
+  GM.on = false; manUI(); await $('manGo').onclick();
+  const t0 = performance.now(); while (M.active && performance.now() - t0 < 60000) await sleep(200);
+  GM.phase = 0; GM.pos = null; gameUI();
+  gMsg(`Partie terminée : attrapé ${GM.catches} fois. Record : ${GM.best ? fsec(GM.best) : '–'}.`);
+}
 // ====================================================================== compteurs (distance et vitesse)
 const PITCH_M = 0.49 / 40;                   // plateau de 49 cm = 40 pas de grille → 1 pas = 12,25 mm
 const ODO = { dist: store.get('odo', [0, 0, 0, 0]), speed: [0, 0, 0, 0], last: null, t: 0, saveAt: 0, drawAt: 0 };
@@ -1189,12 +1264,12 @@ function pathLen(tl, i, w0, w1) {
 function odoTick() {
   const now = performance.now(), tl = R.tl || TL;
   if (!(R.hub && R.hub.connected && R.st && tl)) { ODO.last = null; ODO.speed = [0, 0, 0, 0]; return odoDraw(now); }
-  const w = estW(), P = [0, 1, 2, 3].map(i => M.active && M.v === i + 1 ? M.cmd.slice() : ODVGEN.posAt(tl, i, w));
+  const w = estW(), P = [0, 1, 2, 3].map(i => M.active && M.v === i + 1 ? M.cmd.slice() : GM.on && GM.pos && GM.pos[i] ? GM.pos[i].slice() : ODVGEN.posAt(tl, i, w));
   if (ODO.last) {
     const dt = (now - ODO.t) / 1000;
     if (dt > 0 && dt < 5) for (let i = 0; i < 4; i++) {
       let d;
-      if (M.active && M.v === i + 1) d = Math.hypot(P[i][0] - ODO.last[i][0], P[i][1] - ODO.last[i][1]);
+      if ((M.active && M.v === i + 1) || (GM.on && GM.pos)) d = Math.hypot(P[i][0] - ODO.last[i][0], P[i][1] - ODO.last[i][1]);
       else d = Math.abs(w - ODO.lastW) <= 3000 ? pathLen(tl, i, ODO.lastW, w) : 0;   // grand saut = changement de programme
       ODO.dist[i] += d * PITCH_M;
       const k = Math.min(1, dt / 0.35);       // vitesse lissée sur ~0,35 s
@@ -1226,7 +1301,7 @@ function odoDraw(now) {
 $('odoReset').onclick = () => { ODO.dist = [0, 0, 0, 0]; store.set('odo', ODO.dist); ODO.drawAt = 0; odoDraw(performance.now()); toast('Compteurs remis à zéro'); };
 // ====================================================================== mini board
 const cv = $('cv');
-function drawPlate(c, tl, w, man, trails) {
+function drawPlate(c, tl, w, man, trails, ovr) {
   const cx = c.getContext('2d'), W = c.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
   const dark = matchMedia('(prefers-color-scheme: dark)').matches;
   cx.fillStyle = dark ? '#262624' : '#efeae1'; cx.fillRect(0, 0, W, W);
@@ -1253,7 +1328,7 @@ function drawPlate(c, tl, w, man, trails) {
     man.path.forEach((q, k) => k ? cx.lineTo(X(q[0]), Y(q[1])) : cx.moveTo(X(q[0]), Y(q[1]))); cx.lineTo(X(man.cmd[0]), Y(man.cmd[1])); cx.stroke(); cx.globalAlpha = 1;
   }
   const P = [];
-  for (let i = 0; i < 4; i++) P.push(man && man.v === i + 1 ? man.cmd : tl ? ODVGEN.posAt(tl, i, w) : ODVGEN.HOME[i]);
+  for (let i = 0; i < 4; i++) P.push(man && man.v === i + 1 ? man.cmd : ovr && ovr[i] ? ovr[i] : tl ? ODVGEN.posAt(tl, i, w) : ODVGEN.HOME[i]);
   for (let i = 0; i < 4; i++) {
     const p = P[i], L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
     let hit = false;
@@ -1269,16 +1344,16 @@ function drawPlate(c, tl, w, man, trails) {
 function drawBoard() {
   const tl = R.tl || TL;
   const w = R.st ? estW() : 0;
-  drawPlate(cv, tl, w, M.active ? M : null, false);
+  drawPlate(cv, tl, w, M.active ? M : null, false, GM.on && GM.pos ? GM.pos : null);
   if (R.st && tl) {
     const k = R.st.k, b0 = tl.bounds[k], b1 = tl.bounds[k + 1] || tl.total;
     $('stProg').style.width = (100 * Math.min(1, Math.max(0, (w - b0) / (b1 - b0)))) + '%';
     $('stTime').textContent = `${fmt(w - b0)} / ${fmt(b1 - b0)}  ·  chorégraphie ${k + 1} sur ${tl.bounds.length - 1}`;
   }
 }
-(function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
+(function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); gameTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
-loadItems(); refresh(); showManSpeed();
+loadItems(); refresh(); showManSpeed(); gameUI();
 </script>
 </body>
 </html>
