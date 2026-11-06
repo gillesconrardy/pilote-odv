@@ -48,6 +48,14 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      `(t, 7+16·GEN, octets x1 y1 x2 y2 x3 y3 (×8) vitesse)` toutes les 150 ms ; les V1..V3 suivent ces
      cibles. Fin : retour un par un par chemin dégagé (`JOK`, ou `JSTUCK`), puis l'appli ramène le V4 et `Q`.
      Le V4 imprime `JP x1 y1 … x4 y4 phase prises` (×100) toutes les 250 ms.
+   - **Billes** (V4 en manuel, bouton « 📱 Billes » de Pilotage) : `D` vitesse max, `B` départ (`BON`), `T<jx>,<jy>`
+     inclinaison −100..100 (gauche/droite, haut/bas de l'écran). Le V4 calcule la physique des 4 billes (élan, frottement,
+     rebond amorti sur la clôture, poids/vitesse max différents `BK` pour qu'elles s'étalent) et diffuse V1..V3 comme
+     la poursuite (`game = 4`). Sécurité : 11 pas avec la position prévue ET avec celle d'il y a 250–500 ms (retard
+     radio des suiveurs), sinon on ne peut que s'éloigner ; simulé : jamais < 10 pas. `K` arrête ; la page planifie le
+     rangement (`tidyPlan` : A* `planReturn` + parkings si bloqué) et envoie `W<k><x>,<y>` (un trajet droit, `WOK`)
+     puis `Z` (`JOK`), puis rend la main. Page : capteur `deviceorientation` (position au démarrage = à plat,
+     zone morte 3°, plein à 20°) ; le joystick fait aussi pencher. Tests : `tests/t_billes.py`, harness (`B`, `T…`).
    - Au démarrage, chaque hub imprime `BAT <mV>` (niveau affiché dans Envoi : 6,0 V = 0 %, 8,4 V = 100 %).
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
 4. **`src/page.html`** : F4 Square, 5 onglets dans une barre en haut, qui reste visible au défilement (`nav.tabbar`, sticky, 5 tuiles « briques » graphite à bande orange en bas comme les véhicules, onglet actif tout orange ; après l’écran de démarrage, les 5 tuiles arrivent comme des véhicules : elles descendent au centre puis glissent à leur place, `tabsArrive()` ; (au clic : l’orange monte du bas + l’icône fait un tour, classe `spin` ; les `.card` de l’onglet apparaissent l’une après l’autre, coins orange qui s’écartent puis remplissage, classe `anim` sur la section), icônes + libellés, ordre Setup (= Mise en place) · Programme · Pilotage · Véhicules · Stats ; le dernier ouvert est mémorisé, `odv.tab` ; glisser le doigt à gauche/droite change d’onglet ; appui long 2 s sur un onglet = jeu « TOY » : on le promène, les autres s’écartent, tout revient au relâcher, sauf sur les plateaux, curseurs, joystick, listes défilantes et fenêtres) :

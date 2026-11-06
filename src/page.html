@@ -499,6 +499,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
+      <button class="btn primary" id="tiltGo" style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
       <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
@@ -1195,7 +1196,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'RC') { M.rc = p[1] === '1'; M.rcBusy = false; rcUI(); toast(M.rc ? 'Télécommande connectée' : 'Télécommande introuvable ou déconnectée'); }
     else if (p[0] === 'POS') onPos(+p[1] / 100, +p[2] / 100, p[3] === '1');
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
-    else if (p[0] === 'JON' || p[0] === 'JNO' || p[0] === 'JRET' || p[0] === 'JOK' || p[0] === 'JSTUCK' || p[0] === 'CATCH') onGameEvent(p);
+    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
@@ -1235,7 +1236,7 @@ function manUI() {
   b.textContent = M.returning ? 'Retour à sa place…' : M.active ? 'Rendre la main' : 'Prendre la main';
   b.disabled = M.returning || GM.on; b.className = 'btn ' + (M.active ? '' : 'primary');
   $('joyBox').style.display = M.active && !M.returning && M.mode === 'joy' ? '' : 'none';
-  rcUI();
+  tiltUI(); rcUI();
   $('cv').classList.toggle('drive', M.active && !M.returning && M.mode === 'drag');
   updateRemote();
 }
@@ -1366,6 +1367,7 @@ async function manualEnd() {
 function manualTick(ts) {
   if (!M.active) return;
   const now = performance.now(), dt = Math.min(0.1, (now - M.last) / 1000); M.last = now;
+  if (GM.on && GM.kind === 'bille') { if (GM.phase === 1) billesTick(now); return; }
   let goal = null;
   if (M.returning) {
     while (M.path.length && Math.hypot(M.path[M.path.length - 1][0] - M.cmd[0], M.path[M.path.length - 1][1] - M.cmd[1]) < 0.02) {
@@ -1410,10 +1412,106 @@ function joyAt(e) {
   let jx = (e.clientX - cx0) / R0, jy = (e.clientY - cy0) / R0; const n = Math.hypot(jx, jy); if (n > 1) { jx /= n; jy /= n; }
   M.joy = [jx, jy]; knob.style.transform = `translate(${jx * R0}px,${jy * R0}px)`;
 }
-joy.addEventListener('pointerdown', e => { if (!M.active || M.returning) return; joy.setPointerCapture(e.pointerId); joyAt(e); });
+joy.addEventListener('pointerdown', e => { if (!M.active || M.returning) return; M.joyTouch = true; joy.setPointerCapture(e.pointerId); joyAt(e); });
 joy.addEventListener('pointermove', e => { if (joy.hasPointerCapture(e.pointerId)) joyAt(e); });
-const joyUp = () => { M.joy = [0, 0]; knob.style.transform = ''; };
+const joyUp = () => { M.joyTouch = false; M.joy = [0, 0]; knob.style.transform = ''; };
 joy.addEventListener('pointerup', joyUp); joy.addEventListener('pointercancel', joyUp);
+// ============ billes : les 4 véhicules roulent selon l'inclinaison du téléphone ============
+// La position du téléphone au démarrage = à plat ; zone morte 3°, plein régime à 20°. Le véhicule 4 calcule
+// la physique des 4 billes (commandes B, T, K) ; à la fin, la page planifie le rangement (W k x,y … puis Z).
+const TILT = { on: false, b0: null, g0: null, seen: false, timer: 0 };
+function tiltUI() {
+  const b = $('tiltGo'), bil = GM.on && GM.kind === 'bille';
+  b.disabled = M.returning || (GM.on && (!bil || GM.phase !== 1));
+  b.textContent = !bil ? '📱 Billes : les 4 roulent quand tu penches' : GM.phase === 1 ? '■ Arrêter les billes' : 'Rangement des véhicules…';
+  b.className = 'btn' + (bil ? '' : ' primary');
+}
+function tiltOff() { TILT.on = false; clearTimeout(TILT.timer); if (!M.joyTouch) { M.joy = [0, 0]; knob.style.transform = ''; } }
+window.addEventListener('deviceorientation', e => {
+  if (!TILT.on || e.beta == null || e.gamma == null) return;
+  if (TILT.b0 == null) { TILT.b0 = e.beta; TILT.g0 = e.gamma; }
+  TILT.seen = true;
+  if (M.joyTouch) return;
+  const f = d => { const a = Math.abs(d); return a < 3 ? 0 : Math.sign(d) * Math.min(1, (a - 3) / 17); };
+  let jx = f(e.gamma - TILT.g0), jy = f(e.beta - TILT.b0); const n = Math.hypot(jx, jy); if (n > 1) { jx /= n; jy /= n; }
+  M.joy = [jx, jy];
+  const r = joy.getBoundingClientRect(), R0 = r.width / 2 - 37; knob.style.transform = `translate(${jx * R0}px,${jy * R0}px)`;
+});
+const BIL = { sent: [0, 0], at: 0, busy: false, home4: null };
+function billesTick(now) {
+  // envoi de l'inclinaison au véhicule 4 (8 fois par seconde au plus, et au moins une fois par seconde)
+  if (BIL.busy || !M.hub || !M.hub.connected) return;
+  const q = [Math.round(M.joy[0] * 100), Math.round(M.joy[1] * 100)];
+  const ch = Math.abs(q[0] - BIL.sent[0]) > 4 || Math.abs(q[1] - BIL.sent[1]) > 4 || (q[0] !== BIL.sent[0] && !q[0]) || (q[1] !== BIL.sent[1] && !q[1]);
+  if (now < BIL.at || (!ch && now < BIL.at + 875)) return;
+  BIL.busy = true; BIL.at = now + 125;
+  M.hub.stdin('T' + q[0] + ',' + q[1]).then(() => { BIL.sent = q; }, () => {}).finally(() => { BIL.busy = false; });
+}
+$('tiltGo').onclick = async () => {
+  if (GM.on && GM.kind === 'bille') { if (GM.phase === 1) billesStop(); return; }
+  if (GM.on) return;
+  if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4'); return; }
+  if (!(R.st.s === 'P' || R.st.s === 'S') || R.st.pend) { toast('Mets d\'abord le spectacle en pause ou fais Stop et retour'); return; }
+  try { if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission && await DeviceOrientationEvent.requestPermission() !== 'granted') throw 0; }
+  catch { manMsg('<span class="warn">⚠ Accès aux capteurs refusé : tu pourras faire rouler les billes avec le joystick.</span>'); }
+  if (!M.active) { await $('manGo').onclick(); if (!M.active) { manMsg('<span class="bad">Impossible de prendre la main sur le véhicule 4.</span>'); return; } }
+  GM.home = M.others.map(q => q.slice()); BIL.home4 = M.path[0].slice();
+  await M.hub.stdin('D' + Math.round(Math.min(12, VPAGE) * 100));
+  const r = gWait(['BON', 'JNO'], 3000); await M.hub.stdin('B');
+  if (await r !== 'BON') { manMsg('<span class="bad">Le véhicule 4 ne connaît pas encore les billes : fais « Mettre à jour les 4 véhicules ».</span>'); return; }
+  GM.on = true; GM.kind = 'bille'; GM.phase = 1; GM.pos = GM.home.map(q => q.slice()); BIL.sent = [0, 0]; BIL.at = 0;
+  Object.assign(TILT, { on: true, b0: null, g0: null, seen: false });
+  if (navigator.vibrate) navigator.vibrate(40);
+  manMsg('Tiens le téléphone à plat (ou comme tu veux : cette position compte comme « à plat »), puis <b>penche-le</b> : les 4 véhicules roulent comme des billes. Le joystick marche aussi.');
+  TILT.timer = setTimeout(() => { if (TILT.on && !TILT.seen) manMsg('<span class="warn">⚠ Ce téléphone ne donne pas l\'inclinaison : fais rouler les billes avec le joystick.</span>'); }, 1500);
+  gameUI(); manUI();
+};
+// rangement : chaque véhicule rentre par un chemin libre ; si plus personne ne peut rentrer, on en écarte un
+function tidyPlan(P0, H) {
+  const P = P0.map(q => q.slice()), moves = [], atHome = k => Math.max(Math.abs(P[k][0] - H[k][0]), Math.abs(P[k][1] - H[k][1])) < 0.05;
+  const others = (Q, k) => Q.filter((_, j) => j !== k), key = Q => Q.map(q => q.map(v => Math.round(v)).join(',')).join(';');
+  const park = []; for (const y of [30, 20, 10]) for (const x of [0, 10, 20, 30]) park.push([x, y]);
+  const seen = new Set([key(P)]);
+  for (let it = 0; it < 20; it++) {
+    const pend = [3, 2, 1, 0].filter(k => !atHome(k));
+    if (!pend.length) return moves;
+    let done = false;
+    for (const k of pend) { const w = planReturn(P[k], H[k], others(P, k)); if (w) { moves.push([k, w]); P[k] = H[k].slice(); done = true; break; } }
+    if (done) { seen.add(key(P)); continue; }
+    // personne ne peut rentrer : on gare un véhicule ailleurs, de préférence pour libérer un passage
+    let spare = null;
+    for (const k of [...pend, ...[3, 2, 1, 0].filter(k => atHome(k))]) {
+      const cand = park.filter(r => Math.hypot(r[0] - P[k][0], r[1] - P[k][1]) > 1 && others(P, k).every(o => Math.max(Math.abs(r[0] - o[0]), Math.abs(r[1] - o[1])) >= 10));
+      for (const r of cand) {
+        const Q = P.map(q => q.slice()); Q[k] = r; if (seen.has(key(Q))) continue;
+        const w = planReturn(P[k], r, others(P, k)); if (!w) continue;
+        if (pend.some(j => j !== k && planReturn(Q[j], H[j], others(Q, j)))) { moves.push([k, w]); P[k] = r.slice(); done = true; break; }
+        if (!spare) spare = [k, w, r];
+      }
+      if (done) break;
+    }
+    if (!done && spare) { moves.push([spare[0], spare[1]]); P[spare[0]] = spare[2].slice(); done = true; }
+    if (!done) return null;
+    seen.add(key(P));
+  }
+  return null;
+}
+async function billesStop() {
+  tiltOff(); GM.phase = 2; gameUI(); manMsg('Les billes s\'arrêtent, puis les véhicules rentrent à leur place un par un…');
+  await M.hub.stdin('K'); await sleep(700);
+  const P = [...GM.pos.map(q => q.slice()), M.cmd.slice()], H = [...GM.home.map(q => q.slice()), BIL.home4];
+  const plan = tidyPlan(P, H);
+  if (!plan) { manMsg('<span class="bad">Je ne trouve pas de chemin pour ranger les véhicules. Range-les à la main, puis recalibre-les dans Mise en place.</span>'); return; }
+  for (const [k, way] of plan) for (const q of way) {
+    const r = gWait(['WOK', 'WNO'], 30000); await M.hub.stdin('W' + (k + 1) + Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100));
+    if (await r !== 'WOK') { manMsg('<span class="bad">Le rangement s\'est interrompu (véhicule ' + (k + 1) + ').</span>'); return; }
+  }
+  const r = gWait(['JOK'], 5000); await M.hub.stdin('Z'); await r;
+  M.others = GM.home.map(q => q.slice()); GM.pos = GM.home.map(q => q.slice()); M.cmd = BIL.home4.slice(); M.sent = M.cmd.slice(); M.path = [M.cmd.slice()];
+  GM.on = false; GM.kind = null; GM.phase = 0; manUI(); await $('manGo').onclick();
+  const t0 = performance.now(); while (M.active && performance.now() - t0 < 30000) await sleep(200);
+  GM.pos = null; gameUI(); manMsg('Les 4 billes sont rangées à leur place.');
+}
 $('bPause').onclick = () => send('z');
 $('bHome').onclick = () => send('h');
 $('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; manUI(); send('x'); };
@@ -1747,7 +1845,9 @@ const fsec = ms => (Math.max(0, ms) / 1000).toFixed(1).replace('.', ',') + ' s';
 function gameUI() {
   const b = $('gGo');
   b.textContent = !GM.on ? '▶ Lancer la poursuite' : GM.phase === 1 ? '■ Arrêter la poursuite' : 'Retour des véhicules…';
-  b.className = 'btn ' + (GM.on ? '' : 'primary'); b.disabled = GM.on && GM.phase !== 1;
+  b.className = 'btn ' + (GM.on ? '' : 'primary'); b.disabled = GM.on && (GM.phase !== 1 || GM.kind === 'bille');
+  if (GM.on && GM.kind === 'bille') b.textContent = '▶ Lancer la poursuite';
+  if (typeof tiltUI === 'function') tiltUI();
   $('gCatch').textContent = GM.catches; $('gBest').textContent = GM.best ? fsec(GM.best) : '–';
 }
 function gameTick() {
@@ -1757,6 +1857,7 @@ function onGamePos(a) {
   if (a.length < 8) return;
   GM.pos = [[a[0] / 100, a[1] / 100], [a[2] / 100, a[3] / 100], [a[4] / 100, a[5] / 100]];
   if (M.active) M.others = GM.pos.map(q => q.slice());      // le joystick évite les chasseurs là où ils sont
+  if (GM.kind === 'bille') { M.cmd = [a[6] / 100, a[7] / 100]; M.sent = M.cmd.slice(); }
 }
 function onGameEvent(p) {
   const k = p[0];
@@ -1772,6 +1873,7 @@ function onGameEvent(p) {
 }
 const gWait = (keys, ms) => new Promise(res => { GM.wait = { k: keys, res }; setTimeout(() => { if (GM.wait && GM.wait.res === res) { GM.wait = null; res(null); } }, ms); });
 $('gGo').onclick = async () => {
+  if (GM.kind === 'bille') return;
   if (GM.on && GM.phase === 1) return gameStop();
   if (GM.on) return;
   if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4'); return; }
