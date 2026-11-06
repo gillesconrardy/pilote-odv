@@ -60,6 +60,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px}
 .tog small{display:block;color:var(--muted);font-size:12.5px}
+.tog{padding:6px 2px}
+.tog>div{display:flex;align-items:center;gap:6px;font-size:15px}
+.tip{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);background:none;color:var(--muted);font:700 12px/1 Georgia,serif;font-style:italic;padding:0;display:grid;place-items:center}
+.bubble{position:absolute;z-index:30;max-width:260px;background:var(--dbg);color:#fff;font-size:13px;line-height:1.4;border-radius:10px;padding:9px 11px;box-shadow:0 6px 18px rgba(0,0,0,.3);border-bottom:3px solid var(--accent)}
 .sw{position:relative;width:48px;height:28px;flex:none}
 .sw input{opacity:0;width:0;height:0}
 .sw span{position:absolute;inset:0;background:var(--line);border-radius:20px;transition:.2s}
@@ -166,10 +170,9 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
       <button class="btn primary" id="edNew" style="width:100%;margin-top:10px;padding:14px">✏️ Créer une chorégraphie</button>
     </div>
     <div class="card">
-      <h2>Options</h2>
-      <label class="tog"><div>Jouer en boucle<small>La suite recommence au début quand elle est finie.</small></div>
-        <span class="sw"><input type="checkbox" id="optLoop" checked><span></span></span></label>
-      <label class="tog"><div>Recalage au démarrage<small>Chaque véhicule se cale contre la clôture puis rejoint sa place. Désactive-le si les véhicules sont déjà en place et que les hubs n'ont pas été éteints.</small></div>
+      <label class="tog" for="optLoop"><div>Jouer en boucle <button type="button" class="tip" data-tip="La suite recommence au début quand elle est finie.">i</button></div>
+        <span class="sw"><input type="checkbox" id="optLoop"><span></span></span></label>
+      <label class="tog" for="optHoming"><div>Recalage au démarrage <button type="button" class="tip" data-tip="Chaque véhicule se cale contre la clôture puis rejoint sa place. Désactive-le si les véhicules sont déjà en place et que les hubs n'ont pas été éteints.">i</button></div>
         <span class="sw"><input type="checkbox" id="optHoming" checked><span></span></span></label>
       <div class="sum"><span id="sumTxt">–</span><button class="btn primary" id="toSend">Suivant →</button></div>
       <div id="sumWarn"></div>
@@ -402,6 +405,21 @@ function chDrag(e, row) {
   };
   grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
 }
+// infobulles ⓘ (appui pour ouvrir, appui ailleurs pour fermer)
+let bubble = null;
+const closeTip = () => { if (bubble) { bubble.remove(); bubble = null; } };
+document.addEventListener('click', e => {
+  const t = e.target.closest('.tip');
+  if (!t) { closeTip(); return; }
+  e.preventDefault(); e.stopPropagation();
+  const same = bubble && bubble._for === t; closeTip(); if (same) return;
+  bubble = document.createElement('div'); bubble.className = 'bubble'; bubble._for = t; bubble.textContent = t.dataset.tip;
+  document.body.appendChild(bubble);
+  const r = t.getBoundingClientRect(), w = bubble.offsetWidth;
+  bubble.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + scrollX + 'px';
+  bubble.style.top = r.bottom + 8 + scrollY + 'px';
+}, true);
+addEventListener('scroll', closeTip, { passive: true });
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 let TL = null, PLAY = [];
@@ -418,9 +436,9 @@ function refresh() {
   renderVehicles();
   drawBoard();
 }
-$('optLoop').checked = store.get('loop', true);
+$('optLoop').checked = store.get('loop2', false);
 $('optHoming').checked = store.get('homing', true);
-$('optLoop').onchange = () => { store.set('loop', $('optLoop').checked); progCache = {}; renderVehicles(); };
+$('optLoop').onchange = () => { store.set('loop2', $('optLoop').checked); progCache = {}; renderVehicles(); };
 $('optHoming').onchange = () => { store.set('homing', $('optHoming').checked); progCache = {}; renderVehicles(); };
 $('toSend').onclick = () => showTab('envoi');
 
