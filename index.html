@@ -324,6 +324,9 @@ section.anim .card::before{animation:cardCornerA .42s cubic-bezier(.3,.9,.3,1) b
 section.anim .card::after{animation:cardCornerB .42s cubic-bezier(.3,.9,.3,1) backwards;animation-delay:inherit}
 section.anim .card>*{animation:cardIn .6s ease backwards;animation-delay:inherit}
 @media (prefers-reduced-motion:reduce){section.anim .card,section.anim .card::before,section.anim .card::after,section.anim .card>*{animation:none}}
+nav.tabbar button{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+nav.tabbar button.toy{z-index:30;box-shadow:0 0 0 2px var(--accent),0 12px 26px rgba(0,0,0,.6),0 0 24px rgba(255,154,60,.45)}
+nav.tabbar.toying button{will-change:transform}
 @keyframes tabArrive{0%{transform:translate(var(--dx),-46px);opacity:0}35%{transform:translate(var(--dx),0);opacity:1}100%{transform:none;opacity:1}}
 nav.tabbar.arrive button{animation:tabArrive .9s cubic-bezier(.6,0,.25,1) backwards;animation-delay:var(--dl)}
 @media (prefers-reduced-motion:reduce){nav.tabbar.arrive button{animation:none}}
@@ -951,7 +954,7 @@ document.addEventListener('pointerdown', e => {
   const b = e.target.closest('.btn.primary, .rb.play, .btn.close, .xclose'); if (!b || b.disabled) return;
   b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 400);
 }, true);
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => { b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); showTab(b.dataset.tab); });
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => { if (TOY.until > performance.now()) return; b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); showTab(b.dataset.tab); });
 function showTab(id) {
   try { localStorage.setItem('odv.tab', id); } catch (e) {}
   // les blocs de l'onglet apparaissent l'un après l'autre : les coins orange s'écartent, puis le bloc se remplit
@@ -2386,6 +2389,61 @@ function drawBoard() {
 }
 (function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); gameTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
+// appui long (2 s) sur un onglet : on le promène au doigt, les autres onglets s'écartent (comme le jeu de poursuite) ; au relâcher tout revient
+const TOY = { on: false, until: 0 };
+(function tabToy() {
+  const nav = document.querySelector('nav.tabbar'), bs = [...nav.querySelectorAll('button')];
+  let timer = null, b0 = null, sx = 0, sy = 0, fx = 0, fy = 0, home = [], off = [], raf = 0;
+  nav.addEventListener('contextmenu', e => e.preventDefault());
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  nav.addEventListener('pointerdown', e => {
+    const b = e.target.closest('button'); if (!b || TOY.on) return;
+    b0 = b; sx = fx = e.clientX; sy = fy = e.clientY; cancel();
+    timer = setTimeout(() => start(e.pointerId), 2000);
+  });
+  addEventListener('pointermove', e => {
+    fx = e.clientX; fy = e.clientY;
+    if (timer && Math.hypot(fx - sx, fy - sy) > 12) cancel();
+  }, { passive: true });
+  function start(pid) {
+    timer = null; TOY.on = true; nav.classList.add('toying');
+    try { b0.setPointerCapture(pid); } catch (e) {}
+    home = bs.map(b => { const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width, r.height]; });
+    off = bs.map(() => [0, 0]);
+    bs.forEach(b => b.style.transition = 'none');
+    b0.classList.add('toy'); if (navigator.vibrate) try { navigator.vibrate(35); } catch (e) {}
+    let last = performance.now();
+    const step = now => {
+      if (!TOY.on) return;
+      const k = Math.min(2, (now - last) / 16); last = now;
+      const i0 = bs.indexOf(b0), px = fx, py = fy;
+      off[i0] = [px - home[i0][0], py - home[i0][1]];
+      bs.forEach((b, i) => {
+        if (i === i0) return;
+        let cx = home[i][0] + off[i][0], cy = home[i][1] + off[i][1];
+        const vx = cx - px, vy = cy - py, d = Math.hypot(vx, vy) || 1, R = home[i][2] * 1.25;
+        if (d < R) { const f = (R - d) * .35 * k; off[i][0] += vx / d * f; off[i][1] += vy / d * f; }
+        else { off[i][0] *= Math.pow(.94, k); off[i][1] *= Math.pow(.94, k); }
+        // rester dans l'écran
+        cx = home[i][0] + off[i][0]; cy = home[i][1] + off[i][1];
+        const hw = home[i][2] / 2, hh = home[i][3] / 2;
+        off[i][0] += Math.max(hw + 4 - cx, 0) - Math.max(cx - (innerWidth - hw - 4), 0);
+        off[i][1] += Math.max(hh + 4 - cy, 0) - Math.max(cy - (innerHeight - hh - 4), 0);
+      });
+      bs.forEach((b, i) => b.style.transform = `translate(${off[i][0]}px,${off[i][1]}px)` + (b === b0 ? ' scale(1.08)' : ''));
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+  const end = () => {
+    cancel(); if (!TOY.on) return;
+    TOY.on = false; TOY.until = performance.now() + 400; cancelAnimationFrame(raf);
+    bs.forEach(b => { b.style.transition = 'transform .55s cubic-bezier(.3,1.3,.5,1)'; b.style.transform = ''; });
+    b0.classList.remove('toy'); nav.classList.remove('toying');
+    setTimeout(() => bs.forEach(b => b.style.transition = ''), 650);
+  };
+  addEventListener('pointerup', end); addEventListener('pointercancel', end);
+})();
 // glisser le doigt vers la gauche / la droite = onglet suivant / précédent
 (function swipeTabs() {
   let x0 = null, y0 = 0, t0 = 0;
@@ -2395,7 +2453,7 @@ function drawBoard() {
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now();
   }, { passive: true });
   document.addEventListener('touchend', e => {
-    if (x0 === null) return;
+    if (x0 === null || TOY.on || TOY.until > performance.now()) { x0 = null; return; }
     const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
     if (Math.abs(dx) < 70 || Math.abs(dx) < 1.6 * Math.abs(dy) || performance.now() - t0 > 700) return;
     const bs = [...document.querySelectorAll('nav.tabbar button')], k = bs.findIndex(b => b.classList.contains('on'));
