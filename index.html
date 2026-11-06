@@ -415,7 +415,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.44</b><br>publiée le 06/11/2026 22:51</div>
+    <div class="ver" title="Version de l'application"><b>v1.45</b><br>publiée le 06/11/2026 23:40</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -1070,7 +1070,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.44';
+const MY_VER = '1.45';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1798,26 +1798,30 @@ $('tiltGo').onclick = async () => {
 // rangement : chaque véhicule rentre par un chemin libre ; si plus personne ne peut rentrer, on en écarte un
 function tidyPlan(P0, H) {
   const P = P0.map(q => q.slice()), moves = [], atHome = k => Math.max(Math.abs(P[k][0] - H[k][0]), Math.abs(P[k][1] - H[k][1])) < 0.05;
-  const others = k => P.filter((_, j) => j !== k);
-  const park = []; for (let y = 30; y >= 10; y -= 5) for (let x = 0; x <= 30; x += 5) park.push([x, y]);
-  for (let it = 0; it < 14; it++) {
+  const others = (Q, k) => Q.filter((_, j) => j !== k), key = Q => Q.map(q => q.map(v => Math.round(v)).join(',')).join(';');
+  const park = []; for (const y of [30, 20, 10]) for (const x of [0, 10, 20, 30]) park.push([x, y]);
+  const seen = new Set([key(P)]);
+  for (let it = 0; it < 20; it++) {
     const pend = [3, 2, 1, 0].filter(k => !atHome(k));
     if (!pend.length) return moves;
     let done = false;
-    for (const k of pend) { const w = planReturn(P[k], H[k], others(k)); if (w) { moves.push([k, w]); P[k] = H[k].slice(); done = true; break; } }
-    if (done) continue;
-    // personne ne peut rentrer : on gare un véhicule ailleurs pour libérer un passage
+    for (const k of pend) { const w = planReturn(P[k], H[k], others(P, k)); if (w) { moves.push([k, w]); P[k] = H[k].slice(); done = true; break; } }
+    if (done) { seen.add(key(P)); continue; }
+    // personne ne peut rentrer : on gare un véhicule ailleurs, de préférence pour libérer un passage
+    let spare = null;
     for (const k of [...pend, ...[3, 2, 1, 0].filter(k => atHome(k))]) {
-      const cand = park.filter(r => Math.hypot(r[0] - P[k][0], r[1] - P[k][1]) > 1 && others(k).every(o => Math.max(Math.abs(r[0] - o[0]), Math.abs(r[1] - o[1])) >= 10))
-        .sort((a, b) => Math.hypot(b[0] - P[k][0], b[1] - P[k][1]) - Math.hypot(a[0] - P[k][0], a[1] - P[k][1]));
+      const cand = park.filter(r => Math.hypot(r[0] - P[k][0], r[1] - P[k][1]) > 1 && others(P, k).every(o => Math.max(Math.abs(r[0] - o[0]), Math.abs(r[1] - o[1])) >= 10));
       for (const r of cand) {
-        const w = planReturn(P[k], r, others(k)); if (!w) continue;
-        const Q = P.map(q => q.slice()); Q[k] = r;
-        if (pend.some(j => j !== k && planReturn(Q[j], H[j], Q.filter((_, i) => i !== j)))) { moves.push([k, w]); P[k] = r.slice(); done = true; break; }
+        const Q = P.map(q => q.slice()); Q[k] = r; if (seen.has(key(Q))) continue;
+        const w = planReturn(P[k], r, others(P, k)); if (!w) continue;
+        if (pend.some(j => j !== k && planReturn(Q[j], H[j], others(Q, j)))) { moves.push([k, w]); P[k] = r.slice(); done = true; break; }
+        if (!spare) spare = [k, w, r];
       }
       if (done) break;
     }
+    if (!done && spare) { moves.push([spare[0], spare[1]]); P[spare[0]] = spare[2].slice(); done = true; }
     if (!done) return null;
+    seen.add(key(P));
   }
   return null;
 }
