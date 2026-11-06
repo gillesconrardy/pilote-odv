@@ -285,6 +285,10 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
         <span class="sw"><input type="checkbox" id="optHoming" checked><span></span></span></label>
       <span id="sumTxt" hidden>–</span>
       <button class="btn primary" id="toSend" style="width:100%;padding:14px;margin-top:10px">Suivant →</button>
+      <div id="updBox" hidden>
+        <button class="btn primary" id="updAll2" style="width:100%;padding:14px;margin-top:10px">⟳ Mettre à jour les 4 véhicules</button>
+        <div class="sub" id="updMsg2" style="margin-top:8px"></div>
+      </div>
       <div id="sumWarn"></div>
     </div>
   </section>
@@ -437,6 +441,12 @@ function showTab(id) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
   if (id === 'tele') drawBoard();
+  if (id !== 'choix' && !updating) setUpdMode(false);
+}
+// mode « changer de chorégraphies » (depuis Pilotage) : le bouton de mise à jour remplace « Suivant »
+function setUpdMode(on) {
+  $('updBox').hidden = !on; $('toSend').hidden = on;
+  if (on) $('updMsg2').innerHTML = 'Coche les chorégraphies, puis mets à jour les 4 véhicules.';
 }
 
 if (!navigator.bluetooth) {
@@ -567,7 +577,7 @@ function refresh() {
   const w = $('sumWarn');
   const risky = PLAY.filter(i => i.col);
   w.innerHTML = risky.length ? `<div class="note"><b>Attention :</b> ${risky.map(i => esc(i.name)).join(', ')} contient un chevauchement entre véhicules (vérifie-le dans le simulateur).</div>` : '';
-  $('toSend').disabled = !PLAY.length;
+  $('toSend').disabled = !PLAY.length; if ($('updAll2') && !updating) $('updAll2').disabled = !PLAY.length;
   renderVehicles();
   drawBoard();
 }
@@ -858,7 +868,7 @@ for (let v = 1; v <= 4; v++) {
   $('names').append(lab, inp);
 }
 $('discAll2').onclick = disconnectAll;
-$('goUpd').onclick = () => { showTab('choix'); toast('Choisis les chorégraphies, puis « Mettre à jour les 4 véhicules » dans Envoi', 3500); };
+$('goUpd').onclick = () => { showTab('choix'); setUpdMode(true); scrollTo(0, 0); };
 function askPick(v) {
   // la fenêtre Bluetooth exige un appui de l'utilisateur : on le demande par une petite boîte
   return new Promise((res, rej) => {
@@ -884,10 +894,10 @@ async function ensureHub(v) {
 const atHome = () => R.st && R.tl && (R.st.s === 'P' || R.st.s === 'S') && R.tl.bounds.includes(R.st.w);
 let updating = false;
 async function updateAll() {
-  const msg = t => { $('updMsg').innerHTML = t; log(t.replace(/<[^>]+>/g, '')); };
+  const msg = t => { $('updMsg').innerHTML = t; $('updMsg2').innerHTML = t; log(t.replace(/<[^>]+>/g, '')); };
   if (!TL) { toast('Choisis d\'abord des chorégraphies'); showTab('choix'); return; }
   if (updating) return;
-  updating = true; $('updAll').disabled = true;
+  updating = true; $('updAll').disabled = true; $('updAll2').disabled = true;
   try {
     // 0. il faut le véhicule 4 : c'est lui qui donne les ordres aux autres
     if (!R.hub || !R.hub.connected) {
@@ -927,11 +937,12 @@ async function updateAll() {
       if (!await sendVehicle(v, true, false)) throw new Error(`Échec de l'envoi au véhicule ${v} (voir son message ci-dessous).`);
     }
     msg('<span class="ok">✓ Les 4 véhicules ont la nouvelle sélection. Passe à Pilotage et appuie sur Lecture.</span>');
-    showTab('tele');
+    setUpdMode(false); showTab('tele');
   } catch (e) { msg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); }
-  finally { updating = false; $('updAll').disabled = false; }
+  finally { updating = false; $('updAll').disabled = false; $('updAll2').disabled = !PLAY.length; }
 }
 $('updAll').onclick = updateAll;
+$('updAll2').onclick = updateAll;
 function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + $('optHoming').checked; }
 
 // ====================================================================== 3. remote
