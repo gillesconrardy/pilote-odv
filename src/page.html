@@ -120,6 +120,10 @@ canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3
 .edrow select{font:inherit;border-radius:8px;border:1px solid var(--line);padding:6px;background:var(--card);color:var(--ink)}
 #edCv{touch-action:none}
 pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--soft);border-radius:8px;padding:10px;max-height:260px;overflow:auto;white-space:pre}
+.odo{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 12px;align-items:center;font-variant-numeric:tabular-nums}
+.odo .t{width:30px;height:24px;border-radius:5px;background:var(--dbg);color:#fff;font:700 12px ui-monospace,monospace;display:grid;place-items:center;border-bottom:3px solid}
+.odo .bar{display:block;height:8px;background:var(--soft);border-radius:4px;overflow:hidden}.odo .bar>div{height:100%;width:0;transition:width .25s}
+.odo b{font-size:15px;text-align:right}.odo span.s{font-size:13px;color:var(--muted);min-width:64px;text-align:right}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
 </style>
@@ -185,6 +189,11 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
       <div class="sub" id="stTime">&nbsp;</div>
       <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
       <div id="joyBox" style="display:none"><div class="joy" id="joy"><div class="knob" id="knob"></div></div></div>
+    </div>
+    <div class="card" id="odoCard">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs</h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
+      <div id="odo" style="margin-top:8px"></div>
+      <div class="sub" style="margin-top:6px">Calculés d'après la chorégraphie et l'horloge du véhicule 4 (1 pas de grille = 8 mm).</div>
     </div>
     <div class="remote">
       <button class="rb play" id="bPlay" disabled><span class="ic">▶</span>Lecture</button>
@@ -1110,6 +1119,53 @@ function previewTick() {
   const c = $('pvCv');
   drawPlate(c, PV.tl, PV.w, null, true);
 }
+// ====================================================================== compteurs (distance et vitesse)
+const PITCH_M = 0.008;                       // 1 pas de grille = 8 mm (écart entre deux picots)
+const ODO = { dist: store.get('odo', [0, 0, 0, 0]), speed: [0, 0, 0, 0], last: null, t: 0, saveAt: 0, drawAt: 0 };
+function pathLen(tl, i, w0, w1) {
+  // longueur réelle du trajet du véhicule i entre deux instants du spectacle (en suivant la courbe)
+  const n = Math.max(1, Math.ceil(Math.abs(w1 - w0) / 25)); let d = 0, a = ODVGEN.posAt(tl, i, w0);
+  for (let k = 1; k <= n; k++) { const q = ODVGEN.posAt(tl, i, w0 + (w1 - w0) * k / n); d += Math.hypot(q[0] - a[0], q[1] - a[1]); a = q; }
+  return d;
+}
+function odoTick() {
+  const now = performance.now(), tl = R.tl || TL;
+  if (!(R.hub && R.hub.connected && R.st && tl)) { ODO.last = null; ODO.speed = [0, 0, 0, 0]; return odoDraw(now); }
+  const w = estW(), P = [0, 1, 2, 3].map(i => M.active && M.v === i + 1 ? M.cmd.slice() : ODVGEN.posAt(tl, i, w));
+  if (ODO.last) {
+    const dt = (now - ODO.t) / 1000;
+    if (dt > 0 && dt < 5) for (let i = 0; i < 4; i++) {
+      let d;
+      if (M.active && M.v === i + 1) d = Math.hypot(P[i][0] - ODO.last[i][0], P[i][1] - ODO.last[i][1]);
+      else d = Math.abs(w - ODO.lastW) <= 3000 ? pathLen(tl, i, ODO.lastW, w) : 0;   // grand saut = changement de programme
+      ODO.dist[i] += d * PITCH_M;
+      const k = Math.min(1, dt / 0.35);       // vitesse lissée sur ~0,35 s
+      ODO.speed[i] += (d / dt - ODO.speed[i]) * k;
+    }
+  }
+  ODO.last = P; ODO.lastW = w; ODO.t = now;
+  if (now > ODO.saveAt) { store.set('odo', ODO.dist); ODO.saveAt = now + 2000; }
+  odoDraw(now);
+}
+function odoDraw(now) {
+  if (now < ODO.drawAt) return; ODO.drawAt = now + 250;
+  const box = $('odo'); if (!box) return;
+  const vmax = 17.5;                          // vitesse max moteur en pas/s
+  if (!box.children.length) {
+    box.className = 'odo';
+    for (let i = 0; i < 4; i++) box.insertAdjacentHTML('beforeend', `<div class="t" style="border-color:var(--v${i + 1})">0${i + 1}</div><div class="bar"><div id="odoBar${i}" style="background:var(--v${i + 1})"></div></div><b id="odoD${i}">0 m</b><span class="s" id="odoS${i}">0 cm/s</span>`);
+    box.insertAdjacentHTML('beforeend', `<div></div><div class="sub">Total</div><b id="odoT">0 m</b><span class="s"></span>`);
+  }
+  const fm = m => m < 10 ? m.toFixed(2).replace('.', ',') + ' m' : m < 1000 ? m.toFixed(1).replace('.', ',') + ' m' : (m / 1000).toFixed(2).replace('.', ',') + ' km';
+  for (let i = 0; i < 4; i++) {
+    const cms = ODO.speed[i] * PITCH_M * 100;
+    $('odoD' + i).textContent = fm(ODO.dist[i]);
+    $('odoS' + i).textContent = (cms < 0.5 ? 0 : cms.toFixed(cms < 10 ? 1 : 0).replace('.', ',')) + ' cm/s';
+    $('odoBar' + i).style.width = Math.min(100, ODO.speed[i] / vmax * 100) + '%';
+  }
+  $('odoT').textContent = fm(ODO.dist.reduce((a, b) => a + b, 0));
+}
+$('odoReset').onclick = () => { ODO.dist = [0, 0, 0, 0]; store.set('odo', ODO.dist); ODO.drawAt = 0; odoDraw(performance.now()); toast('Compteurs remis à zéro'); };
 // ====================================================================== mini board
 const cv = $('cv');
 function drawPlate(c, tl, w, man, trails) {
@@ -1162,7 +1218,7 @@ function drawBoard() {
     $('stTime').textContent = `${fmt(w - b0)} / ${fmt(b1 - b0)}  ·  chorégraphie ${k + 1} sur ${tl.bounds.length - 1}`;
   }
 }
-(function loop(ts) { manualTick(ts); previewTick(); edTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
+(function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
 loadItems(); refresh();
 </script>
