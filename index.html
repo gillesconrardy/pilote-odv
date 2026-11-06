@@ -1015,7 +1015,14 @@ function manUI() {
 }
 const manMsg = t => $('manMsg').innerHTML = t;
 $('manGo').onclick = async () => {
-  if (M.active) { M.returning = true; M.finger = null; M.joy = [0, 0]; manMsg('Le véhicule repasse par son chemin jusqu\'à sa place…'); manUI(); return; }
+  if (M.active) {
+    M.returning = true; M.finger = null; M.joy = [0, 0];
+    // chemin le plus court qui contourne les véhicules immobiles ; sinon on refait le chemin parcouru
+    const home = M.path[0], plan = planReturn(M.cmd, home, M.others);
+    if (plan) { M.path = [home].concat(plan.slice(0, -1).reverse()); manMsg('Le véhicule rentre à sa place par le plus court chemin…'); }
+    else manMsg('Le véhicule repasse par son chemin jusqu\'à sa place…');
+    manUI(); return;
+  }
   if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4 (il donne la position de tous)'); return; }
   if (!(R.st.s === 'P' || R.st.s === 'S') || R.st.pend) { toast('Mets d\'abord le spectacle en pause ou fais Stop et retour'); return; }
   if (R.st.gen && R.st.gen !== genId()) { toast('Le véhicule 4 joue une autre sélection : mets d\'abord les 4 véhicules à jour'); return; }
@@ -1042,6 +1049,66 @@ $('manGo').onclick = async () => {
     manUI();
   } catch (e) { manMsg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); if (M.v !== 4 && M.hub) { M.hub.close(); } M.hub = null; }
 };
+// ---------------------------------------------------------------- plus court chemin (véhicule seul, autres immobiles)
+function segClear(a, b, obs) {
+  // le trajet a→b reste-t-il dans le plateau et à 10 pas (Chebyshev) ou plus de chaque obstacle ?
+  for (const o of obs) {
+    const d0x = a[0] - o[0], d0y = a[1] - o[1], d1x = b[0] - o[0], d1y = b[1] - o[1];
+    let lo = 0, hi = 1, inside = true;
+    for (const [s, e] of [[d0x, d1x], [d0y, d1y]]) {
+      const d = e - s, m = 10 - 1e-6;
+      if (Math.abs(d) < 1e-12) { if (Math.abs(s) >= m) { inside = false; break; } continue; }
+      let s1 = (-m - s) / d, s2 = (m - s) / d; if (s1 > s2) [s1, s2] = [s2, s1];
+      lo = Math.max(lo, s1); hi = Math.min(hi, s2);
+      if (hi - lo <= 1e-9) { inside = false; break; }
+    }
+    if (inside && hi - lo > 1e-9) return false;
+  }
+  return true;
+}
+function planReturn(from, to, obs) {
+  if (segClear(from, to, obs)) return [to];
+  const S = 0.5, N = Math.round(30 / S) + 1, id = (i, j) => i * N + j, pt = k => [Math.floor(k / N) * S, (k % N) * S];
+  const free = k => { const p = pt(k); return obs.every(o => Math.max(Math.abs(p[0] - o[0]), Math.abs(p[1] - o[1])) >= 10 - 1e-6); };
+  const goal = id(Math.round(to[0] / S), Math.round(to[1] / S));
+  // départ : le point de grille libre le plus proche qu'on peut rejoindre en ligne droite
+  let start = -1, bd = 1e9;
+  for (let di = -2; di <= 2; di++) for (let dj = -2; dj <= 2; dj++) {
+    const i = Math.round(from[0] / S) + di, j = Math.round(from[1] / S) + dj;
+    if (i < 0 || j < 0 || i >= N || j >= N) continue;
+    const k = id(i, j), q = pt(k), d = Math.hypot(q[0] - from[0], q[1] - from[1]);
+    if (d < bd && free(k) && segClear(from, q, obs)) { bd = d; start = k; }
+  }
+  if (start < 0 || !free(goal)) return null;
+  // A* sur la grille (8 directions)
+  const g = new Float64Array(N * N).fill(Infinity), prev = new Int32Array(N * N).fill(-1), done = new Uint8Array(N * N);
+  const h = k => { const p = pt(k); return Math.hypot(p[0] - to[0], p[1] - to[1]); };
+  const open = [[h(start), start]]; g[start] = 0;
+  while (open.length) {
+    let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
+    const [, k] = open.splice(bi, 1)[0];
+    if (done[k]) continue; done[k] = 1;
+    if (k === goal) break;
+    const i = Math.floor(k / N), j = k % N;
+    for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+      if (!di && !dj) continue;
+      const a = i + di, b = j + dj; if (a < 0 || b < 0 || a >= N || b >= N) continue;
+      const n = id(a, b); if (done[n] || !free(n) || !segClear(pt(k), pt(n), obs)) continue;
+      const c = g[k] + Math.hypot(di, dj) * S;
+      if (c < g[n]) { g[n] = c; prev[n] = k; open.push([c + h(n), n]); }
+    }
+  }
+  if (!done[goal]) return null;
+  const raw = []; for (let k = goal; k >= 0; k = prev[k]) { raw.unshift(pt(k)); if (k === start) break; }
+  // lissage : on saute directement au point le plus loin qu'on voit en ligne droite
+  const out = []; let cur = from, i = 0;
+  raw[raw.length - 1] = to.slice();
+  while (i < raw.length) {
+    let far = i; for (let k = raw.length - 1; k > i; k--) if (segClear(cur, raw[k], obs)) { far = k; break; }
+    cur = raw[far]; out.push(cur); i = far + 1;
+  }
+  return out;
+}
 async function manualEnd() {
   try { await M.hub.stdin('G' + Math.round(M.cmd[0] * 100) + ',' + Math.round(M.cmd[1] * 100)); await sleep(250); await M.hub.stdin('Q'); } catch {}
   if (M.v !== 4) { await sleep(400); M.hub.onLine = null; await M.hub.close(); }
