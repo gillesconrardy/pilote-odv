@@ -55,7 +55,13 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    les véhicules se recalent puis attendent au départ ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
    sans recalage), **Véhicules** (`#envoi` : cartes, « Reconnecter » = renvoi sans recalage / « Déconnecter » par
    véhicule, « Reconnecter les 4 » = `updateAll`, « Tout déconnecter »), **Pilotage** (`#tele`).
-   Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale. Compile avec
+   Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale.
+   5ᵉ onglet **Statistiques** (`#stats`, sous les 4 autres) : collecte dans `odoTick` (`statAdd`/`statFrame`) — distance,
+   temps en mouvement, vitesse max, carte de chaleur 20×20 (cases de 2 pas, emprise 10×10), rose des directions
+   (16 secteurs), plus courte distance entre véhicules, temps par chorégraphie, spectacles joués, mètres au joystick ;
+   par session (mémoire) et par jour (localStorage `odv.stDays`, 120 jours max) ; batterie dans le temps (`odv.stBatt`,
+   via `setBat`) ; trajectoires et courbes de vitesse : session seulement. Période Session / 7 jours / Depuis le début.
+   Maquette sur le canevas Design (artboard Stats). Test : `tests/t_stats.py`. Compile avec
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub
    (format multi-mpy6 : taille u32 + `__main__\0` + mpy ; commandes 0 stop, 3 meta, 4 RAM, 1 start,
    6 stdin), service Pybricks `c5f50001-8280-46da-89f4-6d8051e4aeef`.

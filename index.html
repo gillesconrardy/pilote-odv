@@ -234,6 +234,48 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+nav{flex-wrap:wrap}
+nav button[data-tab=stats]{flex-basis:100%}
+.slabel{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--muted)}
+.pchips{display:flex;gap:4px;flex-wrap:wrap}
+.pchips button{border:1px solid #2f2c28;background:none;color:var(--muted);border-radius:7px;padding:5px 8px;font:500 11.5px var(--sans)}
+.pchips button.on{border-color:rgba(255,154,60,.5);background:#2a2622;color:var(--accent)}
+.shead{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.shead h2{margin:0}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid #2a2c2f;border-radius:4px;padding:12px}
+.kpi .k{font-size:10px;letter-spacing:.14em;color:var(--muted)}
+.kpi .v{font:700 25px var(--mono);margin:2px 0}
+.kpi .v span{font-size:12.5px;color:var(--accent)}
+.kpi .s{font-size:11px;color:var(--muted)}
+.pods{display:grid;grid-template-columns:repeat(3,1fr);align-items:end;gap:6px}
+.pod{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pt{width:60px;height:60px;border-radius:8px;background:#24262a;border-bottom:5px solid;display:grid;place-items:center;font:700 19px var(--mono)}
+.pt.gold{box-shadow:0 0 0 2px var(--accent),0 0 22px rgba(255,154,60,.35)}
+.pm{font:400 13px var(--mono)}
+.ps{width:100%;max-width:96px;background:linear-gradient(180deg,#4a443d,#1f1d1a);display:grid;place-items:start center;padding-top:8px;font:700 24px var(--mono)}
+.ps.gold{background:linear-gradient(180deg,var(--accent),#1f1d1a);color:#1a1208}
+.p4{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;margin-top:10px}
+.p4 span:last-child{font-family:var(--mono)}
+.ruler{display:flex;justify-content:space-between;font:400 9px var(--mono);color:var(--muted);padding-bottom:3px}
+canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-right:2px solid #4a443d}
+.legend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-top:8px}
+.legend i{flex:1;height:6px;background:linear-gradient(90deg,#17181a,#462610,#ff9a3c,#ffeccd)}
+.vleg{display:flex;gap:14px;font-size:11px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.vleg span{display:flex;align-items:center;gap:5px}.vleg i{width:10px;height:3px}
+.vrow{display:grid;grid-template-columns:34px minmax(0,1fr) 110px;gap:10px;align-items:center;margin:6px 0}
+.vrow.head{font-size:10px;letter-spacing:.12em;color:var(--muted)}
+.vrow .t{width:30px;height:24px;border-radius:5px;background:#24262a;border-bottom:3px solid;display:grid;place-items:center;font:700 11px var(--mono)}
+.vl{display:flex;justify-content:space-between;font:400 12px var(--mono);gap:6px}.vl span:last-child{color:var(--muted)}
+.vb{height:5px;background:#2a2622;margin-top:5px}.vb>div{height:5px}
+.roses{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.roses>div{display:flex;flex-direction:column;align-items:center;gap:2px}.roses svg{width:100%;max-width:150px}
+.roses span{font:400 11px var(--mono);color:var(--muted)}
+.crow{margin:8px 0}.crow .vl{font-family:var(--sans);font-size:13px}.crow .vl span:last-child{font-family:var(--mono)}
+.cb{height:8px;background:#2a2622;margin-top:4px}.cb>div{height:8px;background:linear-gradient(90deg,#ff9a3c,#ffc98f)}
+.recs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.recs .k{font-size:10px;letter-spacing:.12em;color:var(--muted)}.recs .v{font:700 19px var(--mono);margin:2px 0}.recs .s{font-size:10.5px;color:var(--muted)}
+
 nav button{font-size:12px;letter-spacing:0;padding:9px 2px;white-space:nowrap}
 .sunext{font-size:15px;margin:2px 0 10px}
 .surow{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:6px;border:1px solid transparent;margin-bottom:6px;background:var(--panel)}
@@ -282,6 +324,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <button data-tab="choix" class="on">Programme</button>
     <button data-tab="envoi">Véhicules</button>
     <button data-tab="tele">Pilotage</button>
+    <button data-tab="stats">Statistiques</button>
   </nav>
 
   <!-- ======================= 0. MISE EN PLACE (toujours avec recalage) ======================= -->
@@ -373,6 +416,27 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     </div>
     <button class="btn" id="goUpd" style="width:100%;margin-top:12px">Changer de chorégraphies…</button>
     <button class="btn" id="discAll2" style="width:100%;margin:8px 0 12px">Tout déconnecter</button>
+  </section>
+
+  <!-- ======================= 5. STATISTIQUES ======================= -->
+  <section id="stats">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px"><span class="slabel">PÉRIODE</span>
+      <div class="pchips" id="stPer"><button data-p="s" class="on">Session</button><button data-p="w">7 jours</button><button data-p="a">Depuis le début</button></div></div>
+    <div class="kpis" id="stKpi"></div>
+    <div class="card"><h2>Le plus voyageur</h2><div id="stPod"></div></div>
+    <div class="card"><div class="shead"><h2>Carte de chaleur</h2><div class="pchips" id="stHeatV"><button data-v="0" class="on">Tous</button><button data-v="1">V1</button><button data-v="2">V2</button><button data-v="3">V3</button><button data-v="4">V4</button></div></div>
+      <div class="ruler"><span>40</span><span>30</span><span>20</span><span>10</span><span>0</span></div>
+      <canvas id="stHeat" width="400" height="400" class="sboard" aria-label="Carte de chaleur des zones les plus parcourues"></canvas>
+      <div class="legend"><span>rare</span><i></i><span>fréquent</span></div></div>
+    <div class="card"><div class="shead"><h2>Trajectoires</h2><span class="sub">session en cours</span></div>
+      <canvas id="stPath" width="400" height="400" class="sboard" aria-label="Trajets des 4 véhicules"></canvas>
+      <div class="vleg"><span><i style="background:var(--v1)"></i>V1</span><span><i style="background:var(--v2)"></i>V2</span><span><i style="background:var(--v3)"></i>V3</span><span><i style="background:var(--v4)"></i>V4</span></div></div>
+    <div class="card"><h2>Par véhicule</h2><div id="stVeh"></div></div>
+    <div class="card"><h2>Batterie dans le temps</h2><div id="stBat"></div></div>
+    <div class="card"><h2>Rose des directions <button type="button" class="tip" data-tip="Longueur d'un pétale = distance parcourue dans cette direction (haut du plateau en haut).">i</button></h2><div class="roses" id="stRose"></div></div>
+    <div class="card"><h2>Temps par chorégraphie</h2><div id="stChor"></div></div>
+    <div class="card"><h2>Records</h2><div class="recs" id="stRec"></div></div>
+    <button class="btn" id="stClear" style="width:100%;margin-bottom:16px">Effacer les statistiques</button>
   </section>
 </div>
 
@@ -792,6 +856,7 @@ function showTab(id) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
   if (id === 'tele') drawBoard();
+  if (id === 'stats' && typeof statRender === 'function') statRender();
   if (id !== 'choix' && !updating) setUpdMode(false);
 }
 // mode « changer de chorégraphies » (depuis Pilotage) : le bouton de mise à jour remplace « Suivant »
@@ -1126,6 +1191,7 @@ function nameVariants(v) {
 const BAT = store.get('bat', {});
 function setBat(v, mv) {
   BAT[v] = { mv, at: Date.now() }; store.set('bat', BAT); showBat(v);
+  if (typeof statBat === 'function') statBat(v, mv);
 }
 function batPct(mv) { return Math.max(0, Math.min(100, Math.round((mv - 6000) / (8400 - 6000) * 100))); }
 function showBat(v) {
@@ -1973,10 +2039,12 @@ function odoTick() {
       if ((M.active && M.v === i + 1) || (GM.on && GM.pos)) d = Math.hypot(P[i][0] - ODO.last[i][0], P[i][1] - ODO.last[i][1]);
       else d = Math.abs(w - ODO.lastW) <= 3000 ? pathLen(tl, i, ODO.lastW, w) : 0;   // grand saut = changement de programme
       ODO.dist[i] += d * PITCH_M;
+      statAdd(i, d, P[i], ODO.last[i], dt, M.active && M.v === i + 1);
       const k = Math.min(1, dt / 0.35);       // vitesse lissée sur ~0,35 s
       ODO.speed[i] += (d / dt - ODO.speed[i]) * k;
     }
   }
+  if (ODO.last) statFrame(P, w, tl, (now - ODO.t));
   ODO.last = P; ODO.lastW = w; ODO.t = now;
   if (now > ODO.saveAt) { store.set('odo', ODO.dist); ODO.saveAt = now + 2000; }
   odoDraw(now);
@@ -2001,6 +2069,150 @@ function odoDraw(now) {
 }
 function odoZero() { ODO.dist = [0, 0, 0, 0]; ODO.speed = [0, 0, 0, 0]; ODO.last = null; store.set('odo', ODO.dist); ODO.drawAt = 0; odoDraw(performance.now()); }
 $('odoReset').onclick = () => { odoZero(); toast('Compteurs remis à zéro'); };
+
+// ====================================================================== 5. statistiques
+// Collecte pendant le pilotage (positions du spectacle, du joystick ou du jeu), par session et par jour.
+const newBucket = () => ({ dist: [0, 0, 0, 0], move: [0, 0, 0, 0], vmax: [0, 0, 0, 0], heat: [0, 1, 2, 3].map(() => new Array(400).fill(0)),
+  rose: [0, 1, 2, 3].map(() => new Array(16).fill(0)), gap: null, chor: {}, show: 0, shows: 0, man: 0 });
+const STAT = { ses: newBucket(), t0: Date.now(), days: store.get('stDays', {}), batt: store.get('stBatt', [[], [], [], []]),
+  path: [[], [], [], []], spd: [[], [], [], []], heatAcc: 0, spdAcc: 0, pathAcc: 0, saveAt: 0, drawAt: 0, per: 's', hv: 0 };
+const dayKey = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+function statBuckets() { const k = dayKey(); if (!STAT.days[k]) STAT.days[k] = newBucket(); return [STAT.ses, STAT.days[k]]; }
+function statAdd(i, d, p, q, dt, manual) {
+  if (!(d > 1e-4)) return;
+  const cm = d * PITCH_M * 100, v = cm / dt, sdx = -(p[0] - q[0]), sdy = p[1] - q[1];
+  const bin = Math.round(((Math.atan2(sdx, -sdy) * 180 / Math.PI + 360) % 360) / 22.5) % 16;
+  for (const b of statBuckets()) {
+    b.dist[i] += d * PITCH_M; b.move[i] += dt * 1000; if (v > b.vmax[i] && v < 60) b.vmax[i] = v;
+    b.rose[i][bin] += d; if (manual) b.man += d * PITCH_M;
+  }
+}
+function statFrame(P, w, tl, dtms) {
+  if (!(dtms > 0 && dtms < 5000)) return;
+  const B = statBuckets();
+  let g = 99; for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) g = Math.min(g, Math.max(Math.abs(P[a][0] - P[b][0]), Math.abs(P[a][1] - P[b][1])));
+  for (const b of B) if (b.gap === null || g < b.gap) b.gap = g;
+  const st = R.st, playing = st && st.s === 'F' && R.lastCmd !== 'h' && !M.active && !GM.on;
+  if (playing) {
+    const nm = (R.names && R.names[st.k]) || '?';
+    for (const b of B) { b.show += dtms; b.chor[nm] = (b.chor[nm] || 0) + dtms; }
+    if (tl && ODO.lastW < tl.total - 60 && w >= tl.total - 60) for (const b of B) b.shows++;
+    if (ODO.lastW - w > 3000) for (const b of B) b.shows++;          // boucle : le spectacle est reparti du début
+  }
+  // carte de chaleur (toutes les 250 ms) : emprise 10×10 pas, cases de 2 pas sur le plateau −5..35
+  STAT.heatAcc += dtms;
+  if (STAT.heatAcc >= 250) {
+    const add = STAT.heatAcc; STAT.heatAcc = 0;
+    for (let i = 0; i < 4; i++) {
+      const c0 = Math.max(0, Math.round((P[i][0] - 5 + 5) / 2)), r0 = Math.max(0, Math.round((P[i][1] - 5 + 5) / 2));
+      for (let cx = c0; cx < Math.min(20, c0 + 5); cx++) for (let cy = r0; cy < Math.min(20, r0 + 5); cy++) for (const b of B) b.heat[i][cy * 20 + 19 - cx] += add;
+    }
+  }
+  STAT.pathAcc += dtms;
+  if (STAT.pathAcc >= 300) { STAT.pathAcc = 0; for (let i = 0; i < 4; i++) { const a = STAT.path[i]; a.push([35 - P[i][0], P[i][1] + 5]); if (a.length > 2400) a.splice(0, a.length - 2400); } }
+  STAT.spdAcc += dtms;
+  if (STAT.spdAcc >= 2000) { STAT.spdAcc = 0; for (let i = 0; i < 4; i++) { const a = STAT.spd[i]; a.push(ODO.speed[i] * PITCH_M * 100); if (a.length > 300) a.shift(); } }
+  const now = performance.now();
+  if (now > STAT.saveAt) { STAT.saveAt = now + 10000; statSave(); }
+}
+function statSave() {
+  const keys = Object.keys(STAT.days).sort(); while (keys.length > 120) delete STAT.days[keys.shift()];
+  store.set('stDays', STAT.days); store.set('stBatt', STAT.batt);
+}
+function statBat(v, mv) {
+  const a = STAT.batt[v - 1], t = Date.now(), last = a[a.length - 1];
+  if (last && t - last[0] < 60000 && Math.abs(last[1] - mv) < 30) return;
+  a.push([t, mv]); if (a.length > 600) a.splice(0, a.length - 600); store.set('stBatt', STAT.batt);
+}
+function statMerge() {
+  if (STAT.per === 's') return STAT.ses;
+  const lim = STAT.per === 'w' ? Date.now() - 7 * 864e5 : 0, m = newBucket();
+  for (const [k, b] of Object.entries(STAT.days)) {
+    if (new Date(k + 'T23:59:59').getTime() < lim) continue;
+    for (let i = 0; i < 4; i++) {
+      m.dist[i] += b.dist[i]; m.move[i] += b.move[i]; m.vmax[i] = Math.max(m.vmax[i], b.vmax[i]);
+      for (let c = 0; c < 400; c++) m.heat[i][c] += b.heat[i][c];
+      for (let c = 0; c < 16; c++) m.rose[i][c] += b.rose[i][c];
+    }
+    if (b.gap !== null && (m.gap === null || b.gap < m.gap)) m.gap = b.gap;
+    for (const [n, ms] of Object.entries(b.chor)) m.chor[n] = (m.chor[n] || 0) + ms;
+    m.show += b.show; m.shows += b.shows; m.man += b.man;
+  }
+  return m;
+}
+const VC = () => [1, 2, 3, 4].map(k => getComputedStyle(document.documentElement).getPropertyValue('--v' + k).trim());
+const f1 = v => v.toFixed(1).replace('.', ',');
+const fdist = m => m < 1000 ? f1(m) : f1(m / 1000);
+const hmin = ms => { const m = Math.round(ms / 60000); return m < 60 ? fmt(ms) : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0'); };
+function heatCol(v) {
+  v = Math.pow(v, 1.7);
+  const S = [[0, [23, 24, 26]], [0.3, [70, 38, 16]], [0.7, [255, 154, 60]], [1, [255, 236, 205]]];
+  for (let k = 1; k < S.length; k++) if (v <= S[k][0]) { const f = (v - S[k - 1][0]) / (S[k][0] - S[k - 1][0]); return 'rgb(' + S[k][1].map((c, j) => Math.round(S[k - 1][1][j] + (c - S[k - 1][1][j]) * f)).join(',') + ')'; }
+  return 'rgb(255,236,205)';
+}
+function statRender() {
+  const b = statMerge(), col = VC(), tot = b.dist.reduce((x, y) => x + y, 0);
+  const iv = b.vmax.indexOf(Math.max(...b.vmax));
+  const kpi = (k, v, u, s) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}<span> ${u}</span></div><div class="s">${s}</div></div>`;
+  $('stKpi').innerHTML = kpi('DISTANCE TOTALE', fdist(tot), tot < 1000 ? 'm' : 'km', '4 véhicules réunis')
+    + kpi('SPECTACLE', hmin(b.show), b.show < 3600000 ? 'min' : '', 'temps de lecture')
+    + kpi('VITESSE DE POINTE', f1(Math.max(...b.vmax)), 'cm/s', Math.max(...b.vmax) > 0 ? 'véhicule ' + (iv + 1) : '–')
+    + kpi('PLUS PRÈS', b.gap === null ? '–' : f1(b.gap), 'pas', b.gap === null ? 'pas encore de mesure' : b.gap < 9.95 ? '⚠ chevauchement' : 'aucun chevauchement');
+  // podium
+  const rk = [0, 1, 2, 3].sort((x, y) => b.dist[y] - b.dist[x]);
+  if (tot <= 0) $('stPod').innerHTML = '<div class="sub">Pas encore de déplacement mesuré : connecte le véhicule 4 et lance un spectacle.</div>';
+  else {
+    const H = [118, 90, 68], step = (i, p) => `<div class="pod"><div class="pt${p === 1 ? ' gold' : ''}" style="border-bottom-color:${col[i]}">0${i + 1}</div><div class="pm">${fdist(b.dist[i])} m</div><div class="ps${p === 1 ? ' gold' : ''}" style="height:${H[p - 1]}px">${p}</div></div>`;
+    $('stPod').innerHTML = `<div class="pods">${step(rk[1], 2)}${step(rk[0], 1)}${step(rk[2], 3)}</div><div class="p4"><span>4ᵉ · véhicule ${rk[3] + 1}</span><span>${fdist(b.dist[rk[3]])} m</span></div>`;
+  }
+  // carte de chaleur
+  { const c = $('stHeat'), g = c.getContext('2d'), W = c.width, s = W / 20, H = new Array(400).fill(0);
+    for (let i = 0; i < 4; i++) if (!STAT.hv || STAT.hv === i + 1) for (let k = 0; k < 400; k++) H[k] += b.heat[i][k];
+    const mx = Math.max(1, ...H); g.fillStyle = '#121314'; g.fillRect(0, 0, W, W);
+    for (let k = 0; k < 400; k++) { g.fillStyle = heatCol(H[k] / mx); g.fillRect((k % 20) * s + 1, Math.floor(k / 20) * s + 1, s - 1.5, s - 1.5); } }
+  // trajectoires
+  { const c = $('stPath'), g = c.getContext('2d'), W = c.width, u = W / 40; g.fillStyle = '#17181a'; g.fillRect(0, 0, W, W);
+    g.fillStyle = '#2a2724'; for (let x = 1; x < 40; x += 2) for (let y = 1; y < 40; y += 2) { g.beginPath(); g.arc(x * u, y * u, 1, 0, 7); g.fill(); }
+    g.lineWidth = 2.2; g.lineJoin = 'round'; g.lineCap = 'round';
+    for (let i = 0; i < 4; i++) { const a = STAT.path[i]; if (a.length < 2) continue; g.strokeStyle = col[i]; g.globalAlpha = .85; g.shadowColor = col[i]; g.shadowBlur = 6; g.beginPath(); a.forEach((p, k) => k ? g.lineTo(p[0] * u, p[1] * u) : g.moveTo(p[0] * u, p[1] * u)); g.stroke(); }
+    g.globalAlpha = 1; g.shadowBlur = 0;
+    if (!STAT.path[0].length) { g.fillStyle = '#a8a49c'; g.font = '14px "Space Grotesk",sans-serif'; g.textAlign = 'center'; g.fillText('Les trajets de cette session s’afficheront ici', W / 2, W / 2); } }
+  // par véhicule
+  const mx = Math.max(1e-6, ...b.dist);
+  const spark = i => { const a = STAT.spd[i]; if (a.length < 2) return '<svg width="110" height="28" aria-hidden="true"></svg>'; const m = Math.max(31, ...a);
+    return `<svg width="110" height="28" viewBox="0 0 110 28" aria-hidden="true"><polyline points="${a.map((v, k) => (k * 110 / (a.length - 1)).toFixed(1) + ',' + (27 - v / m * 25).toFixed(1)).join(' ')}" fill="none" stroke="${col[i]}" stroke-width="1.5" stroke-linejoin="round"/></svg>`; };
+  $('stVeh').innerHTML = '<div class="vrow head"><span></span><span>DISTANCE</span><span>VITESSE (SESSION)</span></div>' + [0, 1, 2, 3].map(i => `<div class="vrow"><div class="t" style="border-color:${col[i]}">0${i + 1}</div><div><div class="vl"><span>${fdist(b.dist[i])} m</span><span>max ${f1(b.vmax[i])} cm/s</span></div><div class="vb"><div style="width:${b.dist[i] / mx * 100}%;background:${col[i]}"></div></div></div>${spark(i)}</div>`).join('');
+  // batterie
+  { const lim = STAT.per === 's' ? STAT.t0 - 3600000 : STAT.per === 'w' ? Date.now() - 7 * 864e5 : 0, W = 330, H = 140;
+    const ser = STAT.batt.map(a => a.filter(p => p[0] >= lim)); const all = ser.flat();
+    if (!all.length) $('stBat').innerHTML = '<div class="sub">Les niveaux s’afficheront ici au fil des connexions (mesure envoyée par chaque hub).</div>';
+    else { const t0 = Math.min(...all.map(p => p[0])), t1 = Math.max(t0 + 60000, ...all.map(p => p[0])), y = mv => H - batPct(mv) / 100 * H;
+      let svg = `<svg viewBox="0 0 ${W} ${H + 16}" width="100%" role="img" aria-label="Niveau de batterie dans le temps"><rect x="0" y="${H * .75}" width="${W}" height="${H * .25}" fill="rgba(229,72,58,.08)"/>`;
+      for (const q of [25, 50, 75, 100]) svg += `<line x1="0" x2="${W}" y1="${H - q / 100 * H}" y2="${H - q / 100 * H}" stroke="#2a2724"/><text x="${W - 2}" y="${H - q / 100 * H - 3}" text-anchor="end" font-size="9" fill="#a8a49c" font-family="Space Mono,monospace">${q} %</text>`;
+      ser.forEach((a, i) => { if (!a.length) return; const pts = a.map(p => ((p[0] - t0) / (t1 - t0) * W).toFixed(1) + ',' + y(p[1]).toFixed(1)); if (a.length === 1) pts.push(W + ',' + y(a[0][1]).toFixed(1));
+        svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${col[i]}" stroke-width="2" stroke-linejoin="round"/>`; });
+      const fd = t => new Date(t).toLocaleString('fr-BE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+      svg += `<text x="0" y="${H + 13}" font-size="9" fill="#a8a49c" font-family="Space Mono,monospace">${fd(t0)}</text><text x="${W}" y="${H + 13}" text-anchor="end" font-size="9" fill="#a8a49c" font-family="Space Mono,monospace">${fd(t1)}</text></svg>`;
+      $('stBat').innerHTML = svg + '<div class="vleg">' + [0, 1, 2, 3].map(i => `<span><i style="background:${col[i]}"></i>V${i + 1}${BAT[i + 1] ? ' ' + batPct(BAT[i + 1].mv) + ' %' : ''}</span>`).join('') + '</div>'; } }
+  // roses
+  const rm = Math.max(1e-6, ...b.rose.flat());
+  $('stRose').innerHTML = [0, 1, 2, 3].map(i => { let p = '';
+    b.rose[i].forEach((r, k) => { if (r <= 0) return; const f = r / rm, rr = Math.max(4, f * 44), a0 = (k * 22.5 - 10) * Math.PI / 180, a1 = (k * 22.5 + 10) * Math.PI / 180;
+      p += `<path d="M50,50 L${(50 + rr * Math.sin(a0)).toFixed(1)},${(50 - rr * Math.cos(a0)).toFixed(1)} A${rr.toFixed(1)},${rr.toFixed(1)} 0 0 1 ${(50 + rr * Math.sin(a1)).toFixed(1)},${(50 - rr * Math.cos(a1)).toFixed(1)} Z" fill="${col[i]}" opacity="${(.35 + .65 * f).toFixed(2)}"/>`; });
+    return `<div><svg viewBox="0 0 100 100" role="img" aria-label="Directions du véhicule ${i + 1}"><circle cx="50" cy="50" r="44" fill="none" stroke="#34302b" stroke-width=".6"/><circle cx="50" cy="50" r="22" fill="none" stroke="#34302b" stroke-width=".6"/><line x1="50" y1="4" x2="50" y2="96" stroke="#2a2724" stroke-width=".6"/><line x1="4" y1="50" x2="96" y2="50" stroke="#2a2724" stroke-width=".6"/>${p}</svg><span>V${i + 1}</span></div>`; }).join('');
+  // chorégraphies
+  const ch = Object.entries(b.chor).sort((x, y) => y[1] - x[1]), cm = ch.length ? ch[0][1] : 1, ct = ch.reduce((x, y) => x + y[1], 0) || 1;
+  $('stChor').innerHTML = ch.length ? ch.map(([n, ms]) => `<div class="crow"><div class="vl"><span>${esc(n)}</span><span>${hmin(ms)} · ${Math.round(ms / ct * 100)} %</span></div><div class="cb"><div style="width:${ms / cm * 100}%"></div></div></div>`).join('') : '<div class="sub">Aucune chorégraphie jouée sur cette période.</div>';
+  // records
+  const rec = (k, v, s) => `<div><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  $('stRec').innerHTML = rec('POURSUITE', GM.best ? fsec(GM.best) : '–', 'meilleure survie') + rec('SPECTACLES', b.shows, 'joués en entier') + rec('MANUEL', f1(b.man), 'mètres au joystick');
+}
+document.querySelectorAll('#stPer button').forEach(x => x.onclick = () => { STAT.per = x.dataset.p; document.querySelectorAll('#stPer button').forEach(y => y.classList.toggle('on', y === x)); statRender(); });
+document.querySelectorAll('#stHeatV button').forEach(x => x.onclick = () => { STAT.hv = +x.dataset.v; document.querySelectorAll('#stHeatV button').forEach(y => y.classList.toggle('on', y === x)); statRender(); });
+$('stClear').onclick = () => { if (!confirm('Effacer toutes les statistiques (session et historique) ?')) return;
+  STAT.ses = newBucket(); STAT.days = {}; STAT.batt = [[], [], [], []]; STAT.path = [[], [], [], []]; STAT.spd = [[], [], [], []]; STAT.t0 = Date.now(); statSave(); statRender(); toast('Statistiques effacées'); };
+addEventListener('pagehide', statSave);
+setInterval(() => { if ($('stats').classList.contains('on')) statRender(); }, 2000);
 // ====================================================================== mini board
 const cv = $('cv');
 function drawPlate(c, tl, w, man, trails, ovr) {
