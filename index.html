@@ -234,6 +234,50 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+/* ===== écran de démarrage (5 s, touche pour passer) ===== */
+#splash{position:fixed;inset:0;z-index:100;background:#121314;display:grid;place-items:center;transition:opacity .35s}
+#splash.out{opacity:0;pointer-events:none}
+#spStage{position:relative;width:300px;height:520px;flex:none}
+#spStage *{position:absolute;box-sizing:border-box}
+#spStage .scene{inset:0;animation:spScene .5s 4.1s ease-in both}
+@keyframes spScene{to{opacity:0;transform:translateY(-30px) scale(.9)}}
+#spStage .dot{left:148px;top:178px;width:4px;height:4px;border-radius:50%;background:#ff9a3c;animation:spDot 1s ease both}
+@keyframes spDot{0%{transform:scale(0);box-shadow:0 0 0 0 rgba(255,154,60,.8)}50%{transform:scale(2.5);box-shadow:0 0 0 0 rgba(255,154,60,.8)}100%{transform:scale(1);box-shadow:0 0 0 30px rgba(255,154,60,0)}}
+#spStage .grid{left:50px;top:80px;width:200px;height:200px;background-image:radial-gradient(circle,#3a3631 1.2px,transparent 1.6px);background-size:12.5px 12.5px;background-position:6px 6px;clip-path:circle(0 at 50% 50%);animation:spGrid .9s .7s cubic-bezier(.5,0,.2,1) both}
+@keyframes spGrid{to{clip-path:circle(75% at 50% 50%)}}
+#spStage .c1,#spStage .c2{width:22px;height:22px}
+#spStage .c1{border-left:3px solid #ff9a3c;border-top:3px solid #ff9a3c;animation:spC1 .6s 1s cubic-bezier(.3,.9,.3,1) both}
+#spStage .c2{border-right:3px solid #ff9a3c;border-bottom:3px solid #ff9a3c;animation:spC2 .6s 1s cubic-bezier(.3,.9,.3,1) both}
+@keyframes spC1{from{left:139px;top:169px;opacity:0}to{left:38px;top:68px;opacity:1}}
+@keyframes spC2{from{left:139px;top:169px;opacity:0}to{left:240px;top:270px;opacity:1}}
+#spStage .v{width:46px;height:46px;border-radius:0;font:700 15px var(--mono);color:#edeae4;display:grid;place-items:center;padding-bottom:6px;
+  background:linear-gradient(#ff9a3c,#ff9a3c) 6px calc(100% - 5px)/calc(100% - 12px) 4px no-repeat,#1a1c1e}
+#spStage .v::before,#spStage .v::after{content:"";position:absolute;width:9px;height:9px}
+#spStage .v::before{left:-1px;top:-1px;border-left:2px solid var(--c);border-top:2px solid var(--c)}
+#spStage .v::after{right:-1px;bottom:-1px;border-right:2px solid var(--c);border-bottom:2px solid var(--c)}
+#spStage .v1{--c:var(--v1);animation:spV1 1.5s 1.5s cubic-bezier(.5,0,.2,1) both}
+#spStage .v2{--c:var(--v2);animation:spV2 1.5s 1.6s cubic-bezier(.5,0,.2,1) both}
+#spStage .v3{--c:var(--v3);animation:spV3 1.5s 1.7s cubic-bezier(.5,0,.2,1) both}
+#spStage .v4{--c:var(--v4);animation:spV4 1.5s 1.8s cubic-bezier(.5,0,.2,1) both}
+@keyframes spV1{0%{left:52px;top:82px;opacity:0}20%{left:52px;top:82px;opacity:1}55%{left:52px;top:82px}100%{left:102px;top:132px}}
+@keyframes spV2{0%{left:102px;top:82px;opacity:0}20%{left:102px;top:82px;opacity:1}55%{left:102px;top:82px}100%{left:152px;top:132px}}
+@keyframes spV3{0%{left:152px;top:82px;opacity:0}20%{left:152px;top:82px;opacity:1}55%{left:152px;top:132px}100%{left:102px;top:182px}}
+@keyframes spV4{0%{left:202px;top:82px;opacity:0}20%{left:202px;top:82px;opacity:1}55%{left:202px;top:182px}100%{left:152px;top:182px}}
+#spStage .sq{left:96px;top:126px;width:108px;height:108px;border:2px solid #ff9a3c;border-radius:0;opacity:0;animation:spSq .5s 3.2s ease-out both}
+@keyframes spSq{0%{opacity:0;transform:scale(1.4)}60%{opacity:1}100%{opacity:1;transform:scale(1);box-shadow:0 0 24px rgba(255,154,60,.35)}}
+#spStage .name{left:0;right:0;top:300px;height:90px;animation:spName .6s 4.1s cubic-bezier(.4,0,.2,1) both}
+@keyframes spName{to{top:215px}}
+#spStage .t{left:0;right:0;top:0;text-align:center;font:400 34px "Russo One",var(--sans);letter-spacing:.05em;color:#edeae4;clip-path:inset(0 100% 0 0);animation:spT .7s 3.3s steps(9) both;white-space:nowrap}
+#spStage .t span{position:static;color:#ff9a3c}
+@keyframes spT{to{clip-path:inset(0 0 0 0)}}
+#spStage .ln{left:150px;top:50px;width:0;height:2px;background:#ff9a3c;animation:spLn .5s 3.9s cubic-bezier(.3,.9,.3,1) both}
+@keyframes spLn{to{left:60px;width:180px}}
+#spStage .sub{left:0;right:0;top:62px;text-align:center;font:11px var(--mono);letter-spacing:.3em;color:#a8a49c;opacity:0;animation:spFade .5s 4.2s both}
+@keyframes spFade{to{opacity:1}}
+#spStage .bar{left:60px;bottom:48px;width:180px;height:3px;background:#2a2622}
+#spStage .bar i{left:0;top:0;height:3px;width:0;background:#ff9a3c;animation:spBar 5s linear both}
+@keyframes spBar{to{width:180px}}
+
 h1.brand{font:400 24px "Russo One",var(--sans);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 h1.brand span{color:var(--accent)}
 nav.tabbar{position:sticky;top:0;z-index:15;margin:0 -2px 14px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;
@@ -330,6 +374,12 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 </style>
 </head>
 <body>
+<div id="splash" role="img" aria-label="F4 Square"><div id="spStage">
+  <div class="scene"><div class="grid"></div><div class="dot"></div><div class="c1"></div><div class="c2"></div>
+    <div class="v v1">01</div><div class="v v2">02</div><div class="v v3">03</div><div class="v v4">04</div><div class="sq"></div></div>
+  <div class="name"><div class="t">F4 <span>SQUARE</span></div><div class="ln"></div><div class="sub">4 · 4 · SYNC</div></div>
+  <div class="bar"><i></i></div>
+</div></div>
 <div class="wrap">
   <header>
     <img class="logo" src="data:image/png;base64,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" alt="">
@@ -2291,6 +2341,17 @@ function drawBoard() {
 }
 (function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); gameTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
+// ====================================================================== écran de démarrage (5 s, touche pour passer)
+(function splash() {
+  const sp = $('splash'), st = $('spStage');
+  const fit = () => { const k = Math.min(1.6, innerWidth / 300, innerHeight / 520); st.style.transform = 'scale(' + k + ')'; };
+  fit(); addEventListener('resize', fit);
+  let done = false;
+  const end = () => { if (done) return; done = true; sp.classList.add('out'); setTimeout(() => sp.remove(), 400);
+    const cur = document.querySelector('section.on'); if (cur) showTab(cur.id); };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { end(); return; }
+  sp.onclick = end; setTimeout(end, 5000);
+})();
 loadItems(); refresh(); showManSpeed(); gameUI(); suRender();
 { let t = 'setup'; try { t = localStorage.getItem('odv.tab') || 'setup'; } catch (e) {} showTab($(t) && document.querySelector(`nav button[data-tab="${t}"]`) ? t : 'setup'); }
 </script>

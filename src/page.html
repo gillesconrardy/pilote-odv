@@ -234,6 +234,50 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+/* ===== écran de démarrage (5 s, touche pour passer) ===== */
+#splash{position:fixed;inset:0;z-index:100;background:#121314;display:grid;place-items:center;transition:opacity .35s}
+#splash.out{opacity:0;pointer-events:none}
+#spStage{position:relative;width:300px;height:520px;flex:none}
+#spStage *{position:absolute;box-sizing:border-box}
+#spStage .scene{inset:0;animation:spScene .5s 4.1s ease-in both}
+@keyframes spScene{to{opacity:0;transform:translateY(-30px) scale(.9)}}
+#spStage .dot{left:148px;top:178px;width:4px;height:4px;border-radius:50%;background:#ff9a3c;animation:spDot 1s ease both}
+@keyframes spDot{0%{transform:scale(0);box-shadow:0 0 0 0 rgba(255,154,60,.8)}50%{transform:scale(2.5);box-shadow:0 0 0 0 rgba(255,154,60,.8)}100%{transform:scale(1);box-shadow:0 0 0 30px rgba(255,154,60,0)}}
+#spStage .grid{left:50px;top:80px;width:200px;height:200px;background-image:radial-gradient(circle,#3a3631 1.2px,transparent 1.6px);background-size:12.5px 12.5px;background-position:6px 6px;clip-path:circle(0 at 50% 50%);animation:spGrid .9s .7s cubic-bezier(.5,0,.2,1) both}
+@keyframes spGrid{to{clip-path:circle(75% at 50% 50%)}}
+#spStage .c1,#spStage .c2{width:22px;height:22px}
+#spStage .c1{border-left:3px solid #ff9a3c;border-top:3px solid #ff9a3c;animation:spC1 .6s 1s cubic-bezier(.3,.9,.3,1) both}
+#spStage .c2{border-right:3px solid #ff9a3c;border-bottom:3px solid #ff9a3c;animation:spC2 .6s 1s cubic-bezier(.3,.9,.3,1) both}
+@keyframes spC1{from{left:139px;top:169px;opacity:0}to{left:38px;top:68px;opacity:1}}
+@keyframes spC2{from{left:139px;top:169px;opacity:0}to{left:240px;top:270px;opacity:1}}
+#spStage .v{width:46px;height:46px;border-radius:0;font:700 15px var(--mono);color:#edeae4;display:grid;place-items:center;padding-bottom:6px;
+  background:linear-gradient(#ff9a3c,#ff9a3c) 6px calc(100% - 5px)/calc(100% - 12px) 4px no-repeat,#1a1c1e}
+#spStage .v::before,#spStage .v::after{content:"";position:absolute;width:9px;height:9px}
+#spStage .v::before{left:-1px;top:-1px;border-left:2px solid var(--c);border-top:2px solid var(--c)}
+#spStage .v::after{right:-1px;bottom:-1px;border-right:2px solid var(--c);border-bottom:2px solid var(--c)}
+#spStage .v1{--c:var(--v1);animation:spV1 1.5s 1.5s cubic-bezier(.5,0,.2,1) both}
+#spStage .v2{--c:var(--v2);animation:spV2 1.5s 1.6s cubic-bezier(.5,0,.2,1) both}
+#spStage .v3{--c:var(--v3);animation:spV3 1.5s 1.7s cubic-bezier(.5,0,.2,1) both}
+#spStage .v4{--c:var(--v4);animation:spV4 1.5s 1.8s cubic-bezier(.5,0,.2,1) both}
+@keyframes spV1{0%{left:52px;top:82px;opacity:0}20%{left:52px;top:82px;opacity:1}55%{left:52px;top:82px}100%{left:102px;top:132px}}
+@keyframes spV2{0%{left:102px;top:82px;opacity:0}20%{left:102px;top:82px;opacity:1}55%{left:102px;top:82px}100%{left:152px;top:132px}}
+@keyframes spV3{0%{left:152px;top:82px;opacity:0}20%{left:152px;top:82px;opacity:1}55%{left:152px;top:132px}100%{left:102px;top:182px}}
+@keyframes spV4{0%{left:202px;top:82px;opacity:0}20%{left:202px;top:82px;opacity:1}55%{left:202px;top:182px}100%{left:152px;top:182px}}
+#spStage .sq{left:96px;top:126px;width:108px;height:108px;border:2px solid #ff9a3c;border-radius:0;opacity:0;animation:spSq .5s 3.2s ease-out both}
+@keyframes spSq{0%{opacity:0;transform:scale(1.4)}60%{opacity:1}100%{opacity:1;transform:scale(1);box-shadow:0 0 24px rgba(255,154,60,.35)}}
+#spStage .name{left:0;right:0;top:300px;height:90px;animation:spName .6s 4.1s cubic-bezier(.4,0,.2,1) both}
+@keyframes spName{to{top:215px}}
+#spStage .t{left:0;right:0;top:0;text-align:center;font:400 34px "Russo One",var(--sans);letter-spacing:.05em;color:#edeae4;clip-path:inset(0 100% 0 0);animation:spT .7s 3.3s steps(9) both;white-space:nowrap}
+#spStage .t span{position:static;color:#ff9a3c}
+@keyframes spT{to{clip-path:inset(0 0 0 0)}}
+#spStage .ln{left:150px;top:50px;width:0;height:2px;background:#ff9a3c;animation:spLn .5s 3.9s cubic-bezier(.3,.9,.3,1) both}
+@keyframes spLn{to{left:60px;width:180px}}
+#spStage .sub{left:0;right:0;top:62px;text-align:center;font:11px var(--mono);letter-spacing:.3em;color:#a8a49c;opacity:0;animation:spFade .5s 4.2s both}
+@keyframes spFade{to{opacity:1}}
+#spStage .bar{left:60px;bottom:48px;width:180px;height:3px;background:#2a2622}
+#spStage .bar i{left:0;top:0;height:3px;width:0;background:#ff9a3c;animation:spBar 5s linear both}
+@keyframes spBar{to{width:180px}}
+
 h1.brand{font:400 24px "Russo One",var(--sans);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 h1.brand span{color:var(--accent)}
 nav.tabbar{position:sticky;top:0;z-index:15;margin:0 -2px 14px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;
@@ -330,6 +374,12 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 </style>
 </head>
 <body>
+<div id="splash" role="img" aria-label="F4 Square"><div id="spStage">
+  <div class="scene"><div class="grid"></div><div class="dot"></div><div class="c1"></div><div class="c2"></div>
+    <div class="v v1">01</div><div class="v v2">02</div><div class="v v3">03</div><div class="v v4">04</div><div class="sq"></div></div>
+  <div class="name"><div class="t">F4 <span>SQUARE</span></div><div class="ln"></div><div class="sub">4 · 4 · SYNC</div></div>
+  <div class="bar"><i></i></div>
+</div></div>
 <div class="wrap">
   <header>
     <img class="logo" src="/*ICON*/" alt="">
@@ -1962,6 +2012,17 @@ function drawBoard() {
 }
 (function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); gameTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
+// ====================================================================== écran de démarrage (5 s, touche pour passer)
+(function splash() {
+  const sp = $('splash'), st = $('spStage');
+  const fit = () => { const k = Math.min(1.6, innerWidth / 300, innerHeight / 520); st.style.transform = 'scale(' + k + ')'; };
+  fit(); addEventListener('resize', fit);
+  let done = false;
+  const end = () => { if (done) return; done = true; sp.classList.add('out'); setTimeout(() => sp.remove(), 400);
+    const cur = document.querySelector('section.on'); if (cur) showTab(cur.id); };
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { end(); return; }
+  sp.onclick = end; setTimeout(end, 5000);
+})();
 loadItems(); refresh(); showManSpeed(); gameUI(); suRender();
 { let t = 'setup'; try { t = localStorage.getItem('odv.tab') || 'setup'; } catch (e) {} showTab($(t) && document.querySelector(`nav button[data-tab="${t}"]`) ? t : 'setup'); }
 </script>

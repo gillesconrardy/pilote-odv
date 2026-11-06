@@ -98,6 +98,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   de Bruxelles, affichées en haut à droite de l'appli et dans le simulateur) ; l'appli relit `version.json` sans cache
   (démarrage, toutes les 2 min, retour dans l'appli) et affiche un bandeau « Nouvelle version disponible » qui recharge avec `?v=N`, puis commit de
   `index.html`, `simulateur/index.html`, `version.json` sur `main` ; en ligne en 1–2 min.
+- Écran de démarrage (`#splash`, 5 s, touche pour passer, désactivé si « réduire les animations ») : point orange,
+  plateau à points, coins qui s'écartent, 4 véhicules (blocs sombres à coins de leur couleur + ligne orange) qui forment
+  un carré 2×2 dans un cadre orange à angles droits, puis « F4 SQUARE » (Russo One) qui s'écrit et se centre.
 - Logo : véhicule « 01 » en pixel art (`icons/logo.svg`, PNG dérivés, `manifest.webmanifest`).
 - Style visuel de l'appli (depuis v1.22, choix de Gilles parmi 3 maquettes) : **« Holo ambre »**, futuriste
   minimaliste — fond graphite #121314, cartes #1a1c1e, accent ambre #ff9a3c, texte #edeae4, polices Space Grotesk
