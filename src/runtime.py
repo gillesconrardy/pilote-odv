@@ -103,7 +103,7 @@ P1 = [0, 0, 0, 0]
 def vt(raw):
     p = P1 if raw >= P1[0] else P0
     r = p[2]
-    if r == 0 or r == 9:
+    if r == 0 or r >= 9:
         return p[1]
     v = p[1] + r * (raw - p[0])
     if r > 0 and v > p[3]:
@@ -219,6 +219,13 @@ if IS_SENDER:
             P0 = [raw, v, 9, 0]
             P1 = [raw, v, 9, 0]
             emergency()
+        if c == 'e':
+            # fin des programmes : les vehicules 1 a 3 s'arretent sur place (pour recevoir un nouveau programme)
+            P0 = P1
+            P1 = [raw, vt(raw), 12, 0]
+            next_bcast = 0
+            print('ACK e 0')
+            return
         if raw < P1[0]:
             print('BUSY')
             return
@@ -304,7 +311,7 @@ while True:
         c = stdin.read(1)
         if c == '\n':
             if line:
-                if IS_SENDER and line in ('p', 'z', 'h', 'x'):
+                if IS_SENDER and line in ('p', 'z', 'h', 'x', 'e'):
                     command(line, local)
                 else:
                     manual_line(line)
@@ -324,7 +331,7 @@ while True:
             next_status = raw + (1000 if manual else 400)
             v = vt(raw)
             p = P1 if raw >= P1[0] else P0
-            st = 'P' if p[2] == 0 else ('S' if v == p[3] else ('F' if p[2] > 0 else 'B'))
+            st = 'E' if p[2] >= 9 else ('P' if p[2] == 0 else ('S' if v == p[3] else ('F' if p[2] > 0 else 'B')))
             w = wrap(v)
             print('ST', st, w, chor_index(w), 1 if raw < P1[0] else 0, hub.battery.voltage(), GEN)
     else:
@@ -340,6 +347,13 @@ while True:
                 P1 = q
             if P1[2] == 9:
                 emergency()
+            if P1[2] == 12:
+                # le vehicule 4 demande la fin du programme : on s'arrete sur place
+                x_motor.hold()
+                y_motor.hold()
+                hub.light.off()
+                wait(300)
+                raise SystemExit
         if not synced:
             last_loop = local
             wait(20)

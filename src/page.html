@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#3a3d41">
 <title>Pilote ODV</title>
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <style>
 /* Couleurs LEGO : Dark Bluish Gray, Light Bluish Gray, White, Bright Orange, Green, Blue, Red */
 :root{--bg:#d7dadc;--stud:#c3c7ca;--card:#ffffff;--ink:#1f2124;--muted:#5d6166;--line:#c9cdd0;--soft:#eceeef;
@@ -22,7 +25,7 @@ header{display:flex;align-items:center;gap:12px;padding:12px 14px 14px;margin:0 
 header::after{content:"";position:absolute;left:14px;right:14px;bottom:6px;height:4px;border-radius:2px;background:var(--accent)}
 header::before{content:"";position:absolute;left:10px;right:10px;top:-7px;height:9px;
   background:radial-gradient(ellipse at 50% 100%,#4a4d52 0 6px,transparent 6.5px) 0 0/26px 9px repeat-x}
-.logo{width:44px;height:44px;border-radius:8px;background:#1f2124;display:grid;place-items:center;color:#fff;font:700 15px ui-monospace,Menlo,Consolas,monospace;border:2px solid #55595e;letter-spacing:.5px}
+.logo{width:50px;height:50px;flex:none;filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
 h1{font:700 21px ui-monospace,Menlo,Consolas,monospace;margin:0;letter-spacing:.5px;color:#fff}
 header .sub{color:#c4c8cc}
 .ver{margin-left:auto;text-align:right;font:600 11px ui-monospace,Menlo,Consolas,monospace;color:#c4c8cc;line-height:1.35}
@@ -110,8 +113,8 @@ canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3
 <body>
 <div class="wrap">
   <header>
-    <div class="logo">ODV</div>
-    <div><h1>Pilote ODV</h1><div class="sub">4 véhicules omnidirectionnels · Pybricks</div></div>
+    <img class="logo" src="/*ICON*/" alt="">
+    <div><h1>Pilote ODV</h1><div class="sub">4 véhicules omnidirectionnels</div></div>
     <div class="ver" title="Version de l'application"><b>v/*VERSION*/</b><br>/*BUILT*/</div>
   </header>
   <div class="banner" id="nobt"></div>
@@ -153,7 +156,7 @@ canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3
       <div class="note" id="howto"></div>
       <details style="margin-top:10px"><summary class="sub">Noms des hubs (pour trouver le bon hub automatiquement)</summary>
         <div id="names" style="display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-top:8px"></div>
-        <div class="sub" style="margin-top:6px">La fenêtre Bluetooth ne propose que le hub portant ce nom. Laisse vide pour voir tous les hubs Pybricks.</div>
+        <div class="sub" style="margin-top:6px">La fenêtre Bluetooth ne propose que le hub portant ce nom. Laisse vide pour voir tous les hubs.</div>
       </details>
       <div class="log" id="log"></div>
     </div>
@@ -191,6 +194,19 @@ canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3
   <textarea id="dlgSrc" spellcheck="false" placeholder="Colle des lignes mvc.move(...), mvc.move_circ(...), mvc.wait_sync_ms(...) ou un fichier VehicleXX.py complet. Elle doit partir de (30,0) (20,0) (10,0) (0,0) et y revenir."></textarea>
   <div id="dlgMsg" class="sub" style="margin:6px 0"></div>
   <div class="row" style="justify-content:flex-end"><button class="btn" id="dlgCancel">Annuler</button><button class="btn primary" id="dlgOk">Ajouter</button></div>
+</dialog>
+<dialog id="pvDlg" style="padding:12px">
+  <div class="row" style="justify-content:space-between;margin-bottom:6px"><b id="pvName" style="font-size:16px"></b><button class="btn" id="pvClose">Fermer</button></div>
+  <canvas id="pvCv" width="600" height="600" style="margin-top:0"></canvas>
+  <div class="row" style="margin-top:8px;flex-wrap:nowrap"><button class="btn primary" id="pvPlay" style="min-width:52px">❚❚</button>
+    <input type="range" id="pvSeek" min="0" max="1000" value="0" style="flex:1;accent-color:var(--accent)">
+    <span class="sub" id="pvTime" style="min-width:78px;text-align:right">0:00 / 0:00</span></div>
+  <div class="row" style="margin-top:6px"><span class="sub">Vitesse</span><div class="seg" id="pvRate" style="flex:1"><button data-r="0.5">×0,5</button><button data-r="1" class="on">×1</button><button data-r="2">×2</button><button data-r="4">×4</button></div></div>
+</dialog>
+<dialog id="pickDlg">
+  <h2 style="margin-bottom:6px">Connexion au véhicule <span id="pickV"></span></h2>
+  <p class="sub" style="margin:0 0 12px">Touche le bouton : la fenêtre Bluetooth ne proposera que le hub <b id="pickName"></b>. Touche-le pour continuer.</p>
+  <div class="row" style="justify-content:flex-end"><button class="btn" id="pickCancel">Annuler</button><button class="btn primary" id="pickGo">Connecter</button></div>
 </dialog>
 <div class="toast" id="toast"></div>
 
@@ -258,10 +274,11 @@ function renderList() {
       : it.gr ? `<span class="badge warn">${it.gr} frôlement${it.gr > 1 ? 's' : ''}</span>` : `<span class="badge ok">✓ sans collision</span>`;
     d.innerHTML = `<input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
       <div class="nm"><b>${esc(it.name)}</b><span>${fmt(it.dur)}</span>${badge}</div>
-      <div class="ord"><button title="Monter">↑</button><button title="Descendre">↓</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
+      <div class="ord"><button title="Aperçu" class="pv">👁</button><button title="Monter">↑</button><button title="Descendre">↓</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
     const [cb] = d.getElementsByTagName('input');
     cb.onchange = () => { it.on = cb.checked; persist(); refresh(); };
-    const bs = d.querySelectorAll('.ord button');
+    d.querySelector('.pv').onclick = () => openPreview(it);
+    const bs = d.querySelectorAll('.ord button:not(.pv)');
     bs[0].onclick = () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; persist(); refresh(); } };
     bs[1].onclick = () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; persist(); refresh(); } };
     if (bs[2]) bs[2].onclick = () => { const k = custom.findIndex(c => c.id === it.custom); custom.splice(k, 1); store.set('custom', custom); loadItems(); refresh(); };
@@ -506,6 +523,7 @@ async function sendVehicle(v, doUpload, homing = $('optHoming').checked) {
     setBar(v, null);
     const msg = e && e.name === 'NotFoundError' ? `Aucun hub choisi (le hub « ${hubName(v)} » est-il allumé ? sinon vérifie son nom dans « Noms des hubs »)`
       : e && e.name === 'SecurityError' ? 'Appuie à nouveau sur le bouton (Chrome demande un appui pour ouvrir la fenêtre Bluetooth)'
+      : e && e.name === 'NetworkError' ? `Hub injoignable : si son programme tourne, appuie une fois sur le bouton du hub pour l'arrêter, puis réessaie`
       : (e && e.message) || String(e);
     setSt(v, '⚠ ' + esc(msg), 'bad'); log(`V${v} : ${msg}`);
     if (e && e.name === 'NotFoundError') V[v].hub = V[v].hub && V[v].hub.connected ? V[v].hub : null;
@@ -544,19 +562,42 @@ for (let v = 1; v <= 4; v++) {
 }
 $('discAll2').onclick = disconnectAll;
 $('goUpd').onclick = () => { showTab('choix'); toast('Choisis les chorégraphies, puis « Mettre à jour les 4 véhicules » dans Envoi', 3500); };
+function askPick(v) {
+  // la fenêtre Bluetooth exige un appui de l'utilisateur : on le demande par une petite boîte
+  return new Promise((res, rej) => {
+    $('pickV').textContent = v; $('pickName').textContent = hubName(v) || 'Pybricks';
+    $('pickGo').onclick = () => { $('pickDlg').close(); Hub.pick(nameVariants(v)).then(res, rej); };
+    $('pickCancel').onclick = () => { $('pickDlg').close(); rej(new Error('Mise à jour annulée.')); };
+    $('pickDlg').showModal();
+  });
+}
+async function ensureHub(v) {
+  let h = V[v].hub;
+  if (!h) { h = await Hub.known(nameVariants(v)); if (h) log(`V${v} : reconnexion automatique à « ${h.name} »`); }
+  if (!h) h = await askPick(v);
+  V[v].hub = h; store.set('name' + v, h.name);
+  for (let k = 0; ; k++) {
+    try { await h.connect(); return h; }
+    catch (e) {
+      if (k >= 5) throw new Error(`Impossible de joindre le véhicule ${v} (« ${hubName(v)} »). Appuie une fois sur le bouton de son hub pour arrêter son programme, puis relance la mise à jour.`);
+      await sleep(1500);
+    }
+  }
+}
 const atHome = () => R.st && R.tl && (R.st.s === 'P' || R.st.s === 'S') && R.tl.bounds.includes(R.st.w);
 let updating = false;
 async function updateAll() {
   const msg = t => { $('updMsg').innerHTML = t; log(t.replace(/<[^>]+>/g, '')); };
   if (!TL) { toast('Choisis d\'abord des chorégraphies'); showTab('choix'); return; }
-  const missing = [1, 2, 3, 4].filter(v => !V[v].hub);
-  if (missing.length) {
-    msg(`Les hubs des véhicules ${missing.join(', ')} ne sont pas encore associés dans cette session. Pour eux : fais « Stop et retour au départ », désactive « Recalage au démarrage », puis appuie sur « Envoyer et démarrer » pour 1, 2, 3 et 4 (le 4 en dernier).`);
-    return;
-  }
   if (updating) return;
   updating = true; $('updAll').disabled = true;
   try {
+    // 0. il faut le véhicule 4 : c'est lui qui donne les ordres aux autres
+    if (!R.hub || !R.hub.connected) {
+      msg('Connexion au véhicule 4…');
+      const h4 = await ensureHub(4); attachRemote(h4);
+      for (let k = 0; k < 15 && !R.st; k++) await sleep(200);
+    }
     // 1. ramener les véhicules au départ
     if (R.hub && R.hub.connected && R.st) {
       if (!atHome()) {
@@ -572,11 +613,19 @@ async function updateAll() {
     } else if (!confirm('Je ne peux pas vérifier où sont les véhicules (véhicule 4 non connecté). Sont-ils bien à leur position de départ ?')) {
       msg('Mise à jour annulée.'); return;
     }
-    // 2. arrêter le véhicule 4 pour couper l'ancienne horloge
+    // 2. le véhicule 4 demande aux véhicules 1 à 3 d'arrêter leur programme (sinon ils sont invisibles en Bluetooth)
+    if (R.hub && R.hub.connected) {
+      msg('Arrêt des programmes des véhicules 1 à 3…');
+      try { await R.hub.stdin('e'); } catch {}
+      await sleep(2500);
+    }
+    // 3. arrêter le véhicule 4 pour couper l'ancienne horloge
     msg('Arrêt du véhicule 4…');
-    const h4 = await getHub(4); h4.onLine = null; R.st = null; await h4.stop();
-    // 3. envoyer 1, 2, 3 puis 4, sans recalage (ils sont déjà en place)
+    const h4 = await ensureHub(4); h4.onLine = null; h4.autoReconnect = false; R.st = null; await h4.stop();
+    // 4. envoyer 1, 2, 3 puis 4, sans recalage (ils sont déjà en place)
     for (const v of [1, 2, 3, 4]) {
+      msg(`Connexion au véhicule ${v}…`);
+      await ensureHub(v);
       msg(`Envoi au véhicule ${v} (${v} sur 4)…`);
       if (!await sendVehicle(v, true, false)) throw new Error(`Échec de l'envoi au véhicule ${v} (voir son message ci-dessous).`);
     }
@@ -731,6 +780,7 @@ function stateLabel() {
   if (s.s === 'B') return ['Retour au départ…', name + ' · en arrière'];
   if (s.s === 'F') return [R.lastCmd === 'h' ? 'Retour au départ…' : 'Lecture', name + (R.lastCmd === 'h' ? ' · jusqu\'à la fin' : '')];
   if (s.s === 'S') return [atBound ? 'À la position de départ' : 'Arrêté', name];
+  if (s.s === 'E') return ['Arrêté', 'Programmes arrêtés'];
   return ['…', ''];
 }
 function updateRemote() {
@@ -748,10 +798,36 @@ function estW() {
   return s.w + (s.s === 'F' ? dt : s.s === 'B' ? -dt : 0);
 }
 
+// ====================================================================== aperçu d'une chorégraphie
+const PV = { tl: null, w: 0, play: true, rate: 1, last: 0, sim: null, cols: [] };
+function openPreview(it) {
+  try { PV.tl = ODVGEN.buildTimeline([{ name: it.name, src: it.src }]); }
+  catch (e) { toast('Aperçu impossible : ' + e.message); return; }
+  const { prog } = ODV.parse(ODVGEN.prepare(it.src), 4);
+  PV.cols = ODV.collisions(ODV.simulate(prog, ODVGEN.HOME), 10).filter(c => c.pen > 1);
+  PV.w = 0; PV.play = true; PV.last = performance.now();
+  $('pvName').textContent = it.name + ' · ' + fmt(PV.tl.total);
+  $('pvPlay').textContent = '❚❚';
+  $('pvDlg').showModal();
+}
+$('pvClose').onclick = () => { PV.tl = null; $('pvDlg').close(); };
+$('pvDlg').addEventListener('close', () => { PV.tl = null; });
+$('pvPlay').onclick = () => { PV.play = !PV.play; if (PV.play && PV.w >= PV.tl.total) PV.w = 0; $('pvPlay').textContent = PV.play ? '❚❚' : '▶'; };
+$('pvSeek').oninput = e => { PV.w = e.target.value / 1000 * PV.tl.total; };
+document.querySelectorAll('#pvRate button').forEach(b => b.onclick = () => { PV.rate = +b.dataset.r; document.querySelectorAll('#pvRate button').forEach(x => x.classList.toggle('on', x === b)); });
+function previewTick() {
+  if (!PV.tl) return;
+  const now = performance.now(), dt = Math.min(100, now - PV.last); PV.last = now;
+  if (PV.play) { PV.w += dt * PV.rate; if (PV.w >= PV.tl.total) { PV.w = PV.tl.total; PV.play = false; $('pvPlay').textContent = '▶'; } }
+  $('pvSeek').value = Math.round(PV.w / PV.tl.total * 1000);
+  $('pvTime').textContent = fmt(PV.w) + ' / ' + fmt(PV.tl.total);
+  const c = $('pvCv');
+  drawPlate(c, PV.tl, PV.w, null, true);
+}
 // ====================================================================== mini board
-const cv = $('cv'), cx = cv.getContext('2d');
-function drawBoard() {
-  const tl = R.tl || TL; const W = cv.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
+const cv = $('cv');
+function drawPlate(c, tl, w, man, trails) {
+  const cx = c.getContext('2d'), W = c.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
   const dark = matchMedia('(prefers-color-scheme: dark)').matches;
   cx.fillStyle = dark ? '#262624' : '#efeae1'; cx.fillRect(0, 0, W, W);
   cx.fillStyle = dark ? '#3a3936' : '#ffffff'; cx.fillRect(X(35), Y(-5), 40 * u, 40 * u);
@@ -759,29 +835,48 @@ function drawBoard() {
   for (let gx = -4; gx <= 34; gx += 2) for (let gy = -4; gy <= 34; gy += 2) { cx.beginPath(); cx.arc(X(gx), Y(gy), u * .22, 0, 7); cx.fill(); }
   cx.fillStyle = '#3d3e40'; cx.fillRect(X(35), Y(-6), 41 * u, u * .45); cx.fillRect(X(-5.6), Y(-6), u * .45, 41 * u);
   cx.fillStyle = '#d0302a'; [[-4, -5.8], [-2.6, -5.8], [-5.8, -4.2]].forEach(([a, b]) => { cx.beginPath(); cx.arc(X(a), Y(b), u * .45, 0, 7); cx.fill(); });
-  const w = R.st ? estW() : 0;
-  const cols = ['--v1', '--v2', '--v3', '--v4'].map(c => getComputedStyle(document.documentElement).getPropertyValue(c).trim());
-  if (M.active && M.path.length > 1) {
-    cx.strokeStyle = cols[M.v - 1]; cx.lineWidth = u * .35; cx.globalAlpha = .45; cx.beginPath();
-    M.path.forEach((q, k) => k ? cx.lineTo(X(q[0]), Y(q[1])) : cx.moveTo(X(q[0]), Y(q[1]))); cx.lineTo(X(M.cmd[0]), Y(M.cmd[1])); cx.stroke(); cx.globalAlpha = 1;
+  const cols = ['--v1', '--v2', '--v3', '--v4'].map(k => getComputedStyle(document.documentElement).getPropertyValue(k).trim());
+  if (trails && tl) {
+    for (let i = 0; i < 4; i++) {
+      cx.strokeStyle = cols[i]; cx.lineWidth = u * .45; cx.lineJoin = 'round';
+      for (let s = 0; s < 12; s++) {
+        const t0 = w - 3000 + s * 250, t1 = t0 + 250; if (t1 <= 0) continue;
+        cx.globalAlpha = 0.1 + 0.6 * s / 12; cx.beginPath();
+        for (let t = Math.max(0, t0); t <= t1; t += 50) { const q = ODVGEN.posAt(tl, i, t); t === Math.max(0, t0) ? cx.moveTo(X(q[0]), Y(q[1])) : cx.lineTo(X(q[0]), Y(q[1])); }
+        cx.stroke();
+      }
+      cx.globalAlpha = 1;
+    }
   }
-  if (M.active && M.finger) { cx.strokeStyle = cols[M.v - 1]; cx.lineWidth = u * .3; cx.beginPath(); cx.arc(X(M.finger[0]), Y(M.finger[1]), u * 1.2, 0, 7); cx.stroke(); }
+  if (man && man.path.length > 1) {
+    cx.strokeStyle = cols[man.v - 1]; cx.lineWidth = u * .35; cx.globalAlpha = .45; cx.beginPath();
+    man.path.forEach((q, k) => k ? cx.lineTo(X(q[0]), Y(q[1])) : cx.moveTo(X(q[0]), Y(q[1]))); cx.lineTo(X(man.cmd[0]), Y(man.cmd[1])); cx.stroke(); cx.globalAlpha = 1;
+  }
+  const P = [];
+  for (let i = 0; i < 4; i++) P.push(man && man.v === i + 1 ? man.cmd : tl ? ODVGEN.posAt(tl, i, w) : ODVGEN.HOME[i]);
   for (let i = 0; i < 4; i++) {
-    const p = M.active && M.v === i + 1 ? M.cmd : tl ? ODVGEN.posAt(tl, i, w) : ODVGEN.HOME[i];
-    const L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
+    const p = P[i], L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
+    let hit = false;
+    for (let j = 0; j < 4; j++) if (j !== i && Math.max(Math.abs(p[0] - P[j][0]), Math.abs(p[1] - P[j][1])) < 9) hit = true;
     cx.fillStyle = '#2f3033'; cx.beginPath(); cx.roundRect ? cx.roundRect(L, T, S, S, u) : cx.rect(L, T, S, S); cx.fill();
     cx.fillStyle = cols[i]; cx.fillRect(L + u, T + S - 2.2 * u, S - 2 * u, u * .6);
     cx.fillStyle = '#fff'; cx.font = `700 ${3.2 * u}px ui-monospace,monospace`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
     cx.fillText('0' + (i + 1), X(p[0]), Y(p[1] - .6));
-    if (M.active && M.v === i + 1) { cx.strokeStyle = '#e2408a'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+    if (man && man.v === i + 1) { cx.strokeStyle = '#e2408a'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+    if (hit) { cx.strokeStyle = '#c91a09'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
   }
+}
+function drawBoard() {
+  const tl = R.tl || TL;
+  const w = R.st ? estW() : 0;
+  drawPlate(cv, tl, w, M.active ? M : null, false);
   if (R.st && tl) {
     const k = R.st.k, b0 = tl.bounds[k], b1 = tl.bounds[k + 1] || tl.total;
     $('stProg').style.width = (100 * Math.min(1, Math.max(0, (w - b0) / (b1 - b0)))) + '%';
     $('stTime').textContent = `${fmt(w - b0)} / ${fmt(b1 - b0)}  ·  chorégraphie ${k + 1} sur ${tl.bounds.length - 1}`;
   }
 }
-(function loop(ts) { manualTick(ts); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
+(function loop(ts) { manualTick(ts); previewTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
 loadItems(); refresh();
 </script>

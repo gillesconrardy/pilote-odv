@@ -1,0 +1,27 @@
+{
+ "name": "Pilote ODV",
+ "short_name": "Pilote ODV",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "background_color": "#d7dadc",
+ "theme_color": "#3a3d41",
+ "icons": [
+  {
+   "src": "icons/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  },
+  {
+   "src": "icons/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

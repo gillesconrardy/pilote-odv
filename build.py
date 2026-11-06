@@ -14,6 +14,8 @@ if '--publier' in sys.argv:
     json.dump(ver, open(VF, 'w'), indent=1)
 VERSION = '%d.%d' % (ver['majeur'], ver['num'])
 BUILT = ('publiée le ' + ver['date']) if ver['date'] else 'version locale'
+import base64
+ICON = 'data:image/png;base64,' + base64.b64encode(open('icons/logo-96.png', 'rb').read()).decode()
 
 rd = lambda f: open(f, encoding='utf-8', newline='').read().replace('\r', '')
 js = lambda o: json.dumps(o, ensure_ascii=False).replace('</', '<\\/')
@@ -29,7 +31,7 @@ core = rd('src/core.js')
 pre = [{'name': n, 'src': rd(C + f), 'def': d} for n, f, d in CHORS]
 page = rd('src/page.html').replace('/*CORE*/', core).replace('/*GEN*/', rd('src/odvgen.js')) \
     .replace('/*RUNTIME*/', js(rd('src/runtime.py'))).replace('/*PRESETS*/', js(pre)) \
-    .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT)
+    .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT).replace('/*ICON*/', ICON)
 open('index.html', 'w', encoding='utf-8').write(page)
 
 # --- Simulateur (simulateur/index.html)

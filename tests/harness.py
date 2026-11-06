@@ -35,6 +35,7 @@ def wait(ms):
 
 class _Light:
     def on(self, c): ctx.light = c
+    def off(self): ctx.light = None
 class _Battery:
     def voltage(self): return 7800
 class _BLE:
@@ -67,6 +68,7 @@ class Motor:
         else:
             r[1] = a / 80
     def stop(self): ctx.stopped = True
+    def hold(self): ctx.stopped = True
 
 class _Stdin:
     def read(self, n): return STDINS[ctx.vid].get_nowait()

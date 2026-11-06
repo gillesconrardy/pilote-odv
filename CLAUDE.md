@@ -34,15 +34,17 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    - Les commandes s'appliquent 1 s plus tard (`LEAD`) pour que les 4 réagissent ensemble.
    - Commandes reçues sur stdin, une par ligne : `p` lecture, `z` pause, `h` stop + retour au départ
      (retrace la chorégraphie en cours vers son début, ou va à sa fin si plus court), `x` urgence
-     (véhicule 4) ; `M` prise en main, `Gx,y` cible (×100), `Q` rendre la main (tous les véhicules).
+     (véhicule 4), `e` fin des programmes des véhicules 1 à 3 (ils s'arrêtent sur place pour redevenir
+     visibles en Bluetooth : un hub qui exécute un programme n'est pas joignable) ; `M` prise en main, `Gx,y` cible (×100), `Q` rendre la main (tous les véhicules).
    - Manuel : déplacement limité à 8 pas/s ; radio allégée sur le V4 pendant le manuel.
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
 4. **`src/page.html`** : Pilote ODV (onglets Programme / Envoi / Pilotage). Compile avec
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub
    (format multi-mpy6 : taille u32 + `__main__\0` + mpy ; commandes 0 stop, 3 meta, 4 RAM, 1 start,
    6 stdin), service Pybricks `c5f50001-8280-46da-89f4-6d8051e4aeef`.
-   Fonctions : choix/ordre des chorégraphies, boucle, recalage, « Mettre à jour les 4 véhicules »
-   (retour au départ → arrêt V4 → envoi 1,2,3,4 sans recalage), « Tout déconnecter » (vérifié),
+   Fonctions : choix/ordre des chorégraphies, aperçu animé (bouton 👁), boucle, recalage,
+   « Mettre à jour les 4 véhicules » (retour au départ → `e` → arrêt V4 → envoi 1,2,3,4 sans recalage ;
+   une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
    reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30).
 5. **`simulateur/template.html`** : simulateur visuel (plateau blanc à picots, véhicules gris
    « 01…04 » d'après la photo du montage), lecture, détection des chevauchements, édition du code.
@@ -59,6 +61,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
 - Publier : `python build.py --publier` (augmente la version dans `version.json` et note l'heure
   de Bruxelles, affichées en haut à droite de l'appli et dans le simulateur), puis commit de
   `index.html`, `simulateur/index.html`, `version.json` sur `main` ; en ligne en 1–2 min.
+- Logo : véhicule « 01 » en pixel art (`icons/logo.svg`, PNG dérivés, `manifest.webmanifest`).
 - Style visuel « LEGO » : gris bleuté foncé + bande orange (comme les véhicules), fond à picots,
   boutons aux couleurs LEGO (vert, jaune, bleu, rouge). Garder ce style pour toute nouvelle page.
 - Nouvelle chorégraphie : fichier de lignes `mvc.*` indentées de 4 espaces dans `choregraphies/`,
