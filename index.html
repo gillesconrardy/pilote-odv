@@ -324,6 +324,9 @@ section.anim .card::before{animation:cardCornerA .42s cubic-bezier(.3,.9,.3,1) b
 section.anim .card::after{animation:cardCornerB .42s cubic-bezier(.3,.9,.3,1) backwards;animation-delay:inherit}
 section.anim .card>*{animation:cardIn .6s ease backwards;animation-delay:inherit}
 @media (prefers-reduced-motion:reduce){section.anim .card,section.anim .card::before,section.anim .card::after,section.anim .card>*{animation:none}}
+@keyframes tabArrive{0%{transform:translate(var(--dx),-46px);opacity:0}35%{transform:translate(var(--dx),0);opacity:1}100%{transform:none;opacity:1}}
+nav.tabbar.arrive button{animation:tabArrive .9s cubic-bezier(.6,0,.25,1) backwards;animation-delay:var(--dl)}
+@media (prefers-reduced-motion:reduce){nav.tabbar.arrive button{animation:none}}
 @keyframes tabspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 nav.tabbar button.spin svg{animation:tabspin .55s cubic-bezier(.3,.9,.3,1)}
 .slabel{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--muted)}
@@ -2383,6 +2386,14 @@ function drawBoard() {
 }
 (function loop(ts) { manualTick(ts); previewTick(); edTick(); odoTick(); gameTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
+// les onglets arrivent comme des véhicules : tous partent du centre, descendent, puis glissent à leur place
+function tabsArrive() {
+  const nav = document.querySelector('nav.tabbar'), bs = [...nav.querySelectorAll('button')];
+  const w = bs[1].getBoundingClientRect().left - bs[0].getBoundingClientRect().left;
+  bs.forEach((b, k) => { b.style.setProperty('--dx', ((2 - k) * w) + 'px'); b.style.setProperty('--dl', (Math.abs(2 - k) * 0.09) + 's'); });
+  nav.classList.remove('arrive'); void nav.offsetWidth; nav.classList.add('arrive');
+  setTimeout(() => nav.classList.remove('arrive'), 1400);
+}
 // ====================================================================== écran de démarrage (5 s, touche pour passer)
 (function splash() {
   const sp = $('splash'), st = $('spStage');
@@ -2390,7 +2401,7 @@ function drawBoard() {
   fit(); addEventListener('resize', fit);
   let done = false;
   const end = () => { if (done) return; done = true; sp.classList.add('out'); setTimeout(() => sp.remove(), 400);
-    const cur = document.querySelector('section.on'); if (cur) showTab(cur.id); };
+    tabsArrive(); const cur = document.querySelector('section.on'); if (cur) showTab(cur.id); };
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { end(); return; }
   sp.onclick = end; setTimeout(end, 5000);
 })();
