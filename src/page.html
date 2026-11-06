@@ -245,6 +245,15 @@ nav.tabbar button::before{content:"";position:absolute;inset:0;background:var(--
 nav.tabbar button>*{position:relative}
 nav.tabbar button.on{color:#121314;border-bottom-color:#c96d1c;font-weight:700}
 nav.tabbar button.on::before{transform:none}
+@keyframes cardFill{0%,40%{background:transparent;border-color:transparent}100%{}}
+@keyframes cardCornerA{from{left:46%;top:42%}to{left:-1px;top:-1px}}
+@keyframes cardCornerB{from{right:46%;bottom:42%}to{right:-1px;bottom:-1px}}
+@keyframes cardIn{0%,50%{opacity:0}100%{opacity:1}}
+section.anim .card{animation:cardFill .6s ease backwards}
+section.anim .card::before{animation:cardCornerA .42s cubic-bezier(.3,.9,.3,1) backwards;animation-delay:inherit}
+section.anim .card::after{animation:cardCornerB .42s cubic-bezier(.3,.9,.3,1) backwards;animation-delay:inherit}
+section.anim .card>*{animation:cardIn .6s ease backwards;animation-delay:inherit}
+@media (prefers-reduced-motion:reduce){section.anim .card,section.anim .card::before,section.anim .card::after,section.anim .card>*{animation:none}}
 @keyframes tabspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 nav.tabbar button.spin svg{animation:tabspin .55s cubic-bezier(.3,.9,.3,1)}
 .slabel{font:400 10.5px var(--mono);letter-spacing:.16em;color:var(--muted)}
@@ -534,6 +543,10 @@ const store = { get(k, d) { try { const v = localStorage.getItem('odv.' + k); re
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => { b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); showTab(b.dataset.tab); });
 function showTab(id) {
   try { localStorage.setItem('odv.tab', id); } catch (e) {}
+  // les blocs de l'onglet apparaissent l'un après l'autre : les coins orange s'écartent, puis le bloc se remplit
+  const sec = $(id);
+  if (sec) { sec.classList.remove('anim'); void sec.offsetWidth; sec.querySelectorAll('.card').forEach((c, k) => c.style.animationDelay = Math.min(k, 6) * 0.08 + 's');
+    sec.classList.add('anim'); clearTimeout(sec._an); sec._an = setTimeout(() => sec.classList.remove('anim'), 1400); }
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
   document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
   if (id === 'tele') drawBoard();
