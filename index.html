@@ -363,7 +363,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <div class="card">
     <input type="text" id="edName" placeholder="Nom de la chorégraphie" style="margin-bottom:6px">
     <canvas id="edCv" width="600" height="600" aria-label="Plateau d'édition"></canvas>
-    <div class="sub" id="edHint" style="margin-top:6px"></div>
+    <div class="row" style="margin-top:8px;flex-wrap:nowrap"><div class="sub" id="edHint" style="flex:1"></div><button class="btn" id="edPlay" style="flex:none">▶ Aperçu</button></div>
   </div>
   <div class="card">
     <h2>Étapes</h2>
@@ -397,7 +397,6 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     </details>
   </div>
   <div class="row" style="margin-bottom:12px">
-    <button class="btn" id="edPlay" style="flex:1">▶ Aperçu</button>
     <button class="btn" id="edCode" style="flex:1">Code</button>
     <button class="btn primary" id="edSave" style="flex:1.4">💾 Enregistrer</button>
   </div>
