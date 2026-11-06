@@ -46,7 +46,7 @@ async def main():
         print('state', await pg.inner_text('#stBig'), '|', await pg.inner_text('#stSub'), '|', await pg.inner_text('#stTime'))
         print('stdin writes V4', [x for x in w['Pybricks Hub 4'] if x[0] == 6], await pg.evaluate("window.__writes['Pybricks Hub 4'].filter(x=>x[0]==6)"))
         await pg.click('nav button[data-tab=choix]'); await pg.click('#chList .ch input'); await pg.wait_for_timeout(200)
-        await pg.click('nav button[data-tab=envoi]'); await pg.click('#updAll'); await pg.wait_for_timeout(9000)
+        await pg.click('nav button[data-tab=envoi]'); await pg.click('#updAll'); await pg.wait_for_timeout(16000)
         print('updMsg:', await pg.inner_text('#updMsg'))
         allc = await pg.evaluate('window.__all'); import re
         for n, src in allc:

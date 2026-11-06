@@ -36,7 +36,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      (retrace la chorégraphie en cours vers son début, ou va à sa fin si plus court), `x` urgence
      (véhicule 4), `e` fin des programmes des véhicules 1 à 3 (ils s'arrêtent sur place pour redevenir
      visibles en Bluetooth : un hub qui exécute un programme n'est pas joignable) ; `M` prise en main, `Gx,y` cible (×100), `Q` rendre la main (tous les véhicules).
-   - Manuel : déplacement limité à 8 pas/s ; radio allégée sur le V4 pendant le manuel.
+   - Manuel : vitesse choisie au curseur dans la page (1 à 16 pas/s), plafond hub 16 pas/s ; radio allégée sur le V4.
+   - Au démarrage, chaque hub imprime `BAT <mV>` (niveau affiché dans Envoi : 6,0 V = 0 %, 8,4 V = 100 %).
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
 4. **`src/page.html`** : Pilote ODV (onglets Programme / Envoi / Pilotage). Compile avec
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub

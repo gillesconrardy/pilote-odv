@@ -870,6 +870,7 @@ function manualTick(ts) {
   let goal = null;
   if (M.returning) {
     while (M.path.length && Math.hypot(M.path[M.path.length - 1][0] - M.cmd[0], M.path[M.path.length - 1][1] - M.cmd[1]) < 0.02) {
+      M.cmd = M.path[M.path.length - 1].slice();   // on se cale exactement sur le point de passage
       if (M.path.length === 1) break; M.path.pop();
     }
     goal = M.path[M.path.length - 1];
