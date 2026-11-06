@@ -335,7 +335,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <!-- ======================= 3. TÉLÉCOMMANDE ======================= -->
   <section id="tele">
     <div class="card">
-      <div class="state"><div><div class="big" id="stBig">○ Non connecté</div><div class="sub" id="stSub"></div></div>
+      <div class="state"><div><div class="big" id="stBig" style="display:inline">○ Non connecté</div> <button type="button" class="tip" style="display:inline-grid;vertical-align:middle;width:17px;height:17px;font-size:10.5px;margin-left:4px" data-tip="Stop et retour : les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision. Arrêt d'urgence : les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.">i</button><div class="sub" id="stSub"></div></div>
         <button class="btn" id="connect4">Connecter V4</button></div>
       <div class="prog"><div id="stProg"></div></div>
       <div class="sub" id="stTime"></div>
@@ -356,7 +356,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
-      <div class="row" style="margin-top:8px"><button class="btn" id="rcGo" disabled>🎮 Connecter la télécommande</button><span class="sub" id="rcSt">Télécommande : non connectée</span></div>
+      <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
     <div class="card" id="gameCard">
@@ -371,7 +371,8 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <button class="btn primary" id="gGo" style="width:100%">▶ Lancer la poursuite</button>
       <div class="sub" id="gMsg" style="margin-top:8px"></div>
     </div>
-    <div class="row" style="margin:12px 0"><button class="btn" id="discAll2">Tout déconnecter</button><button class="btn" id="goUpd">Changer de chorégraphies…</button><button type="button" class="tip" data-tip="Stop et retour : les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision. Arrêt d'urgence : les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.">i</button></div>
+    <button class="btn" id="goUpd" style="width:100%;margin-top:12px">Changer de chorégraphies…</button>
+    <button class="btn" id="discAll2" style="width:100%;margin:8px 0 12px">Tout déconnecter</button>
   </section>
 </div>
 
