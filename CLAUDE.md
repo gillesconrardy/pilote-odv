@@ -105,7 +105,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   démarrage, étiquettes HTML classe `.vbk` avec `--c` = couleur du véhicule) : bloc sombre #1f2124 hachuré en
   diagonale à la couleur du véhicule, coins « crochets » de sa couleur, ligne orange en bas, numéro en police
   **Tomorrow** 700 (Google Fonts).
-- Boutons orange (`.btn.primary`, `.rb.play`) et boutons « Fermer » (`.btn.close`) : coins légèrement arrondis (5 px), éclair blanc à l’appui (classe `flash` posée au pointerdown). Tous les `.btn` sont compacts (≈36 px de haut) ; tous les boutons et sélecteurs ont le même arrondi de 5 px.
+- Boutons orange (`.btn.primary`, `.rb.play`) ; « Fermer » = croix orange dans un carré en haut à droite (`.xclose`, Atelier et aperçu) : coins légèrement arrondis (5 px), éclair blanc à l’appui (classe `flash` posée au pointerdown). Tous les `.btn` sont compacts (≈36 px de haut) ; tous les boutons et sélecteurs ont le même arrondi de 5 px.
 - Logo : véhicule « 01 » en pixel art (`icons/logo.svg`, PNG dérivés, `manifest.webmanifest`).
 - Style visuel de l'appli (depuis v1.22, choix de Gilles parmi 3 maquettes) : **« Holo ambre »**, futuriste
   minimaliste — fond graphite #121314, cartes #1a1c1e, accent ambre #ff9a3c, texte #edeae4, polices Space Grotesk
