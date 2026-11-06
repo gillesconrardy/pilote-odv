@@ -53,7 +53,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub
    (format multi-mpy6 : taille u32 + `__main__\0` + mpy ; commandes 0 stop, 3 meta, 4 RAM, 1 start,
    6 stdin), service Pybricks `c5f50001-8280-46da-89f4-6d8051e4aeef`.
-   Fonctions : choix/ordre des chorégraphies, aperçu animé (bouton 👁), boucle, recalage,
+   Fonctions : choix/ordre des chorégraphies (glisser-déposer par la poignée ⠿), aperçu animé (bouton 👁), boucle, recalage,
    « Mettre à jour les 4 véhicules » (retour au départ → `e` → arrêt V4 → envoi 1,2,3,4 sans recalage ;
    une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
    reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30) ;

@@ -46,6 +46,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .btn:disabled{opacity:.45;cursor:default}
 .ch{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
 .ch:last-child{border-bottom:0}
+.ch .grip{flex:none;width:30px;height:40px;display:grid;place-items:center;color:var(--muted);font:700 20px system-ui;touch-action:none;cursor:grab;border-radius:8px;user-select:none;-webkit-user-select:none}
+.ch.drag{background:var(--card);box-shadow:0 6px 16px rgba(0,0,0,.25);border-radius:10px;position:relative;z-index:3;border-bottom-color:transparent}
+.ch.drag .grip{background:var(--accent);color:#1f2124;cursor:grabbing}
+.ch.drag{transition:none}
 .ch input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent);flex:none}
 .ch .nm{flex:1;min-width:0}
 .ch .nm b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -356,19 +360,47 @@ function renderList() {
     const badge = !it.ok ? `<span class="badge bad">⚠ ${it.msg}</span>`
       : it.col ? `<span class="badge bad">${it.col} chevauchement</span>`
       : it.gr ? `<span class="badge warn">${it.gr} frôlement${it.gr > 1 ? 's' : ''}</span>` : `<span class="badge ok">✓ sans collision</span>`;
-    d.innerHTML = `<input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
+    d.dataset.id = it.id;
+    d.innerHTML = `<div class="grip" title="Glisser pour changer l'ordre">⠿</div><input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
       <div class="nm"><b>${esc(it.name)}</b><span>${fmt(it.dur)}</span>${badge}</div>
-      <div class="ord">${it.ed ? '<button title="Modifier" class="edb">✏️</button>' : ''}<button title="Aperçu" class="pv">👁</button><button title="Monter">↑</button><button title="Descendre">↓</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
+      <div class="ord">${it.ed ? '<button title="Modifier" class="edb">✏️</button>' : ''}<button title="Aperçu" class="pv">👁</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
     const [cb] = d.getElementsByTagName('input');
     cb.onchange = () => { it.on = cb.checked; persist(); refresh(); };
     d.querySelector('.pv').onclick = () => openPreview(it);
     if (it.ed) d.querySelector('.edb').onclick = () => edOpen(it);
     const bs = d.querySelectorAll('.ord button:not(.pv):not(.edb)');
-    bs[0].onclick = () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; persist(); refresh(); } };
-    bs[1].onclick = () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; persist(); refresh(); } };
-    if (bs[2]) bs[2].onclick = () => { const k = custom.findIndex(c => c.id === it.custom); custom.splice(k, 1); store.set('custom', custom); loadItems(); refresh(); };
+    d.querySelector('.grip').onpointerdown = e => chDrag(e, d);
+    if (bs[0]) bs[0].onclick = () => { const k = custom.findIndex(c => c.id === it.custom); custom.splice(k, 1); store.set('custom', custom); loadItems(); refresh(); };
     box.appendChild(d);
   });
+}
+// glisser-déposer pour changer l'ordre (poignée ⠿, doigt ou souris)
+function chDrag(e, row) {
+  e.preventDefault();
+  const box = $('chList'), grip = e.currentTarget; grip.setPointerCapture(e.pointerId);
+  let y0 = e.clientY, moved = false;
+  row.classList.add('drag');
+  const move = ev => {
+    row.style.transform = `translateY(${ev.clientY - y0}px)`;
+    const r = row.getBoundingClientRect(), mid = r.top + r.height / 2;
+    const prev = row.previousElementSibling, next = row.nextElementSibling;
+    if (prev && mid < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
+      const h = prev.offsetHeight; box.insertBefore(row, prev); y0 -= h; moved = true;
+    } else if (next && mid > next.getBoundingClientRect().top + next.offsetHeight / 2) {
+      const h = next.offsetHeight; box.insertBefore(next, row); y0 += h; moved = true;
+    } else return;
+    row.style.transform = `translateY(${ev.clientY - y0}px)`;
+    if (navigator.vibrate) try { navigator.vibrate(8); } catch {}
+  };
+  const up = () => {
+    grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
+    row.classList.remove('drag'); row.style.transform = '';
+    if (!moved) return;
+    const order = [...box.children].map(c => c.dataset.id);
+    items.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    persist(); refresh();
+  };
+  grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
