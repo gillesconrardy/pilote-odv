@@ -240,7 +240,10 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .tools .btn{padding:6px 2px!important;font-size:11.5px!important}
 .veh .acts .btn{padding:5px 4px!important;font-size:12.5px!important}
 .surow .btn.primary,.surow .btn{min-width:84px}
-.btn.primary.flash,.rb.play.flash{animation:btnFlash .35s ease-out}
+.btn.close{border-radius:0!important}
+.btn.primary.flash,.rb.play.flash,.btn.close.flash{animation:btnFlash .35s ease-out}
+.btn.close.flash{animation-name:btnFlashGrey}
+@keyframes btnFlashGrey{0%{background:#fff;color:#121314}100%{}}
 @keyframes btnFlash{0%{background:#fff}100%{background:var(--accent)}}
 /* ===== véhicule (design 1 hachuré, police Tomorrow) : étiquettes HTML ===== */
 .vbk{position:relative;border:0!important;border-radius:0!important;box-shadow:none;color:#edeae4!important;font-family:"Tomorrow",var(--mono)!important;font-weight:700!important;padding-bottom:3px;
@@ -534,7 +537,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 </dialog>
 <div class="edwrap" id="edWrap"><div class="wrap">
   <header style="margin-bottom:12px"><img class="logo" src="/*ICON*/" alt=""><div><h1 style="font-size:18px">Atelier chorégraphie</h1><div class="sub">Fais glisser les véhicules pour créer chaque étape</div></div>
-    <button class="btn" id="edClose" style="margin-left:auto">Fermer</button></header>
+    <button class="btn close" id="edClose" style="margin-left:auto">Fermer</button></header>
   <div class="card">
     <input type="text" id="edName" placeholder="Nom de la chorégraphie" style="margin-bottom:6px">
     <canvas id="edCv" width="600" height="600" aria-label="Plateau d'édition"></canvas>
@@ -576,7 +579,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 </div></div>
 <button class="newver" id="newVer"><span style="font-size:22px">⟳</span><span><span id="newVerTxt">Nouvelle version disponible</span><small>Touche ici pour mettre à jour</small></span></button>
 <dialog id="pvDlg" style="padding:12px">
-  <div class="row" style="justify-content:space-between;margin-bottom:6px"><b id="pvName" style="font-size:16px"></b><button class="btn" id="pvClose">Fermer</button></div>
+  <div class="row" style="justify-content:space-between;margin-bottom:6px"><b id="pvName" style="font-size:16px"></b><button class="btn close" id="pvClose">Fermer</button></div>
   <canvas id="pvCv" width="600" height="600" style="margin-top:0"></canvas>
   <div class="row" style="margin-top:8px;flex-wrap:nowrap"><button class="btn primary" id="pvPlay" style="min-width:52px">❚❚</button>
     <input type="range" id="pvSeek" min="0" max="1000" value="0" style="flex:1;accent-color:var(--accent)">
@@ -607,7 +610,7 @@ const store = { get(k, d) { try { const v = localStorage.getItem('odv.' + k); re
                 set(k, v) { try { localStorage.setItem('odv.' + k, JSON.stringify(v)); } catch {} } };
 
 document.addEventListener('pointerdown', e => {
-  const b = e.target.closest('.btn.primary, .rb.play'); if (!b || b.disabled) return;
+  const b = e.target.closest('.btn.primary, .rb.play, .btn.close'); if (!b || b.disabled) return;
   b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); setTimeout(() => b.classList.remove('flash'), 400);
 }, true);
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => { b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); showTab(b.dataset.tab); });
