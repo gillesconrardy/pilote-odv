@@ -61,6 +61,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px}
 .tog small{display:block;color:var(--muted);font-size:12.5px}
 .tog{padding:6px 2px}
+.newver{position:fixed;left:10px;right:10px;bottom:12px;z-index:40;display:none;align-items:center;gap:10px;border:0;border-radius:12px;padding:12px 14px;background:var(--dbg);color:#fff;font:700 15px system-ui;border-bottom:5px solid var(--accent);box-shadow:0 6px 18px rgba(0,0,0,.35);text-align:left}
+.newver.on{display:flex}
+.newver small{display:block;font-weight:500;font-size:12.5px}
 .tog>div{display:flex;align-items:center;gap:6px;font-size:15px}
 .tip{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--muted);background:none;color:var(--muted);font:700 12px/1 Georgia,serif;font-style:italic;padding:0;display:grid;place-items:center}
 .bubble{position:absolute;z-index:30;max-width:260px;background:var(--dbg);color:#fff;font-size:13px;line-height:1.4;border-radius:10px;padding:9px 11px;box-shadow:0 6px 18px rgba(0,0,0,.3);border-bottom:3px solid var(--accent)}
@@ -286,6 +289,7 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
   </div>
   <pre class="code" id="edCodeBox" style="display:none"></pre>
 </div></div>
+<button class="newver" id="newVer"><span style="font-size:22px">⟳</span><span><span id="newVerTxt">Nouvelle version disponible</span><small>Touche ici pour mettre à jour</small></span></button>
 <dialog id="pvDlg" style="padding:12px">
   <div class="row" style="justify-content:space-between;margin-bottom:6px"><b id="pvName" style="font-size:16px"></b><button class="btn" id="pvClose">Fermer</button></div>
   <canvas id="pvCv" width="600" height="600" style="margin-top:0"></canvas>
@@ -420,6 +424,26 @@ document.addEventListener('click', e => {
   bubble.style.top = r.bottom + 8 + scrollY + 'px';
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
+// nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
+const MY_VER = '/*VERSION*/';
+async function checkVersion() {
+  if (!/^https?:/.test(location.protocol)) return;
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const j = await r.json(), v = j.majeur + '.' + j.num;
+    if (v === MY_VER || +j.num < +MY_VER.split('.')[1]) return;
+    const b = $('newVer'); b.dataset.n = j.num;
+    $('newVerTxt').textContent = `Nouvelle version v${v} disponible`;
+    b.classList.add('on');
+  } catch (e) {}
+}
+$('newVer').onclick = () => {
+  const busy = [1, 2, 3, 4].some(v => V[v].hub && V[v].hub.connected);
+  if (busy && !confirm('Recharger l\'appli ? Le téléphone se déconnecte des véhicules (leurs programmes continuent).')) return;
+  location.replace(location.pathname + '?v=' + $('newVer').dataset.n);
+};
+checkVersion(); setInterval(checkVersion, 120000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 let TL = null, PLAY = [];
