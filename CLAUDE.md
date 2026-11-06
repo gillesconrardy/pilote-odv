@@ -51,7 +51,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
 4. **`src/page.html`** : Pilote ODV, 4 onglets (le dernier ouvert est mémorisé, `odv.tab`) :
    **Mise en place** (`#setup` : TOUJOURS avec recalage, un véhicule à la fois 1→4, bouton « Recaler » par véhicule,
-   `sendVehicle(v, true, true)`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
+   `sendVehicle(v, true, true, true)` = programme « idle » SANS chorégraphie (une pause de 500 ms, `idleTL()`) :
+   les véhicules se recalent puis attendent au départ ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
    sans recalage), **Véhicules** (`#envoi` : cartes, « Reconnecter » = renvoi sans recalage / « Déconnecter » par
    véhicule, « Reconnecter les 4 » = `updateAll`, « Tout déconnecter »), **Pilotage** (`#tele`).
    Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale. Compile avec

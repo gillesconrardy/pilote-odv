@@ -42,7 +42,7 @@ async def main():
         for k, v in progs.items(): open('gen_' + k, 'w').write(v)
         print('progs', list(progs))
         await pg.click('nav button[data-tab=tele]'); await pg.wait_for_timeout(900)
-        await pg.click('#bPlay'); await pg.wait_for_timeout(2500)
+        print('Lecture désactivée en mise en place:', await pg.is_disabled('#bPlay')); await pg.evaluate("send('p')"); await pg.wait_for_timeout(2500)
         await pg.screenshot(path='p3.png', full_page=True)
         print('state', await pg.inner_text('#stBig'), '|', await pg.inner_text('#stSub'), '|', await pg.inner_text('#stTime'))
         print('stdin writes V4', [x for x in w['Pybricks Hub 4'] if x[0] == 6], await pg.evaluate("window.__writes['Pybricks Hub 4'].filter(x=>x[0]==6)"))

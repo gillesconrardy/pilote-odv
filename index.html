@@ -287,11 +287,10 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <!-- ======================= 0. MISE EN PLACE (toujours avec recalage) ======================= -->
   <section id="setup">
     <div class="card">
-      <h2>Mise en place <button type="button" class="tip" data-tip="Chaque véhicule reçoit le programme, se cale contre la clôture puis rejoint sa place de départ. Un seul véhicule sur le plateau à la fois, dans l'ordre 1, 2, 3 puis 4. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
+      <h2>Mise en place <button type="button" class="tip" data-tip="Chaque véhicule se cale contre la clôture puis rejoint sa place de départ et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Un seul véhicule sur le plateau à la fois, dans l'ordre 1, 2, 3 puis 4. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
       <div class="sunext" id="suNext"></div>
       <div id="suList"></div>
-      <div class="sub" id="suSel" style="margin-top:10px"></div>
-      <button class="btn primary" id="suGo" style="width:100%;padding:14px;margin-top:10px" hidden>Aller au pilotage →</button>
+      <button class="btn primary" id="suGo" style="width:100%;padding:14px;margin-top:10px" hidden>Choisir les chorégraphies →</button>
       <button class="btn" id="suReset" style="width:100%;margin-top:8px">↺ Recommencer la mise en place</button>
     </div>
   </section>
@@ -961,20 +960,24 @@ async function loadCompiler() {
   }
   throw new Error('Impossible de charger le compilateur Pybricks (connexion internet nécessaire) : ' + (last && last.message));
 }
-function genId() {
+function genId(tl = TL, loop = $('optLoop').checked) {
   // même numéro pour les 4 véhicules d'une même sélection, différent dès que la sélection change
-  const str = JSON.stringify([TL.bounds, TL.segs, $('optLoop').checked]);
+  const str = JSON.stringify([tl.bounds, tl.segs, loop]);
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return 1 + ((h >>> 0) % 999);
 }
-function programText(vid, homing = false) {
+// programme « mise en place » : recalage puis attente au départ, sans chorégraphie (une simple pause)
+let IDLE = null;
+const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Mise en place', src: '    mvc.wait_sync_ms(500)\n' }]));
+function programText(vid, homing = false, idle = false) {
+  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Mise en place'] });
   return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name) });
 }
-async function compileFor(vid, homing = false) {
-  const key = vid + (homing ? 'h' : 'n');
+async function compileFor(vid, homing = false, idle = false) {
+  const key = vid + (homing ? 'h' : 'n') + (idle ? 'i' : '');
   if (progCache[key]) return progCache[key];
-  const src = programText(vid, homing);
+  const src = programText(vid, homing, idle);
   const m = await loadCompiler();
   const r = await m.compile('vehicule' + vid + '.py', src, undefined, MPY_WASM);
   if (!r || r.status !== 0 || !r.mpy) throw new Error('Erreur de compilation : ' + ((r && r.err) || []).join(' '));
@@ -1148,12 +1151,12 @@ async function getHub(v) {
   await h.connect();
   return h;
 }
-async function sendVehicle(v, doUpload, homing = false) {
+async function sendVehicle(v, doUpload, homing = false, idle = false) {
   if (!navigator.bluetooth) { toast('Bluetooth web indisponible dans ce navigateur'); return false; }
   V[v].busy = true; renderVehicles();
   try {
     let prog = null;
-    if (doUpload) { setSt(v, 'Préparation du programme…'); prog = await compileFor(v, homing); log(`V${v} : programme ${prog.length} octets`); }
+    if (doUpload) { setSt(v, 'Préparation du programme…'); prog = await compileFor(v, homing, idle); log(`V${v} : programme ${prog.length} octets`); }
     setSt(v, 'Choisis le hub du véhicule ' + v + '…');
     const h = await getHub(v);
     log(`V${v} : connecté à « ${h.name} »` + (h.caps ? ` (max ${h.caps.maxProg} octets)` : ''));
@@ -1168,7 +1171,7 @@ async function sendVehicle(v, doUpload, homing = false) {
     if (v !== 4) h.onLine = line => { const q = line.split(/\s+/); if (q[0] === 'BAT') gotBat = +q[1]; };
     await h.start();
     if (v !== 4) { for (let k = 0; k < 15 && gotBat === null; k++) await sleep(100); if (gotBat) setBat(v, gotBat); h.onLine = null; }
-    if (v === 4) { attachRemote(h); setSt(v, `✓ En marche sur « ${esc(h.name)} » · télécommande prête`, 'ok'); toast('Véhicule 4 prêt : passe à la télécommande'); }
+    if (v === 4) { attachRemote(h, idle); setSt(v, `✓ En marche sur « ${esc(h.name)} » · télécommande prête`, 'ok'); toast('Véhicule 4 prêt : passe à la télécommande'); }
     else { await sleep(300); await h.close(); setSt(v, `✓ En marche sur « ${esc(h.name)} » ${homing && doUpload ? '· recalage puis attente du véhicule 4' : '· attend le véhicule 4'}`, 'ok'); }
     return true;
   } catch (e) {
@@ -1312,31 +1315,29 @@ function suRender() {
   }
   const next = [1, 2, 3, 4].find(v => !SU.done[v]);
   for (let v = 1; v <= 4; v++) {
-    const b = $('su' + v); b.disabled = !TL || V[v].busy;
+    const b = $('su' + v); b.disabled = V[v].busy;
     b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? 'Refaire' : 'Recaler';
     b.parentElement.classList.toggle('next', v === next); b.parentElement.classList.toggle('ok', !!SU.done[v]);
   }
   // à placer d'abord (dans l'ordre), puis ceux déjà en place, en vert, en bas de la liste
   for (const v of [1, 2, 3, 4].filter(v => !SU.done[v]).concat([1, 2, 3, 4].filter(v => SU.done[v]))) box.appendChild($('surow' + v));
-  $('suNext').innerHTML = !TL ? 'Coche d\'abord des chorégraphies dans l\'onglet Programme.'
-    : next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Recaler ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Recaler ».`)
-    : '<span class="ok">✓ Les 4 véhicules sont en place.</span>';
+  $('suNext').innerHTML = next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Recaler ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Recaler ».`)
+    : '<span class="ok">✓ Les 4 véhicules sont en place.</span> Choisis maintenant les chorégraphies.';
   $('suGo').hidden = !!next;
-  $('suSel').textContent = PLAY.length ? `Programme envoyé : ${PLAY.length} chorégraphie${PLAY.length > 1 ? 's' : ''} · ${fmt(TL.total)}` : '';
 }
 async function suGo(v) {
   $('sust' + v).innerHTML = '';
-  const ok = await sendVehicle(v, true, true);
+  const ok = await sendVehicle(v, true, true, true);
   if (ok) SU.done[v] = true;
   suRender();
 }
 $('suReset').onclick = () => { SU.done = {}; for (let v = 1; v <= 4; v++) $('sust' + v).innerHTML = ''; suRender(); };
-$('suGo').onclick = () => showTab('tele');
+$('suGo').onclick = () => showTab('choix');
 
 // ====================================================================== 3. remote
 let R = { hub: null, st: null, at: 0, last: null, lastCmd: null, lock: 0 };
-function attachRemote(h) {
-  R.hub = h; R.tl = TL; R.names = PLAY.map(i => i.name);
+function attachRemote(h, idle = false) {
+  R.hub = h; R.idle = idle; R.tl = idle ? idleTL() : TL; R.names = idle ? ['Mise en place'] : PLAY.map(i => i.name);
   h.onLine = line => {
     const p = line.split(/\s+/);
     if (p[0] === 'ST') { R.st = { s: p[1], w: +p[2], k: +p[3], pend: p[4] === '1', mv: +p[5], gen: +p[6] }; R.at = performance.now(); updateRemote();
@@ -1582,11 +1583,12 @@ function stateLabel() {
 }
 function updateRemote() {
   const on = R.hub && R.hub.connected;
-  ['bPlay', 'bPause', 'bHome'].forEach(id => $(id).disabled = !on || M.active);
+  ['bPlay', 'bPause', 'bHome'].forEach(id => $(id).disabled = !on || M.active || R.idle);
   $('bStop').disabled = !on;
   $('connect4').style.display = on ? 'none' : '';
   let [a, b] = on ? stateLabel() : ['○ Non connecté', ''];
-  if (on && R.st && R.st.gen && TL && R.st.gen !== genId()) b = '⚠ Autre sélection que l\'onglet Programme' + (b ? ' · ' + b : '');
+  if (on && R.idle) b = 'En place · envoie le programme depuis l\'onglet Programme';
+  else if (on && R.st && R.st.gen && TL && R.st.gen !== genId()) b = '⚠ Autre sélection que l\'onglet Programme' + (b ? ' · ' + b : '');
   $('stBig').textContent = a; $('stSub').textContent = b;
 }
 function estW() {
