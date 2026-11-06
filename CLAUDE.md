@@ -82,7 +82,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   - `t_page2.py`, `t_manual.py`, `t_joy.py` : Playwright + faux Bluetooth (envoi, mise à jour, joystick).
   - `sim_model.py` : modèle Python de référence des mouvements.
 - Publier : `python build.py --publier` (augmente la version dans `version.json` et note l'heure
-  de Bruxelles, affichées en haut à droite de l'appli et dans le simulateur), puis commit de
+  de Bruxelles, affichées en haut à droite de l'appli et dans le simulateur) ; l'appli relit `version.json` sans cache
+  (démarrage, toutes les 2 min, retour dans l'appli) et affiche un bandeau « Nouvelle version disponible » qui recharge avec `?v=N`, puis commit de
   `index.html`, `simulateur/index.html`, `version.json` sur `main` ; en ligne en 1–2 min.
 - Logo : véhicule « 01 » en pixel art (`icons/logo.svg`, PNG dérivés, `manifest.webmanifest`).
 - Style visuel « LEGO » : gris bleuté foncé + bande orange (comme les véhicules), fond à picots,
