@@ -45,7 +45,14 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    Fonctions : choix/ordre des chorégraphies, aperçu animé (bouton 👁), boucle, recalage,
    « Mettre à jour les 4 véhicules » (retour au départ → `e` → arrêt V4 → envoi 1,2,3,4 sans recalage ;
    une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
-   reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30).
+   reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30) ;
+   « Rendre la main » : retour du V4 par le plus court chemin qui contourne les 3 autres (A* + lissage).
+   **Atelier** (« Créer une chorégraphie ») : étapes = poses des 4 véhicules (glisser sur le plateau,
+   aimant 1 pas), vitesse et pause par étape, contrôle de collision (pose + trajet, via core.js),
+   « Ajouter le retour au départ » (tout droit / X puis Y / Y puis X / un par un, le plus court sûr),
+   aperçu, code ; enregistré dans le navigateur (localStorage `odv.custom`, champ `ed` = étapes) et
+   réouvrable avec ✏️. Les chorégraphies créées ne sont PAS dans le dépôt : pour les garder pour de
+   bon, copier leur code dans `choregraphies/` et `CHORS`.
 5. **`simulateur/template.html`** : simulateur visuel (plateau blanc à picots, véhicules gris
    « 01…04 » d'après la photo du montage), lecture, détection des chevauchements, édition du code.
 

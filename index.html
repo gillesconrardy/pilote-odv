@@ -106,6 +106,20 @@ textarea{height:260px}
 .joy::before{left:50%;top:12%;bottom:12%;width:2px;margin-left:-1px}.joy::after{top:50%;left:12%;right:12%;height:2px;margin-top:-1px}
 .joy .knob{position:absolute;width:74px;height:74px;border-radius:50%;background:var(--accent);left:58px;top:58px;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1}
 canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3px}
+.edwrap{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;display:none}
+.edwrap.on{display:block}
+.edwrap .wrap{padding-top:12px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:4px 2px 8px}
+.chips button{flex:none;min-width:46px;border:0;border-radius:8px;padding:8px 10px;font:700 14px ui-monospace,monospace;background:#dfe2e4;color:#2c2e31;box-shadow:inset 0 -3px 0 rgba(0,0,0,.15);position:relative}
+.chips button.on{background:var(--accent);color:#1f2124}
+.chips button.bad::after,.chips button.warn::after{content:"";position:absolute;right:3px;top:3px;width:8px;height:8px;border-radius:50%;background:var(--red)}
+.chips button.warn::after{background:var(--yellow,#f2cd37)}
+.edrow{display:flex;align-items:center;gap:10px;margin:8px 0}
+.edrow label{min-width:92px;font-size:13.5px;color:var(--muted)}
+.edrow input[type=range]{flex:1;accent-color:var(--accent)}
+.edrow select{font:inherit;border-radius:8px;border:1px solid var(--line);padding:6px;background:var(--card);color:var(--ink)}
+#edCv{touch-action:none}
+pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--soft);border-radius:8px;padding:10px;max-height:260px;overflow:auto;white-space:pre}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 15px;border-radius:10px;font-size:14px;opacity:0;transition:.2s;pointer-events:none;max-width:90vw;text-align:center}
 .toast.on{opacity:1}
 </style>
@@ -130,7 +144,7 @@ canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3
     <div class="card">
       <h2>Chorégraphies à jouer</h2>
       <div id="chList"></div>
-      <div class="row" style="margin-top:10px"><button class="btn" id="addBtn">＋ Ajouter une chorégraphie</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn primary" id="edNew">✏️ Créer une chorégraphie</button><button class="btn" id="addBtn">Importer du code</button></div>
     </div>
     <div class="card">
       <h2>Options</h2>
@@ -195,6 +209,33 @@ canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3
   <div id="dlgMsg" class="sub" style="margin:6px 0"></div>
   <div class="row" style="justify-content:flex-end"><button class="btn" id="dlgCancel">Annuler</button><button class="btn primary" id="dlgOk">Ajouter</button></div>
 </dialog>
+<div class="edwrap" id="edWrap"><div class="wrap">
+  <header style="margin-bottom:12px"><img class="logo" src="data:image/png;base64,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" alt=""><div><h1 style="font-size:18px">Atelier chorégraphie</h1><div class="sub">Fais glisser les véhicules pour créer chaque étape</div></div>
+    <button class="btn" id="edClose" style="margin-left:auto">Fermer</button></header>
+  <div class="card">
+    <input type="text" id="edName" placeholder="Nom de la chorégraphie" style="margin-bottom:6px">
+    <canvas id="edCv" width="600" height="600" aria-label="Plateau d'édition"></canvas>
+    <div class="sub" id="edHint" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <h2>Étapes</h2>
+    <div class="chips" id="edChips"></div>
+    <div id="edStep"></div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="edAdd">＋ Nouvelle étape</button>
+      <button class="btn" id="edDel">Supprimer l'étape</button>
+      <button class="btn" id="edLeft" title="Avancer l'étape">◀</button><button class="btn" id="edRight" title="Reculer l'étape">▶</button>
+    </div>
+    <div class="row" style="margin-top:8px"><button class="btn" id="edHome">⌂ Ajouter le retour au départ</button><label class="sub" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="edSnap" checked> Aimanter (1 pas)</label></div>
+    <div id="edCheck" style="margin-top:10px"></div>
+  </div>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn" id="edPlay" style="flex:1">▶ Aperçu</button>
+    <button class="btn" id="edCode" style="flex:1">Code</button>
+    <button class="btn primary" id="edSave" style="flex:1.4">💾 Enregistrer</button>
+  </div>
+  <pre class="code" id="edCodeBox" style="display:none"></pre>
+</div></div>
 <dialog id="pvDlg" style="padding:12px">
   <div class="row" style="justify-content:space-between;margin-bottom:6px"><b id="pvName" style="font-size:16px"></b><button class="btn" id="pvClose">Fermer</button></div>
   <canvas id="pvCv" width="600" height="600" style="margin-top:0"></canvas>
@@ -585,7 +626,7 @@ function analyse(it) {
 }
 function loadItems() {
   const all = PRESETS.map((p, i) => ({ id: 'p' + i, name: p.name, src: p.src, def: p.def }))
-    .concat(custom.map((c, i) => ({ id: 'c' + c.id, name: c.name, src: c.src, custom: c.id })));
+    .concat(custom.map((c, i) => ({ id: 'c' + c.id, name: c.name, src: c.src, custom: c.id, ed: c.ed })));
   all.forEach(analyse);
   const saved = store.get('order', null);
   const on = store.get('on', null);
@@ -603,11 +644,12 @@ function renderList() {
       : it.gr ? `<span class="badge warn">${it.gr} frôlement${it.gr > 1 ? 's' : ''}</span>` : `<span class="badge ok">✓ sans collision</span>`;
     d.innerHTML = `<input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
       <div class="nm"><b>${esc(it.name)}</b><span>${fmt(it.dur)}</span>${badge}</div>
-      <div class="ord"><button title="Aperçu" class="pv">👁</button><button title="Monter">↑</button><button title="Descendre">↓</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
+      <div class="ord">${it.ed ? '<button title="Modifier" class="edb">✏️</button>' : ''}<button title="Aperçu" class="pv">👁</button><button title="Monter">↑</button><button title="Descendre">↓</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
     const [cb] = d.getElementsByTagName('input');
     cb.onchange = () => { it.on = cb.checked; persist(); refresh(); };
     d.querySelector('.pv').onclick = () => openPreview(it);
-    const bs = d.querySelectorAll('.ord button:not(.pv)');
+    if (it.ed) d.querySelector('.edb').onclick = () => edOpen(it);
+    const bs = d.querySelectorAll('.ord button:not(.pv):not(.edb)');
     bs[0].onclick = () => { if (idx > 0) { [items[idx - 1], items[idx]] = [items[idx], items[idx - 1]]; persist(); refresh(); } };
     bs[1].onclick = () => { if (idx < items.length - 1) { [items[idx + 1], items[idx]] = [items[idx], items[idx + 1]]; persist(); refresh(); } };
     if (bs[2]) bs[2].onclick = () => { const k = custom.findIndex(c => c.id === it.custom); custom.splice(k, 1); store.set('custom', custom); loadItems(); refresh(); };
@@ -1194,6 +1236,183 @@ function estW() {
   return s.w + (s.s === 'F' ? dt : s.s === 'B' ? -dt : 0);
 }
 
+// ====================================================================== atelier : créer une chorégraphie
+const ED = { steps: [], sel: 0, id: null, drag: null, play: null, issues: {} };
+const clone = o => JSON.parse(JSON.stringify(o));
+const homePos = () => ODVGEN.HOME.map(p => p.slice());
+const nf = v => { const r = Math.round(v * 100) / 100; return Number.isInteger(r) ? String(r) : r.toFixed(2).replace(/0$/, ''); };
+function edOpen(it) {
+  ED.id = it && it.custom || null;
+  ED.steps = it && it.ed ? clone(it.ed) : [{ pos: homePos(), speed: 100, wait: 0 }];
+  ED.sel = Math.min(1, ED.steps.length - 1); ED.play = null;
+  $('edName').value = it ? it.name : '';
+  $('edCodeBox').style.display = 'none';
+  $('edWrap').classList.add('on'); document.body.style.overflow = 'hidden';
+  edRefresh();
+}
+$('edNew').onclick = () => edOpen(null);
+$('edClose').onclick = () => { ED.play = null; $('edWrap').classList.remove('on'); document.body.style.overflow = ''; };
+function edCode() {
+  const name = $('edName').value.trim() || 'Ma chorégraphie';
+  const lines = ['    # ' + name.replace(/[\r\n]/g, ' ') + " (créée avec l'atelier Pilote ODV)"], lineStep = {};
+  for (let k = 1; k < ED.steps.length; k++) {
+    const s = ED.steps[k];
+    lines.push('    mvc.move(' + s.pos.map(p => nf(p[0]) + ', ' + nf(p[1])).join(',  ') + (s.speed < 100 ? ', speed=' + s.speed : '') + ')  # étape ' + k);
+    lineStep[lines.length] = k;
+    if (s.wait > 0) { lines.push('    mvc.wait_sync_ms(' + s.wait + ')'); lineStep[lines.length] = k; }
+  }
+  return { src: lines.join('\n') + '\n', lineStep };
+}
+function poseBad(pos) {
+  for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++)
+    if (Math.max(Math.abs(pos[a][0] - pos[b][0]), Math.abs(pos[a][1] - pos[b][1])) < 10 - 1e-6) return [a + 1, b + 1];
+  return null;
+}
+function edValidate() {
+  const { src, lineStep } = edCode(), issues = {};
+  ED.steps.forEach((s, k) => { const b = poseBad(s.pos); if (b) issues[k] = { lvl: 'bad', msg: `V${b[0]} et V${b[1]} se chevauchent à cette étape` }; });
+  if (ED.steps.length > 1) {
+    const { prog } = ODV.parse(src, 4), sim = ODV.simulate(prog, ODVGEN.HOME);
+    for (const c of ODV.collisions(sim, 10)) {
+      const k = lineStep[c.ln]; if (!k || issues[k]) continue;
+      issues[k] = { lvl: c.pen > 1 ? 'bad' : 'warn', msg: `en allant à cette étape, V${c.i} et V${c.j} ${c.pen > 1 ? 'se percutent' : 'se frôlent'} (${c.pen.toFixed(1)} pas)` };
+    }
+  }
+  const last = ED.steps[ED.steps.length - 1].pos, H = ODVGEN.HOME;
+  const atHome = last.every((p, i) => Math.abs(p[0] - H[i][0]) < 0.01 && Math.abs(p[1] - H[i][1]) < 0.01);
+  ED.issues = issues;
+  return { src, atHome, nBad: Object.values(issues).filter(x => x.lvl === 'bad').length };
+}
+function edRefresh() {
+  const v = edValidate();
+  const ch = $('edChips'); ch.innerHTML = '';
+  ED.steps.forEach((s, k) => {
+    const b = document.createElement('button'); b.textContent = k === 0 ? 'Départ' : k;
+    if (k === ED.sel) b.classList.add('on'); if (ED.issues[k]) b.classList.add(ED.issues[k].lvl);
+    b.onclick = () => { ED.sel = k; ED.play = null; edRefresh(); };
+    ch.appendChild(b);
+  });
+  const s = ED.steps[ED.sel];
+  $('edStep').innerHTML = ED.sel === 0
+    ? '<div class="sub">Le départ est fixe : (30,0) (20,0) (10,0) (0,0). Ajoute une étape pour faire bouger les véhicules.</div>'
+    : `<div class="edrow"><label>Vitesse</label><input type="range" id="edSpeed" min="10" max="100" step="5" value="${s.speed}"><b id="edSpeedV" style="min-width:44px">${s.speed} %</b></div>
+       <div class="edrow"><label>Pause après</label><select id="edWait">${[0, 250, 500, 1000, 1500, 2000, 3000, 5000].map(w => `<option value="${w}" ${w === s.wait ? 'selected' : ''}>${w ? (w / 1000).toLocaleString('fr') + ' s' : 'aucune'}</option>`).join('')}</select></div>
+       <div class="sub">${s.pos.map((p, i) => `V${i + 1} (${nf(p[0])}, ${nf(p[1])})`).join(' · ')}</div>`;
+  if (ED.sel > 0) {
+    $('edSpeed').oninput = e => { s.speed = +e.target.value; $('edSpeedV').textContent = s.speed + ' %'; };
+    $('edSpeed').onchange = () => edRefresh();
+    $('edWait').onchange = e => { s.wait = +e.target.value; edRefresh(); };
+  }
+  $('edDel').disabled = ED.sel === 0; $('edLeft').disabled = ED.sel <= 1; $('edRight').disabled = ED.sel === 0 || ED.sel >= ED.steps.length - 1;
+  const total = ED.steps.length > 1 ? ODVGEN.buildTimeline([{ name: 'x', src: v.src }]).total : 0;
+  const list = Object.entries(ED.issues).map(([k, x]) => `<div class="${x.lvl === 'bad' ? 'bad' : 'warn'}" style="font-size:13px">● ${+k === 0 ? 'Départ' : 'Étape ' + k} : ${x.msg}</div>`).join('');
+  $('edCheck').innerHTML = (list || (ED.steps.length > 1 ? '<div class="ok" style="font-size:13px">✓ Aucune collision</div>' : ''))
+    + (ED.steps.length > 1 && !v.atHome ? '<div class="warn" style="font-size:13px">● La dernière étape doit ramener les véhicules au départ (bouton ⌂).</div>' : '')
+    + (total ? `<div class="sub" style="margin-top:4px">Durée : ${fmt(total)}</div>` : '');
+  $('edSave').disabled = ED.steps.length < 2 || !v.atHome || v.nBad > 0;
+  $('edHint').textContent = ED.sel === 0 ? 'Choisis ou ajoute une étape pour déplacer les véhicules.' : `Étape ${ED.sel} : fais glisser un véhicule à sa nouvelle place.`;
+  if ($('edCodeBox').style.display !== 'none') $('edCodeBox').textContent = v.src;
+  edDraw();
+}
+function edDraw(w) {
+  const c = $('edCv');
+  if (ED.play) { drawPlate(c, ED.play.tl, ED.play.w, null, true); return; }
+  // plateau : étape choisie en plein, étape précédente en fantôme
+  const s = ED.steps[ED.sel], prev = ED.sel > 0 ? ED.steps[ED.sel - 1] : null;
+  const fake = { segs: s.pos.map(p => [{ k: 0, x0: p[0], y0: p[1], dur: 1 }]), start: s.pos };
+  drawPlate(c, fake, 0, null, false);
+  if (prev) {
+    const cx = c.getContext('2d'), u = c.width / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
+    cx.save(); cx.setLineDash([u * .8, u * .6]); cx.lineWidth = u * .3;
+    prev.pos.forEach((p, i) => {
+      cx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--v' + (i + 1)).trim();
+      cx.strokeRect(X(p[0] + 4.7), Y(p[1] - 4.7), 9.4 * u, 9.4 * u);
+      cx.beginPath(); cx.moveTo(X(p[0]), Y(p[1])); cx.lineTo(X(s.pos[i][0]), Y(s.pos[i][1])); cx.stroke();
+    });
+    cx.restore();
+  }
+}
+// déplacer un véhicule au doigt
+function edPt(e) { const c = $('edCv'), r = c.getBoundingClientRect(), u = c.width / 44; return [37 - (e.clientX - r.left) * c.width / r.width / u, (e.clientY - r.top) * c.height / r.height / u - 7]; }
+$('edCv').addEventListener('pointerdown', e => {
+  if (ED.sel === 0 || ED.play) return;
+  const q = edPt(e), s = ED.steps[ED.sel];
+  let best = -1, bd = 6;
+  s.pos.forEach((p, i) => { const d = Math.max(Math.abs(p[0] - q[0]), Math.abs(p[1] - q[1])); if (d < bd) { bd = d; best = i; } });
+  if (best < 0) return;
+  ED.drag = { i: best, off: [s.pos[best][0] - q[0], s.pos[best][1] - q[1]] };
+  $('edCv').setPointerCapture(e.pointerId); e.preventDefault();
+});
+$('edCv').addEventListener('pointermove', e => {
+  if (!ED.drag) return;
+  const q = edPt(e), s = ED.steps[ED.sel], st = $('edSnap').checked ? 1 : 0.25;
+  const snap = v => Math.min(30, Math.max(0, Math.round(v / st) * st));
+  s.pos[ED.drag.i] = [snap(q[0] + ED.drag.off[0]), snap(q[1] + ED.drag.off[1])];
+  edDraw();
+});
+const edUp = () => { if (ED.drag) { ED.drag = null; edRefresh(); } };
+$('edCv').addEventListener('pointerup', edUp); $('edCv').addEventListener('pointercancel', edUp);
+$('edAdd').onclick = () => {
+  const base = ED.steps[ED.sel];
+  ED.steps.splice(ED.sel + 1, 0, { pos: clone(base.pos), speed: ED.sel ? base.speed : 100, wait: 0 });
+  ED.sel++; edRefresh();
+};
+$('edDel').onclick = () => { if (ED.sel > 0) { ED.steps.splice(ED.sel, 1); ED.sel = Math.min(ED.sel, ED.steps.length - 1); edRefresh(); } };
+$('edLeft').onclick = () => { const k = ED.sel; if (k > 1) { [ED.steps[k - 1], ED.steps[k]] = [ED.steps[k], ED.steps[k - 1]]; ED.sel--; edRefresh(); } };
+$('edRight').onclick = () => { const k = ED.sel; if (k > 0 && k < ED.steps.length - 1) { [ED.steps[k + 1], ED.steps[k]] = [ED.steps[k], ED.steps[k + 1]]; ED.sel++; edRefresh(); } };
+// retour automatique au départ : tout droit, X puis Y, Y puis X, ou un véhicule à la fois (le plus court qui ne se touche pas)
+function transSafe(A, B) {
+  for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) {
+    const d0x = A[a][0] - A[b][0], d0y = A[a][1] - A[b][1], d1x = B[a][0] - B[b][0], d1y = B[a][1] - B[b][1];
+    let lo = 0, hi = 1, inside = true;
+    for (const [s, e] of [[d0x, d1x], [d0y, d1y]]) {
+      const d = e - s, m = 9.95;
+      if (Math.abs(d) < 1e-12) { if (Math.abs(s) >= m) { inside = false; break; } continue; }
+      let s1 = (-m - s) / d, s2 = (m - s) / d; if (s1 > s2) [s1, s2] = [s2, s1];
+      lo = Math.max(lo, s1); hi = Math.min(hi, s2); if (hi - lo <= 1e-9) { inside = false; break; }
+    }
+    if (inside && hi - lo > 1e-9) return false;
+  }
+  return true;
+}
+$('edHome').onclick = () => {
+  const P = ED.steps[ED.steps.length - 1].pos, H = homePos();
+  if (P.every((p, i) => p[0] === H[i][0] && p[1] === H[i][1])) { toast('La dernière étape est déjà au départ'); return; }
+  const cands = [[H], [P.map((p, i) => [H[i][0], p[1]]), H], [P.map((p, i) => [p[0], H[i][1]]), H]];
+  const perm = (a, r) => r.length ? r.flatMap((v, k) => perm(a.concat([v]), r.filter((_, q) => q !== k))) : [a];
+  for (const o of perm([], [0, 1, 2, 3])) { let cur = P, seq = []; for (const m of o) { cur = cur.map((p, i) => i === m ? H[i].slice() : p.slice()); seq.push(cur); } cands.push(seq); }
+  const cost = seq => { let c = 0, a = P; for (const b of seq) { c += Math.max(...b.map((p, i) => Math.max(Math.abs(p[0] - a[i][0]), Math.abs(p[1] - a[i][1])))); a = b; } return c; };
+  let best = null;
+  for (const seq of cands) { let a = P, ok = !poseBad(P); for (const b of seq) { if (!transSafe(a, b)) { ok = false; break; } a = b; } if (ok && (!best || cost(seq) < cost(best))) best = seq; }
+  if (!best) { toast('Pas de retour direct sûr : ajoute une étape intermédiaire'); return; }
+  best.filter((b, k) => k === best.length - 1 || !b.every((p, i) => p[0] === (k ? best[k - 1] : P)[i][0] && p[1] === (k ? best[k - 1] : P)[i][1]))
+      .forEach(b => ED.steps.push({ pos: clone(b), speed: 100, wait: 0 }));
+  ED.sel = ED.steps.length - 1; edRefresh(); toast('Retour au départ ajouté (' + best.length + ' étape' + (best.length > 1 ? 's' : '') + ')');
+};
+$('edPlay').onclick = () => {
+  if (ED.play) { ED.play = null; $('edPlay').textContent = '▶ Aperçu'; edDraw(); return; }
+  if (ED.steps.length < 2) { toast('Ajoute au moins une étape'); return; }
+  ED.play = { tl: ODVGEN.buildTimeline([{ name: 'x', src: edCode().src }]), w: 0, last: performance.now() };
+  $('edPlay').textContent = '■ Arrêter';
+};
+function edTick() {
+  if (!ED.play) return;
+  const now = performance.now(); ED.play.w += now - ED.play.last; ED.play.last = now;
+  if (ED.play.w > ED.play.tl.total + 600) { ED.play = null; $('edPlay').textContent = '▶ Aperçu'; edDraw(); return; }
+  edDraw();
+}
+$('edCode').onclick = () => { const b = $('edCodeBox'); b.style.display = b.style.display === 'none' ? '' : 'none'; b.textContent = edCode().src; };
+$('edSave').onclick = () => {
+  const v = edValidate(); if (!v.atHome || v.nBad) return;
+  const name = $('edName').value.trim() || 'Ma chorégraphie';
+  if (ED.id) { const c = custom.find(c => c.id === ED.id); Object.assign(c, { name, src: v.src, ed: clone(ED.steps) }); }
+  else {
+    const id = Date.now(); custom.push({ id, name, src: v.src, ed: clone(ED.steps) }); ED.id = id;
+    const on = store.get('on', items.filter(i => i.on).map(i => i.id)); on.push('c' + id); store.set('on', on);
+  }
+  store.set('custom', custom); loadItems(); refresh();
+  toast('« ' + name + ' » enregistrée et ajoutée au programme');
+};
 // ====================================================================== aperçu d'une chorégraphie
 const PV = { tl: null, w: 0, play: true, rate: 1, last: 0, sim: null, cols: [] };
 function openPreview(it) {
@@ -1272,7 +1491,7 @@ function drawBoard() {
     $('stTime').textContent = `${fmt(w - b0)} / ${fmt(b1 - b0)}  ·  chorégraphie ${k + 1} sur ${tl.bounds.length - 1}`;
   }
 }
-(function loop(ts) { manualTick(ts); previewTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
+(function loop(ts) { manualTick(ts); previewTick(); edTick(); if ($('tele').classList.contains('on')) { drawBoard(); if (R.st) updateRemote(); } requestAnimationFrame(loop); })();
 
 loadItems(); refresh();
 </script>
