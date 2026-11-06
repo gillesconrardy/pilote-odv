@@ -193,7 +193,7 @@ pre.code{font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--s
     <div class="card" id="odoCard">
       <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs</h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
       <div id="odo" style="margin-top:8px"></div>
-      <div class="sub" style="margin-top:6px">Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 50 cm : 1 pas de grille = 12,5 mm).</div>
+      <div class="sub" style="margin-top:6px">Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas de grille = 12,25 mm).</div>
     </div>
     <div class="remote">
       <button class="rb play" id="bPlay" disabled><span class="ic">▶</span>Lecture</button>
@@ -1120,7 +1120,7 @@ function previewTick() {
   drawPlate(c, PV.tl, PV.w, null, true);
 }
 // ====================================================================== compteurs (distance et vitesse)
-const PITCH_M = 0.5 / 40;                    // plateau de 50 cm = 40 pas de grille → 1 pas = 12,5 mm
+const PITCH_M = 0.49 / 40;                   // plateau de 49 cm = 40 pas de grille → 1 pas = 12,25 mm
 const ODO = { dist: store.get('odo', [0, 0, 0, 0]), speed: [0, 0, 0, 0], last: null, t: 0, saveAt: 0, drawAt: 0 };
 function pathLen(tl, i, w0, w1) {
   // longueur réelle du trajet du véhicule i entre deux instants du spectacle (en suivant la courbe)

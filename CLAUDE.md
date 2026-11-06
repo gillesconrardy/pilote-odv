@@ -15,7 +15,7 @@ il pilote depuis Chrome sur Android (Safari/Chrome iPhone n'ont pas le Bluetooth
 `VEHICLE_ID`). Unités : pas de grille, `GEAR_RATIO` 80°/pas, vitesse max 1400°/s, pas de 4 ms.
 Repère : origine O en haut à droite (clôture en haut et à droite, picots rouges au coin), +X vers la
 gauche, +Y vers le bas. Positions de départ : V1 (30,0), V2 (20,0), V3 (10,0), V4 (0,0).
-Plateau : 50 cm de côté = 40 pas → 1 pas = 12,5 mm (compteurs de distance/vitesse de l'onglet Pilotage). Emprise d'un véhicule : 10 pas (Chebyshev < 10 = chevauchement ; 10 = côte à côte, autorisé).
+Plateau : 49 cm de côté = 40 pas → 1 pas = 12,25 mm (compteurs de distance/vitesse de l'onglet Pilotage). Emprise d'un véhicule : 10 pas (Chebyshev < 10 = chevauchement ; 10 = côte à côte, autorisé).
 Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicule à la fois, dans l'ordre 1→4.
 
 ## Architecture
