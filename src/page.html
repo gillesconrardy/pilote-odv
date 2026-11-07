@@ -234,6 +234,15 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .odo .bar{background:#2a2622;border-radius:0}
 .odo b{font-family:var(--mono);font-weight:400}
 :root{color-scheme:dark}
+/* barre de chargement de l'envoi aux 4 véhicules */
+.uprog{margin-top:10px}
+.uprog .ut{display:flex;justify-content:space-between;align-items:baseline;font:400 11px var(--mono);letter-spacing:.12em;color:var(--muted);margin-bottom:5px}
+.uprog .ut b{font:700 13px "Tomorrow",var(--mono);color:var(--accent);letter-spacing:0}
+.uprog .uk{height:10px;background:#2a2622;position:relative;overflow:hidden}
+.uprog .uk i{position:absolute;left:0;top:0;bottom:0;width:0;background:repeating-linear-gradient(45deg,rgba(0,0,0,.18) 0 4px,transparent 4px 10px),var(--accent);background-size:14px 14px;transition:width .35s ease;animation:uprogMove .6s linear infinite}
+.uprog.done .uk i{animation:none;background:var(--green)}
+.uprog.done .ut b{color:var(--green)}
+@keyframes uprogMove{to{background-position:14px 0}}
 /* ===== boutons orange : angles droits, éclair blanc à l'appui ===== */
 .btn.primary,.rb.play{border-radius:5px!important;box-shadow:none}
 .btn{padding:7px 14px!important;font-size:13.5px!important;line-height:1.35;min-height:0}
@@ -451,7 +460,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <span id="sumTxt" hidden>–</span>
       <div id="updBox">
         <button class="btn primary" id="updAll2" style="width:100%;padding:14px;margin-top:10px">⟳ Envoyer aux 4 véhicules</button>
-        <div class="sub" id="updMsg2" style="margin-top:8px"></div>
+        <div class="uprog" id="updProg2" hidden><div class="ut"><span class="ul">Envoi</span><b>0 %</b></div><div class="uk"><i></i></div></div><div class="sub" id="updMsg2" style="margin-top:8px"></div>
       </div>
       <div id="sumWarn"></div>
     </div>
@@ -462,7 +471,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <div class="card">
       <h2>Les 4 véhicules <button type="button" class="tip" data-tip="Tout reconnecter : ramène les véhicules au départ, puis leur renvoie la sélection de l'onglet Programme, sans calibrage. Tout déconnecter : le téléphone coupe la liaison, les programmes continuent sur les hubs.">i</button></h2>
       <div class="vall"><button class="btn primary" id="updAll">Tout reconnecter</button><button class="btn" id="discAll">Tout déconnecter</button></div>
-      <div class="sub" id="updMsg" style="margin-top:8px"></div>
+      <div class="uprog" id="updProg" hidden><div class="ut"><span class="ul">Envoi</span><b>0 %</b></div><div class="uk"><i></i></div></div><div class="sub" id="updMsg" style="margin-top:8px"></div>
     </div>
     <div class="card">
       <h2>Un par un</h2>
@@ -956,7 +965,8 @@ function renderVehicles() {
   if (typeof suRender === 'function' && $('suList')) suRender();
 }
 function setSt(v, txt, cls = '') { const h = cls ? `<span class="${cls}">${txt}</span>` : txt; $('st' + v).innerHTML = h; if ($('sust' + v)) $('sust' + v).innerHTML = h; }
-function setBar(v, f) { for (const id of ['bar' + v, 'subar' + v]) { const b = $(id); if (!b) continue; if (f === null) { b.style.display = 'none'; continue; } b.style.display = 'block'; b.firstElementChild.style.width = (f * 100) + '%'; } }
+function setBar(v, f) {
+  if (updating && UPD.v === v && f !== null) updProg(UPD.base + UPD.span * f); for (const id of ['bar' + v, 'subar' + v]) { const b = $(id); if (!b) continue; if (f === null) { b.style.display = 'none'; continue; } b.style.display = 'block'; b.firstElementChild.style.width = (f * 100) + '%'; } }
 
 const DEFAULT_NAMES = { 1: 'vehicle1', 2: 'vehicle2', 3: 'vehicle3', 4: 'vehicle4' };
 const hubName = v => (store.get('hub' + v, DEFAULT_NAMES[v]) || '').trim();
@@ -1096,25 +1106,38 @@ async function ensureHub(v) {
 }
 const atHome = () => R.st && R.tl && (R.st.s === 'P' || R.st.s === 'S') && R.tl.bounds.includes(R.st.w);
 let updating = false;
+// barre de chargement : 0-5 % connexion V4, 5-15 % retour au départ, 15-22 % arrêts, 22-100 % envoi 1 → 4 (≈ 19,5 % chacun)
+const UPD = { v: 0, base: 0, span: 0 };
+function updProg(f, label, done) {
+  for (const id of ['updProg', 'updProg2']) {
+    const e = $(id); if (f === null) { e.hidden = true; continue; }
+    e.hidden = false; e.classList.toggle('done', !!done);
+    e.querySelector('i').style.width = (Math.max(0, Math.min(1, f)) * 100).toFixed(1) + '%';
+    e.querySelector('b').textContent = Math.round(Math.max(0, Math.min(1, f)) * 100) + ' %';
+    if (label) e.querySelector('.ul').textContent = label;
+  }
+}
 async function updateAll() {
   const msg = t => { $('updMsg').innerHTML = t; $('updMsg2').innerHTML = t; log(t.replace(/<[^>]+>/g, '')); };
   if (!TL) { toast('Choisis d\'abord des chorégraphies'); showTab('choix'); return; }
   if (updating) return;
   updating = true; $('updAll').disabled = true; $('updAll2').disabled = true;
+  clearTimeout(UPD.hide); updProg(0, 'PRÉPARATION');
   try {
     // 0. il faut le véhicule 4 : c'est lui qui donne les ordres aux autres
     if (!R.hub || !R.hub.connected) {
-      msg('Connexion au véhicule 4…');
+      msg('Connexion au véhicule 4…'); updProg(.02, 'CONNEXION V4');
       const h4 = await ensureHub(4); attachRemote(h4);
       for (let k = 0; k < 15 && !R.st; k++) await sleep(200);
     }
     // 1. ramener les véhicules au départ
     if (R.hub && R.hub.connected && R.st) {
       if (!atHome()) {
-        msg('Retour des véhicules au départ…');
+        msg('Retour des véhicules au départ…'); updProg(.05, 'RETOUR AU DÉPART');
         R.lock = 0; await send('h');
         const t0 = performance.now();
         while (!atHome()) {
+          updProg(.05 + .1 * (1 - Math.exp(-(performance.now() - t0) / 15000)));
           if (performance.now() - t0 > 120000) throw new Error('Les véhicules ne sont pas revenus au départ.');
           if (!R.hub || !R.hub.connected) throw new Error('Véhicule 4 déconnecté pendant le retour.');
           await sleep(300);
@@ -1125,25 +1148,27 @@ async function updateAll() {
     }
     // 2. le véhicule 4 demande aux véhicules 1 à 3 d'arrêter leur programme (sinon ils sont invisibles en Bluetooth)
     if (R.hub && R.hub.connected) {
-      msg('Arrêt des programmes des véhicules 1 à 3…');
+      msg('Arrêt des programmes des véhicules 1 à 3…'); updProg(.15, 'ARRÊT DES PROGRAMMES');
       try { await R.hub.stdin('e'); } catch {}
       await sleep(2500);
     }
     // 3. arrêter le véhicule 4 pour couper l'ancienne horloge
-    msg('Arrêt du véhicule 4…');
+    msg('Arrêt du véhicule 4…'); updProg(.2);
     const h4 = await ensureHub(4); h4.onLine = null; h4.autoReconnect = false; R.st = null; await h4.stop();
     // 4. envoyer 1, 2, 3 puis 4, sans calibrage (ils sont déjà en place)
     for (const v of [1, 2, 3, 4]) {
-      msg(`Connexion au véhicule ${v}…`);
+      UPD.base = .22 + (v - 1) * .195; UPD.span = .18; UPD.v = v;
+      msg(`Connexion au véhicule ${v}…`); updProg(UPD.base, 'VÉHICULE ' + v + ' / 4');
       await ensureHub(v);
       msg(`Envoi au véhicule ${v} (${v} sur 4)…`);
       if (!await sendVehicle(v, true, false)) throw new Error(`Échec de l'envoi au véhicule ${v} (voir son message ci-dessous).`);
     }
+    UPD.v = 0; updProg(1, 'TERMINÉ', true);
     msg('<span class="ok">✓ Les 4 véhicules ont la nouvelle sélection. Passe à Pilotage et appuie sur Lecture.</span>');
     odoZero();   // nouvelle sélection : les compteurs repartent de zéro
     setUpdMode(false); showTab('tele');
   } catch (e) { msg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); }
-  finally { updating = false; $('updAll').disabled = false; $('updAll2').disabled = !PLAY.length; }
+  finally { updating = false; UPD.v = 0; $('updAll').disabled = false; $('updAll2').disabled = !PLAY.length; UPD.hide = setTimeout(() => updProg(null), 6000); }
 }
 $('updAll').onclick = updateAll;
 $('updAll2').onclick = updateAll;

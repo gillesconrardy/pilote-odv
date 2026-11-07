@@ -217,7 +217,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way
     if s[0] == 'D':
         try:
             CSPD = clamp(int(s[1:]) / 100000, 0.001, 0.012)
@@ -225,6 +225,7 @@ def manual_line(s):
             pass
         return
     if s == 'J':
+        b_ret = False
         if IS_SENDER and manual and game == 0 and None not in OBS:
             for k in range(3):
                 GC[k][0] = OBS[k][0]
@@ -240,11 +241,65 @@ def manual_line(s):
         else:
             print('JNO')
         return
+    if s == 'B':
+        # billes : les 4 vehicules roulent selon l'inclinaison du telephone (commande T)
+        if IS_SENDER and manual and game == 0 and None not in OBS:
+            for k in range(3):
+                GC[k][0] = OBS[k][0]
+                GC[k][1] = OBS[k][1]
+                GH[k] = OBS[k]
+                BV[k][0] = 0.0
+                BV[k][1] = 0.0
+            BV[3][0] = 0.0
+            BV[3][1] = 0.0
+            B4[0] = tx
+            B4[1] = ty
+            B4H[0] = tx
+            B4H[1] = ty
+            TILT[0] = 0.0
+            TILT[1] = 0.0
+            b_snapshot(watch.time(), True)
+            game = 4
+            g_mover = -1
+            g_stuck = False
+            print('BON')
+        else:
+            print('JNO')
+        return
+    if s[0] == 'T' and len(s) > 2:
+        k = s.find(',')
+        try:
+            TILT[0] = clamp(int(s[1:k]) / 100, -1, 1)
+            TILT[1] = clamp(int(s[k + 1:]) / 100, -1, 1)
+        except (ValueError, IndexError):
+            pass
+        return
     if s == 'K':
-        if game == 1:
+        b_ret = game == 4
+        if game == 4:
+            TILT[0] = 0.0
+            TILT[1] = 0.0
+        if game in (1, 4):
             game = 2
             g_mover = -1
             print('JRET')
+        return
+    if s[0] == 'W' and len(s) > 3:
+        # apres les billes : deplacer le vehicule s[1] (1..4) tout droit vers x,y (x100)
+        k = s.find(',')
+        if game == 2 and b_ret and g_mover < 0:
+            try:
+                g_way = [(clamp(int(s[2:k]) / 100, 0, 30), clamp(int(s[k + 1:]) / 100, 0, 30))]
+                g_mover = clamp(int(s[1]), 1, 4) - 1
+            except (ValueError, IndexError):
+                print('WNO')
+        else:
+            print('WNO')
+        return
+    if s == 'Z':
+        if game == 2 and b_ret and g_mover < 0:
+            game = 3
+            print('JOK')
         return
     if s == 'C':
         if manual:
@@ -271,14 +326,14 @@ def manual_line(s):
         hub.light.on(Color.MAGENTA)
         print('MAN', 1)
     elif s == 'Q':
-        if game in (1, 2):
+        if game in (1, 2, 4):
             print('BUSY')
             return
         game = 0
         manual = False
         blend = True
         print('MAN', 0)
-    elif s[0] == 'G' and manual:
+    elif s[0] == 'G' and manual and game != 4:
         k = s.find(',')
         if k > 1:
             try:
@@ -318,6 +373,106 @@ g_next_jp = 0
 game_rx = False               # (vehicules 1 a 3) on suit les positions diffusees par le vehicule 4
 grate = 0.006
 last_game = 0
+# billes (game 4) : B4 = position prevue du vehicule 4, BV = vitesses (pas/ms), TILT = inclinaison -1..1
+B4 = [0.0, 0.0]
+BV = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+TILT = [0.0, 0.0]
+BK = (0.7, 1.0, 1.3, 0.85)    # chaque bille a son poids (elan et vitesse max), pour qu'elles s'etalent
+
+
+B4H = [0.0, 0.0]
+b_ret = False
+
+
+def b_pos(k):
+    return B4 if k == 3 else GC[k]
+
+
+def b_home(k):
+    return B4H if k == 3 else GH[k]
+
+
+BOLD = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]   # positions d'il y a 250 a 500 ms
+BNOW = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
+b_snap = 0
+
+
+def b_ok(k, x, y):
+    # les suiveurs ont jusqu'a ~250 ms de retard radio : on garde 11 pas avec la position prevue
+    # ET avec celle d'il y a un quart de seconde ; en dessous, on ne peut que s'eloigner
+    c = b_pos(k)
+    for j in range(4):
+        if j == k:
+            continue
+        o = b_pos(j)
+        q = BOLD[j]
+        dn = cheb(x, y, o[0], o[1])
+        do = cheb(x, y, q[0], q[1])
+        if dn < 11 and dn < cheb(c[0], c[1], o[0], o[1]) - 1e-9:
+            return False
+        if do < 11 and do < cheb(c[0], c[1], q[0], q[1]) - 1e-9:
+            return False
+    return True
+
+
+def b_snapshot(local, reset):
+    global b_snap
+    if reset or local >= b_snap:
+        b_snap = local + 250
+        for k in range(4):
+            p = b_pos(k)
+            o = BNOW[k] if not reset else p
+            BOLD[k][0] = o[0]
+            BOLD[k][1] = o[1]
+            BNOW[k][0] = p[0]
+            BNOW[k][1] = p[1]
+
+
+def billes_tick(dt):
+    # la +X du plateau est vers la gauche : pencher a droite (TILT[0] > 0) fait diminuer x
+    if dt > 50:
+        dt = 50
+    acc = CSPD / 450
+    ax = -TILT[0] * acc
+    ay = TILT[1] * acc
+    fr = 1 - dt / (700 if (TILT[0] == 0 and TILT[1] == 0) else 2500)
+    for k in range(4):
+        v = BV[k]
+        c = b_pos(k)
+        v[0] = (v[0] + ax * BK[k] * dt) * fr
+        v[1] = (v[1] + ay * BK[k] * dt) * fr
+        n = (v[0] * v[0] + v[1] * v[1]) ** 0.5
+        vm = CSPD * BK[k]
+        if n > vm:
+            v[0] *= vm / n
+            v[1] *= vm / n
+        nx = c[0] + v[0] * dt
+        ny = c[1] + v[1] * dt
+        # rebond amorti contre la cloture
+        if nx < 0:
+            nx = 0
+            v[0] = -v[0] * 0.3
+        elif nx > 30:
+            nx = 30
+            v[0] = -v[0] * 0.3
+        if ny < 0:
+            ny = 0
+            v[1] = -v[1] * 0.3
+        elif ny > 30:
+            ny = 30
+            v[1] = -v[1] * 0.3
+        if b_ok(k, nx, ny):
+            c[0] = nx
+            c[1] = ny
+        elif b_ok(k, nx, c[1]):
+            c[0] = nx
+            v[1] = 0.0
+        elif b_ok(k, c[0], ny):
+            c[1] = ny
+            v[0] = 0.0
+        else:
+            v[0] = 0.0
+            v[1] = 0.0
 
 
 def cheb(ax, ay, bx, by):
@@ -430,18 +585,24 @@ def game_tick(dtg, local):
             elif g_ok(k, c[0], ny):
                 c[1] = ny
     elif game == 2:
+        # retour un par un ; apres les billes, le vehicule 4 fait partie du retour (B4 -> B4H)
         sp = max(CSPD, 0.006) * dtg
-        if g_mover < 0:
-            if all(cheb(GC[k][0], GC[k][1], GH[k][0], GH[k][1]) < 0.02 for k in range(3)):
+        n = 4 if b_ret else 3
+        if g_mover < 0 and b_ret:
+            pass                  # apres les billes, l'appli envoie les deplacements un par un (W, puis Z)
+        elif g_mover < 0:
+            if all(cheb(b_pos(k)[0], b_pos(k)[1], b_home(k)[0], b_home(k)[1]) < 0.02 for k in range(n)):
                 game = 3
                 print('JOK')
             else:
-                for k in range(3):
-                    c = GC[k]
-                    h = GH[k]
+                for k in range(n):
+                    c = b_pos(k)
+                    h = b_home(k)
                     if cheb(c[0], c[1], h[0], h[1]) < 0.02:
                         continue
-                    obs = [(GC[j][0], GC[j][1]) for j in range(3) if j != k] + [(mx, my)]
+                    obs = [(b_pos(j)[0], b_pos(j)[1]) for j in range(n) if j != k]
+                    if not b_ret:
+                        obs.append((mx, my))
                     for path in ([h], [(h[0], c[1]), h], [(c[0], h[1]), h]):
                         ok = True
                         ax = c[0]
@@ -462,7 +623,7 @@ def game_tick(dtg, local):
                     g_stuck = True
                     print('JSTUCK')
         else:
-            c = GC[g_mover]
+            c = b_pos(g_mover)
             w = g_way[0]
             dx = w[0] - c[0]
             dy = w[1] - c[1]
@@ -474,6 +635,8 @@ def game_tick(dtg, local):
                 if not g_way:
                     g_mover = -1
                     g_stuck = False
+                    if b_ret:
+                        print('WOK')
             else:
                 c[0] += dx * sp / d
                 c[1] += dy * sp / d
@@ -596,7 +759,7 @@ while True:
         if raw >= next_bcast and game:
             # jeu : positions prevues des 3 chasseurs (en 1/8 de pas) + leur vitesse (en 0,1 pas/s)
             b = [int(clamp(GC[k // 2][k % 2], 0, 31) * 8 + 0.5) for k in range(6)]
-            b.append(int(clamp(max(CSPD, 0.006) * 10000, 1, 255)))
+            b.append(int(clamp(max(CSPD * (1.3 if game == 4 else 1), 0.006) * 10000, 1, 255)))
             hub.ble.broadcast((raw + COMP, 7 + 16 * GEN, bytes(b)))
             next_bcast = raw + 150
         elif raw >= next_bcast:
@@ -677,8 +840,17 @@ while True:
             elif free_at(tx, ny):
                 ty = ny
             rc_until = local + 300
-    if IS_SENDER and game:
+    if IS_SENDER and game == 4:
+        b_snapshot(local, False)
+        billes_tick(local - last_loop)
+        tx = B4[0]
+        ty = B4[1]
+    elif IS_SENDER and game:
         game_tick(local - last_loop, local)
+        if b_ret and game in (2, 3):
+            tx = B4[0]
+            ty = B4[1]
+    if IS_SENDER and game:
         if local >= g_next_jp:
             g_next_jp = local + 250
             print('JP', int(GC[0][0] * 100), int(GC[0][1] * 100), int(GC[1][0] * 100), int(GC[1][1] * 100),
