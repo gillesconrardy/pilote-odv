@@ -56,6 +56,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      rangement (`tidyPlan` : A* `planReturn` + parkings si bloqué) et envoie `W<k><x>,<y>` (un trajet droit, `WOK`)
      puis `Z` (`JOK`), puis rend la main. Page : capteur `deviceorientation` (position au démarrage = à plat,
      zone morte 3°, plein à 20°) ; le joystick fait aussi pencher. Tests : `tests/t_billes.py`, harness (`B`, `T…`).
+   - LED du hub = couleur du véhicule (`VCOL` : V1 bleu 215°, V2 orange 28°, V3 vert 140°, V4 violet 270°, `Color(h,100,100)`) ;
+     en marche elle pulse couleur pleine / atténuée (`VDIM`, v = 30) ; restent : rouge = urgence, jaune/rouge = batterie faible
+     (< 7,0 / 6,5 V), cyan = connexion télécommande.
    - Au démarrage, chaque hub imprime `BAT <mV>` (niveau affiché dans Envoi : 6,0 V = 0 %, 8,4 V = 100 %).
    - Le V4 imprime `ST <P|F|B|S> <w> <chor> <attente> <mV> <GEN>` toutes les 400 ms.
 4. **`src/page.html`** : F4 Square, 5 onglets dans une barre en haut, qui reste visible au défilement (`nav.tabbar`, sticky, 5 tuiles « briques » graphite à bande orange en bas comme les véhicules, onglet actif tout orange ; après l’écran de démarrage, les 5 tuiles arrivent comme des véhicules : elles descendent au centre puis glissent à leur place, `tabsArrive()` ; (au clic : l’orange monte du bas + l’icône fait un tour, classe `spin` ; les `.card` de l’onglet apparaissent l’une après l’autre, coins orange qui s’écartent puis remplissage, classe `anim` sur la section), icônes + libellés, ordre Setup (= Mise en place) · Programme · Pilotage · Véhicules · Stats ; le dernier ouvert est mémorisé, `odv.tab` ; glisser le doigt à gauche/droite change d’onglet ; appui long 2 s sur un onglet = jeu « TOY » : on le promène, les autres s’écartent, tout revient au relâcher, sauf sur les plateaux, curseurs, joystick, listes défilantes et fenêtres) :

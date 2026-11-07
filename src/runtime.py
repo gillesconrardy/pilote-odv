@@ -13,6 +13,10 @@ VEHICLE_ID = %VID%
 SENDER_ID = 4                 # le vehicule 4 diffuse l'horloge et recoit les commandes du telephone
 IS_SENDER = VEHICLE_ID == SENDER_ID
 ME = VEHICLE_ID - 1            # indice du vehicule (0 a 3)
+# couleur de la LED du hub = couleur du vehicule dans l'appli (V1 bleu, V2 orange, V3 vert, V4 violet)
+VHUE = (215, 28, 140, 270)[ME]
+VCOL = Color(VHUE, 100, 100)
+VDIM = Color(VHUE, 100, 30)   # pulsation : couleur pleine / couleur attenuee
 CHANNEL = 1
 DO_HOMING = %HOMING%          # True : recalage contre la cloture au demarrage
 LOOP = %LOOP%                 # True : la suite de choregraphies tourne en boucle
@@ -127,7 +131,7 @@ def battery_color():
         return Color.RED
     if v < 7000:
         return Color.YELLOW
-    return Color.BLUE
+    return VCOL
 
 
 def homing():
@@ -154,7 +158,7 @@ def emergency():
 
 
 # ---------------------------------------------------------------- demarrage
-hub.light.on(Color.ORANGE)
+hub.light.on(VCOL)
 print('BAT', hub.battery.voltage())
 if DO_HOMING:
     homing()
@@ -213,7 +217,7 @@ def remote_connect():
     except OSError:
         remote = None
         print('RC', 0)
-    hub.light.on(Color.MAGENTA if manual else Color.BLUE)
+    hub.light.on(VCOL)
 
 
 def manual_line(s):
@@ -323,7 +327,7 @@ def manual_line(s):
         blend = False
         tx = mx
         ty = my
-        hub.light.on(Color.MAGENTA)
+        hub.light.on(VCOL)
         print('MAN', 1)
     elif s == 'Q':
         if game in (1, 2, 4):
@@ -739,7 +743,7 @@ else:
         synced = True
         return True
 
-    hub.light.on(Color.GREEN)
+    hub.light.on(VCOL)
 
 while True:
     local = watch.time()
@@ -768,7 +772,7 @@ while True:
             next_bcast = raw + (BCAST_MS * 2 if manual else BCAST_MS)
             count += 1
             if not manual:
-                hub.light.on(battery_color() if count % 2 else Color.WHITE)
+                hub.light.on(battery_color() if count % 2 else VDIM)
         if raw >= next_status:
             next_status = raw + (1000 if manual else 400)
             v = vt(raw)
@@ -787,7 +791,7 @@ while True:
                 grate = gb[6] / 10000 * 1.25
                 if not game_rx:
                     game_rx = True
-                    hub.light.on(Color.RED)
+                    hub.light.on(VCOL)
         elif data is not None and len(data) == 5 and data[3] // 16 == GEN:
             if game_rx:
                 # fin du jeu : on rejoint (en douceur) sa place dans la choregraphie
@@ -796,7 +800,7 @@ while True:
             if feed(data[0]):
                 count += 1
                 if not manual:
-                    hub.light.on(battery_color() if count % 2 else Color.WHITE)
+                    hub.light.on(battery_color() if count % 2 else VDIM)
             q = [data[1], data[2], data[3] % 16 - 1, data[4]]
             if q != P1:
                 P0 = P1

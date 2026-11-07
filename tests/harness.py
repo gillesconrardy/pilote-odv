@@ -19,6 +19,8 @@ def mod(name, **kw):
     m = types.ModuleType(name); m.__dict__.update(kw); sys.modules[name] = m; return m
 
 class Color:
+    def __init__(self, h=0, s=100, v=100): self.h, self.s, self.v = h, s, v
+    def __repr__(self): return 'hsv(%d,%d,%d)' % (self.h, self.s, self.v)
     CYAN = 'cyan'; RED = 'red'; GREEN = 'green'; BLUE = 'blue'; WHITE = 'white'; YELLOW = 'yellow'; ORANGE = 'orange'; MAGENTA = 'magenta'
 class Port: A = 'A'; C = 'C'
 class Button: LEFT_PLUS='L+'; LEFT_MINUS='L-'; RIGHT_PLUS='R+'; RIGHT_MINUS='R-'; CENTER='C'
@@ -43,7 +45,9 @@ def wait(ms):
     time.sleep(ms / 1000 / SPEED)
 
 class _Light:
-    def on(self, c): ctx.light = c
+    def on(self, c):
+        ctx.light = c
+        if hasattr(ctx, 'lights') and (not ctx.lights or ctx.lights[-1] != repr(c)): ctx.lights.append(repr(c))
     CYAN = 'cyan'
     def off(self): ctx.light = None
 class _Battery:
@@ -95,6 +99,7 @@ mod('usys', stdin=_Stdin()); mod('uselect', poll=_Poll)
 def run_vehicle(vid, src, delay_ms, drift):
     time.sleep(delay_ms / 1000 / SPEED)
     ctx.vid = vid; ctx.drift = drift; ctx.last = [0, 0]; ctx.stopped = False; ctx.light = None
+    ctx.lights = []
     src = src.replace("    last_loop = local\n    x_motor.track_target",
                       "    _REC.append((_true(), wrap(vt(raw)), x, y))\n    last_loop = local\n    x_motor.track_target")
     assert '_REC.append' in src
@@ -105,6 +110,7 @@ def run_vehicle(vid, src, delay_ms, drift):
     except SystemExit:
         pass
     REC[vid].append(('stopped', ctx.stopped))
+    REC[vid].append(('lights', ctx.lights[:8]))
 
 if __name__ == '__main__':
     progs = json.load(open(sys.argv[1]))
