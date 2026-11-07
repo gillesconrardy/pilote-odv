@@ -58,6 +58,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ch .nm span{font-size:12.5px;color:var(--muted)}
 .ord{display:flex;gap:4px}
 .ord button{width:34px;height:34px;border:1px solid var(--line);background:var(--soft);border-radius:8px;font-size:15px}
+.ord button.pv{display:grid;place-items:center;padding:0}.ord button.pv svg{width:20px;height:20px;pointer-events:none}
 .badge{font-size:11.5px;font-weight:650;border-radius:6px;padding:1px 7px;margin-left:4px}
 .ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
 .tog{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px}
@@ -1026,7 +1027,7 @@ function renderList() {
     d.dataset.id = it.id;
     d.innerHTML = `<div class="grip" title="Glisser pour changer l'ordre">⠿</div><input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
       <div class="nm"><b>${esc(it.name)}</b><span>${fmt(it.dur)}</span>${badge}</div>
-      <div class="ord">${it.ed ? '<button title="Modifier" class="edb">✏️</button>' : ''}<button title="Aperçu" class="pv">👁</button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
+      <div class="ord">${it.ed ? '<button title="Modifier" class="edb">✏️</button>' : ''}<button title="Aperçu" class="pv"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="1.8" stroke-linecap="square"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5" stroke-opacity=".5"/><path d="M12 12 L19 6"/><rect x="15" y="14" width="3" height="3" fill="#ff9a3c" stroke="none"/></svg></button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
     const [cb] = d.getElementsByTagName('input');
     cb.onchange = () => { it.on = cb.checked; persist(); refresh(); };
     d.querySelector('.pv').onclick = () => openPreview(it);
