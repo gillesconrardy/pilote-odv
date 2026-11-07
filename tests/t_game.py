@@ -29,7 +29,7 @@ async def main():
         jb = await pg.locator('#joy').bounding_box(); cx, cy = jb['x'] + jb['width']/2, jb['y'] + jb['height']/2
         await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx, cy + 80, steps=3); await pg.wait_for_timeout(2500); await pg.mouse.up()
         print('after 2.5 s: time', await pg.inner_text('#gTime'), 'catches', await pg.inner_text('#gCatch'), 'best', await pg.inner_text('#gBest'), 'V4', await pg.evaluate('M.cmd'), 'others', await pg.evaluate('JSON.stringify(M.others)'))
-        await pg.locator('#cv').screenshot(path='/home/claude/work/game_board.png')
+        await pg.evaluate('GM.pos=[[30,11],[20,24],[0,0]]'); await pg.wait_for_timeout(300); await pg.locator('#cv').screenshot(path='/home/claude/work/game_board.png')
         await pg.click('#gGo'); await pg.wait_for_function('GM.phase === 0', timeout=60000)
         print('end msg:', await pg.inner_text('#gMsg'), '| manual active:', await pg.evaluate('M.active'))
         st = await pg.evaluate('window.__stdin'); print('last stdin:', st[-4:])

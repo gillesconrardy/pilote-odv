@@ -2332,6 +2332,15 @@ function drawPlate(c, tl, w, man, trails, ovr) {
     vehDraw(cx, L, T, S, u, cols[i], '0' + (i + 1));
     if (man && man.v === i + 1) { cx.strokeStyle = '#ff9a3c'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
     if (hit) { cx.strokeStyle = '#e5483a'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+    // poursuite : pastille du rôle (méchant rouge, gentil bleu, fixe gris, toi = ambre)
+    if (ovr && GM.on && GM.kind === 'chase') {
+      const r = i === 3 ? 'p' : GM.roles[i], B = { m: ['#ff4d43', 'M'], g: ['#3b8bff', 'G'], f: ['#6b6760', 'F'], o: ['#6b6760', 'F'], p: ['#ff9a3c', 'TOI'] }[r];
+      const bx = L + S, by = T, h = u * 3.2, bw = B[1].length > 1 ? u * 5.4 : h;
+      cx.save(); cx.fillStyle = B[0]; cx.strokeStyle = '#121314'; cx.lineWidth = u * .4;
+      cx.beginPath(); cx.roundRect ? cx.roundRect(bx - bw / 2, by - h / 2, bw, h, h / 2) : cx.rect(bx - bw / 2, by - h / 2, bw, h); cx.fill(); cx.stroke();
+      cx.fillStyle = r === 'p' ? '#121314' : '#fff'; cx.font = `700 ${1.9 * u}px "Space Grotesk",sans-serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.fillText(B[1], bx, by + u * .1); cx.restore();
+    }
   }
 }
 function drawBoard() {

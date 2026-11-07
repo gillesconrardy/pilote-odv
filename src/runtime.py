@@ -601,7 +601,7 @@ def game_tick(dtg, local):
             sk = st
             if GR[k] == 1:
                 gx, gy = guard_target(k)
-                sk = st * 1.5
+                sk = st * 0.8      # le mechant est plus rapide que le gentil
             else:
                 gx = mx
                 gy = my
@@ -834,7 +834,7 @@ while True:
         if raw >= next_bcast and game:
             # jeu : positions prevues des 3 chasseurs (en 1/8 de pas) + leur vitesse (en 0,1 pas/s)
             b = [int(clamp(GC[k // 2][k % 2], 0, 31) * 8 + 0.5) for k in range(6)]
-            b.append(int(clamp(max(CSPD * (1.3 if game == 4 else 1.5), 0.006) * 10000, 1, 255)))
+            b.append(int(clamp(max(CSPD * (1.3 if game == 4 else 1), 0.006) * 10000, 1, 255)))
             b.append(255 if game == 4 or not g_placed else GR[0] + 3 * GR[1] + 9 * GR[2])   # roles (LED des suiveurs)
             hub.ble.broadcast((raw + COMP, 7 + 16 * GEN, bytes(b)))
             next_bcast = raw + 150
