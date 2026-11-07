@@ -275,10 +275,22 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 #splash.out{opacity:0;pointer-events:none}
 #spStage{position:relative;width:300px;height:520px;flex:none}
 #spStage *{position:absolute;box-sizing:border-box}
-#spStage .scene{inset:0;animation:spScene .2s 4s ease-in both}
-@keyframes spScene{to{opacity:0;filter:blur(4px)}}
-#spStage .fl{left:96px;top:126px;width:108px;height:108px;background:#fff;opacity:0;animation:spFl .35s 3.75s ease-out both}
-@keyframes spFl{0%{opacity:0}35%{opacity:.9}100%{opacity:0;transform:scale(1.6)}}
+#spStage .scene{inset:0}
+/* fin : éclatement — chaque véhicule fonce vers un coin en grossissant, avec traînée (échos), puis flash */
+#spStage .ex{inset:0;transform-origin:150px 180px;animation:var(--k) .3s var(--d) cubic-bezier(.7,0,1,.5) forwards}
+#spStage .ex.g1,#spStage .ex.g2{opacity:0}
+#spStage .ex.g1{--d2:.035s}#spStage .ex.g2{--d2:.07s}
+#spStage .ex.g1,#spStage .ex.g2{animation:var(--k) .3s calc(var(--d) + var(--d2)) cubic-bezier(.7,0,1,.5) forwards,spGh .3s calc(var(--d) + var(--d2)) linear forwards}
+#spStage .ex.g1{--go:.45}#spStage .ex.g2{--go:.22}
+@keyframes spGh{0%{opacity:var(--go)}100%{opacity:0}}
+#spStage .e0{--k:spX0;--d:3.6s}#spStage .e1{--k:spX1;--d:3.68s}#spStage .e2{--k:spX2;--d:3.71s}#spStage .e3{--k:spX3;--d:3.74s}#spStage .e4{--k:spX4;--d:3.77s}
+@keyframes spX0{to{transform:scale(3.5);opacity:0}}
+@keyframes spX1{70%{opacity:1}to{transform:translate(-280px,-300px) scale(6);opacity:0}}
+@keyframes spX2{70%{opacity:1}to{transform:translate(280px,-300px) scale(6);opacity:0}}
+@keyframes spX3{70%{opacity:1}to{transform:translate(-280px,300px) scale(6);opacity:0}}
+@keyframes spX4{70%{opacity:1}to{transform:translate(280px,300px) scale(6);opacity:0}}
+#splash .spfl{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;animation:spFl .3s 4s ease-out both}
+@keyframes spFl{0%{opacity:0}25%{opacity:.95}100%{opacity:0}}
 #spStage .dot{left:148px;top:178px;width:4px;height:4px;border-radius:50%;background:#ff9a3c;animation:spDot 1s ease both}
 @keyframes spDot{0%{transform:scale(0);box-shadow:0 0 0 0 rgba(255,154,60,.8)}50%{transform:scale(2.5);box-shadow:0 0 0 0 rgba(255,154,60,.8)}100%{transform:scale(1);box-shadow:0 0 0 30px rgba(255,154,60,0)}}
 #spStage .grid{left:50px;top:80px;width:200px;height:200px;background-image:radial-gradient(circle,#3a3631 1.2px,transparent 1.6px);background-size:12.5px 12.5px;background-position:6px 6px;clip-path:circle(0 at 50% 50%);animation:spGrid .9s .7s cubic-bezier(.5,0,.2,1) both}
@@ -303,7 +315,7 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 @keyframes spV4{0%{left:202px;top:82px;opacity:0}20%{left:202px;top:82px;opacity:1}55%{left:202px;top:182px}100%{left:152px;top:182px}}
 #spStage .sq{left:96px;top:126px;width:108px;height:108px;border:2px solid #ff9a3c;border-radius:0;opacity:0;animation:spSq .5s 3.2s ease-out both}
 @keyframes spSq{0%{opacity:0;transform:scale(1.4)}60%{opacity:1}100%{opacity:1;transform:scale(1);box-shadow:0 0 24px rgba(255,154,60,.35)}}
-#spStage .name{left:0;right:0;top:300px;height:90px;animation:spName .55s 4.2s cubic-bezier(.4,0,.2,1) both}
+#spStage .name{left:0;right:0;top:300px;height:90px;animation:spName .55s 4.15s cubic-bezier(.4,0,.2,1) both}
 @keyframes spName{to{top:215px}}
 #spStage .t{left:0;right:0;top:0;text-align:center;font:400 34px "Russo One",var(--sans);letter-spacing:.05em;color:#edeae4;clip-path:inset(0 100% 0 0);animation:spT .7s 3.3s steps(9) both;white-space:nowrap}
 #spStage .t span{position:static;color:#ff9a3c}
@@ -419,11 +431,11 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 </head>
 <body>
 <div id="splash" role="img" aria-label="F4 Square"><div id="spStage">
-  <div class="scene"><div class="grid"></div><div class="dot"></div><div class="c1"></div><div class="c2"></div>
-    <div class="v v1">01</div><div class="v v2">02</div><div class="v v3">03</div><div class="v v4">04</div><div class="sq"></div><div class="fl"></div></div>
+  <div class="scene"><div class="ex e0"><div class="grid"></div><div class="dot"></div><div class="c1"></div><div class="c2"></div><div class="sq"></div></div>
+    <div class="ex e1 g2"><div class="v v1">01</div></div><div class="ex e1 g1"><div class="v v1">01</div></div><div class="ex e1"><div class="v v1">01</div></div><div class="ex e2 g2"><div class="v v2">02</div></div><div class="ex e2 g1"><div class="v v2">02</div></div><div class="ex e2"><div class="v v2">02</div></div><div class="ex e3 g2"><div class="v v3">03</div></div><div class="ex e3 g1"><div class="v v3">03</div></div><div class="ex e3"><div class="v v3">03</div></div><div class="ex e4 g2"><div class="v v4">04</div></div><div class="ex e4 g1"><div class="v v4">04</div></div><div class="ex e4"><div class="v v4">04</div></div></div>
   <div class="name"><div class="t">F4 <span>SQUARE</span></div><div class="ln"></div><div class="sub">4 · 4 · SYNC</div></div>
   <div class="bar"><i></i></div>
-</div></div>
+</div><div class="spfl"></div></div>
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
