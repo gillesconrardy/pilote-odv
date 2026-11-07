@@ -89,7 +89,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    à une étape → décaler l'un des deux véhicules sur la place libre la plus proche ; collision en trajet → « tous de côté puis en
    hauteur » / l'inverse (+1 étape), « un par un » (ordre et trajets droits ou en L), sinon « contourner un par un » (`tidyPlan`) ;
    aperçu (sous le plateau) ; enregistré dans le navigateur (localStorage `odv.custom`, champ `ed` = étapes) et
-   réouvrable avec ✏️.
+   réouvrable avec ✏️ ; « Enregistrer » ferme l'Atelier et revient à l'onglet Programme.
    **Inventer avec l'IA** (dans l'Atelier, sous les Étapes ; exemples en pastilles, bouton ✨, clé repliée) : description en français → API Anthropic (`claude-sonnet-5-5`,
    appel direct du navigateur avec `anthropic-dangerous-direct-browser-access`), réponse JSON
    `{name, steps:[{pos,speed,wait}]}` chargée dans l'Atelier ; jusqu'à 3 corrections automatiques en renvoyant

@@ -24,7 +24,7 @@ async def main():
         print(await pg.evaluate('edCode().src'))
         await pg.click('#edPlay'); await pg.wait_for_timeout(1500); await pg.screenshot(path='/home/claude/work/ed1.png', full_page=False)
         await pg.click('#edPlay')
-        await pg.click('#edSave'); await pg.wait_for_timeout(300); await pg.click('#edClose')
+        await pg.click('#edSave'); await pg.wait_for_timeout(300); print('après enregistrement: atelier ouvert =', await pg.evaluate("document.getElementById('edWrap').classList.contains('on')"), '| onglet =', await pg.evaluate("localStorage.getItem('odv.tab')"))
         rows = await pg.locator('#chList .ch').all_inner_texts(); print('list last:', rows[-1].replace('\n', ' '))
         print('summary:', await pg.inner_text('#sumTxt'))
         src = await pg.evaluate("programText(1).length"); print('program V1 chars', src)

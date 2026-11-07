@@ -1929,6 +1929,8 @@ $('edSave').onclick = () => {
     const on = store.get('on', items.filter(i => i.on).map(i => i.id)); on.push('c' + id); store.set('on', on);
   }
   store.set('custom', custom); loadItems(); refresh();
+  // on ferme l'atelier et on revient à l'onglet Programme
+  $('edClose').onclick(); showTab('choix'); window.scrollTo(0, 0);
   toast('« ' + name + ' » enregistrée et ajoutée au programme');
 };
 // ====================================================================== aperçu d'une chorégraphie
