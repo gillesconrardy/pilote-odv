@@ -50,8 +50,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      Le V4 imprime `JP x1 y1 … x4 y4 phase prises` (×100) toutes les 250 ms.
      **Rôles** (depuis v1.52) : `R<abc>` (chiffres pour V1..V3 : 0 méchant, 1 gentil, 2 fixe ; « retiré » = fixe garé dans un coin
      par l'appli). Gentil = garde du corps : `guard_target` se colle devant le méchant le plus proche du joueur (10,3 pas, côté
-     joueur), vitesse ×0,8 (le méchant va plus vite), marge 10,2 avec les méchants (les méchants gardent 11 avec lui → il les bloque), glisse sur le côté s'il
-     est bloqué. Seuls les méchants attrapent. LED des suiveurs via un 8ᵉ octet de diffusion `r1+3r2+9r3` (255 = couleur du
+     joueur), vitesse ×0,5 (le méchant va bien plus vite), marge 10,2 entre méchant et gentil. Le méchant est plus fort : bloqué
+     par un gentil il le bouscule (`push` : devant, de côté ou sur un axe, le gentil s'écarte peu à peu), glisse du côté opposé à
+     l'obstacle (`GS`), et s'il ne se rapproche plus du joueur depuis 0,6 s il prend un détour (`detour`, point de passage `GW` 4 s). Seuls les méchants attrapent. LED des suiveurs via un 8ᵉ octet de diffusion `r1+3r2+9r3` (255 = couleur du
      véhicule) : méchant rouge, gentil bleu, fixe couleur atténuée ; sur le plateau de l'appli, pastille M rouge / G bleue / F grise / TOI ambre (`drawPlate`, si `GM.kind === 'chase'`). **Placement au hasard** : `P` (→ `PON`, jeu 2 + `b_ret`,
      `g_placed`) puis `W…`/`Z` comme les billes, puis `J` (accepté depuis le jeu 0 ou 3) ; `K` après un placement → rangement
      par l'appli (`W…`, `Z`). Appli : `gRandomConfig` (joueur au hasard, gentils ≤ 16 pas de lui, méchants ≥ 20, fixes partout,

@@ -394,6 +394,11 @@ game = 0                      # 0 non, 1 poursuite, 2 retour des chasseurs, 3 ch
 GC = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]   # positions prevues des chasseurs
 GH = [(0, 0), (0, 0), (0, 0)]                # leur place au debut du jeu
 GR = [0, 0, 0]                # roles : 0 mechant, 1 gentil, 2 fixe
+GS = [1, 1, 1]                # cote prefere pour contourner un obstacle
+GW = [None, None, None]       # detour d'un mechant bloque (point de passage)
+GT = [0, 0, 0]                # fin du detour
+GB = [0, 0, 0]                # dernier controle d'avancee (ms)
+GQ = [99.0, 99.0, 99.0]       # distance au joueur a ce controle
 g_placed = False
 CSPD = 0.005                  # vitesse des chasseurs (pas/ms), reglee par l'appli (commande D)
 g_freeze = 0
@@ -532,7 +537,7 @@ def g_ok(k, x, y):
         else:
             ox = GC[j][0]
             oy = GC[j][1]
-            mg = 10.2 if GR[k] == 1 else 11      # le garde du corps peut venir au contact d'un mechant
+            mg = 10.2 if GR[k] == 1 or GR[j] == 1 else 11      # mechant et gentil peuvent venir au contact
         dn = cheb(x, y, ox, oy)
         if dn < 10 or (dn < mg and dn < cheb(cx, cy, ox, oy) - 1e-9):
             return False
@@ -590,6 +595,61 @@ def guard_target(k):
     return clamp(GC[best][0] + ux / m * 10.3, 0, 30), clamp(GC[best][1] + uy / m * 10.3, 0, 30)
 
 
+def push(k, nx, ny, ux, uy, st):
+    # le mechant est plus fort : il bouscule le gentil qui le gene (devant lui, ou sur le cote)
+    for j in range(3):
+        if GR[j] != 1 or cheb(nx, ny, GC[j][0], GC[j][1]) >= 10.2:
+            continue
+        g = GC[j]
+        sd = GS[k]
+        # devant lui, sinon du cote oppose a celui ou le mechant glisse
+        ay = 1 if g[1] > GC[k][1] else -1
+        ax = 1 if g[0] > GC[k][0] else -1
+        for n, (vx, vy) in enumerate(((ux, uy), (uy * sd, -ux * sd), (0, ay), (ax, 0))):
+            px = g[0] + vx * st * 1.2
+            py = g[1] + vy * st * 1.2
+            if g_ok(j, px, py):
+                ox = g[0]
+                oy = g[1]
+                g[0] = px
+                g[1] = py
+                if g_ok(k, nx, ny):
+                    return True
+                if n == 0:
+                    g[0] = ox
+                    g[1] = oy
+                else:
+                    # pousse sur le cote : le gentil s'ecarte peu a peu, le mechant passera
+                    return False
+    return False
+
+
+def detour(k, ux, uy, local):
+    # point de passage a cote de l'obstacle le plus proche, du cote ou il y a de la place
+    c = GC[k]
+    best = None
+    bd = 1e9
+    for j in range(3):
+        if j != k and cheb(GC[j][0], GC[j][1], c[0], c[1]) < bd:
+            bd = cheb(GC[j][0], GC[j][1], c[0], c[1])
+            best = j
+    if best is None or bd > 12:
+        return
+    g = GC[best]
+    for sd in (GS[k], -GS[k]):
+        wx = clamp(g[0] - uy * sd * 11.5 + ux * 3, 0, 30)
+        wy = clamp(g[1] + ux * sd * 11.5 + uy * 3, 0, 30)
+        ok = cheb(wx, wy, mx, my) >= 10.5
+        for j in range(3):
+            if j != k and cheb(wx, wy, GC[j][0], GC[j][1]) < 10.5:
+                ok = False
+        if ok:
+            GW[k] = (wx, wy)
+            GT[k] = local + 4000
+            GS[k] = -sd
+            return
+
+
 def game_tick(dtg, local):
     global game, g_freeze, g_round, g_catch, g_mover, g_way, g_stuck
     if game == 1 and local >= g_freeze:
@@ -601,10 +661,19 @@ def game_tick(dtg, local):
             sk = st
             if GR[k] == 1:
                 gx, gy = guard_target(k)
-                sk = st * 0.8      # le mechant est plus rapide que le gentil
+                sk = st * 0.5      # le mechant est bien plus rapide que le gentil
             else:
                 gx = mx
                 gy = my
+                if GW[k] is not None:
+                    # detour en cours pour contourner un gentil (ou un fixe)
+                    if local > GT[k] or cheb(c[0], c[1], GW[k][0], GW[k][1]) < 0.5:
+                        GW[k] = None
+                    else:
+                        gx = GW[k][0]
+                        gy = GW[k][1]
+            ox0 = c[0]
+            oy0 = c[1]
             dx = gx - c[0]
             dy = gy - c[1]
             d = (dx * dx + dy * dy) ** 0.5
@@ -616,19 +685,52 @@ def game_tick(dtg, local):
                 if g_ok(k, nx, ny):
                     c[0] = nx
                     c[1] = ny
-                elif g_ok(k, nx, c[1]):
+                elif GR[k] == 0 and push(k, nx, ny, dx / d, dy / d, sk):
                     c[0] = nx
-                elif g_ok(k, c[0], ny):
                     c[1] = ny
-                elif GR[k] == 1:
-                    # garde du corps bloque : il glisse sur le cote pour contourner
-                    for ex, ey in ((-dy, dx), (dy, -dx)):
-                        nx = c[0] + ex * sk / d
-                        ny = c[1] + ey * sk / d
-                        if g_ok(k, nx, ny):
-                            c[0] = nx
-                            c[1] = ny
+                elif abs(dx) > 0.3 * d and g_ok(k, nx, c[1]):
+                    c[0] = nx
+                elif abs(dy) > 0.3 * d and g_ok(k, c[0], ny):
+                    c[1] = ny
+                else:
+                    # bloque : il glisse sur le cote pour contourner (le mechant contourne le gentil)
+                    # on glisse du cote oppose a l'obstacle le plus proche (sinon toujours du meme cote)
+                    bj = -1
+                    bd = 12.0
+                    for j in range(3):
+                        if j != k and cheb(GC[j][0], GC[j][1], c[0], c[1]) < bd:
+                            bd = cheb(GC[j][0], GC[j][1], c[0], c[1])
+                            bj = j
+                    if bj >= 0:
+                        lat = -dy * (c[0] - GC[bj][0]) + dx * (c[1] - GC[bj][1])
+                        if lat > 0.5 * d:
+                            GS[k] = 1
+                        elif lat < -0.5 * d:
+                            GS[k] = -1
+                    done = False
+                    for sd in (GS[k], -GS[k]):
+                        px = -dy * sd / d
+                        py = dx * sd / d
+                        # de biais, puis tout droit sur l'axe le plus utile (sans se rapprocher de l'obstacle)
+                        for vx, vy in ((px, py), (0, 1 if py > 0 else -1), (1 if px > 0 else -1, 0)):
+                            nx = c[0] + vx * sk
+                            ny = c[1] + vy * sk
+                            if g_ok(k, nx, ny):
+                                c[0] = nx
+                                c[1] = ny
+                                GS[k] = sd
+                                done = True
+                                break
+                        if done:
                             break
+                if GR[k] == 0 and GW[k] is None:
+                    # mechant qui ne se rapproche plus du joueur depuis 0,6 s : detour sur le cote de l'obstacle
+                    dp = cheb(c[0], c[1], mx, my)
+                    if local - GB[k] > 600:
+                        if dp > GQ[k] - 0.5:
+                            detour(k, (mx - c[0]) / (dp + 1e-6), (my - c[1]) / (dp + 1e-6), local)
+                        GB[k] = local
+                        GQ[k] = dp
         for k in range(3):
             if GR[k] == 0 and cheb(GC[k][0], GC[k][1], mx, my) < 10.8:
                 g_catch += 1
