@@ -222,6 +222,11 @@ textarea,input[type=text],input[type=password]{background:var(--panel)!important
 .log{font-family:var(--mono)}
 .seg{background:var(--panel);border:1px solid #2a2c2f}
 .seg button.on{background:#2a2622;color:var(--accent);box-shadow:none}
+.grole{display:flex;align-items:center;gap:8px;margin:6px 0}
+.grole .tag.vbk{width:34px;height:34px;font-size:14px;flex:none}
+.grole .seg{flex:1}.grole .seg button{padding:7px 2px;font-size:12.5px}
+.grole .seg button.on[data-r=m]{color:#ff5a52;background:rgba(255,90,82,.14)}
+.grole .seg button.on[data-r=g]{color:#5b9bff;background:rgba(91,155,255,.14)}
 .vpick button{background:#24262a}
 .joy{background:var(--panel);border:1px solid var(--edge)}
 .joy::before,.joy::after{background:#34302b}
@@ -532,8 +537,8 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
     <div class="card" id="gameCard">
-      <h2>Jeu de poursuite <button type="button" class="tip" data-tip="Tu conduis le véhicule 4 (joystick ou télécommande) ; les véhicules 1, 2 et 3 te chassent. Ils ne te percutent jamais : s'ils viennent se coller à toi, tu es attrapé.">i</button></h2>
-      
+      <h2>Jeu de poursuite <button type="button" class="tip" data-tip="Tu conduis le véhicule 4 (joystick ou télécommande). Choisis le rôle des véhicules 1, 2 et 3 : Méchant (LED rouge) te chasse ; Gentil (LED bleue) est ton garde du corps et barre la route au méchant le plus proche ; Fixe reste immobile sur le plateau, comme un obstacle ; Retiré est rangé dans un coin. Au départ, l'appli place les 4 véhicules au hasard. Personne ne percute personne : si un méchant vient se coller à toi, tu es attrapé.">i</button></h2>
+      <div id="gRoles"></div>
       <div class="edrow"><label>Difficulté</label><div class="seg" id="gDiff" style="flex:1"><button data-s="3">Facile</button><button data-s="5" class="on">Moyen</button><button data-s="7">Difficile</button></div></div>
       <div class="row" style="justify-content:space-around;margin:8px 0;text-align:center">
         <div><div class="sub">Survie</div><b id="gTime" style="font-size:22px">0,0 s</b></div>
@@ -1240,7 +1245,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'RC') { M.rc = p[1] === '1'; M.rcBusy = false; rcUI(); toast(M.rc ? 'Télécommande connectée' : 'Télécommande introuvable ou déconnectée'); }
     else if (p[0] === 'POS') onPos(+p[1] / 100, +p[2] / 100, p[3] === '1');
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
-    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
+    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
@@ -1965,10 +1970,51 @@ document.querySelectorAll('#gDiff button').forEach(b => b.onclick = () => {
   if (GM.on) return; GM.speed = +b.dataset.s; document.querySelectorAll('#gDiff button').forEach(x => x.classList.toggle('on', x === b));
 });
 const gMsg = t => $('gMsg').innerHTML = t;
+// rôles des véhicules 1 à 3 : m méchant, g gentil (garde du corps), f fixe, o retiré (garé dans un coin)
+GM.roles = store.get('roles', ['m', 'm', 'm']);
+const ROLE_TXT = { m: 'Méchant', g: 'Gentil', f: 'Fixe', o: 'Retiré' };
+function gRolesUI() {
+  $('gRoles').innerHTML = [0, 1, 2].map(k => `<div class="grole"><span class="tag vbk" style="--c:var(--v${k + 1})">0${k + 1}</span><div class="seg">${
+    Object.keys(ROLE_TXT).map(r => `<button type="button" data-k="${k}" data-r="${r}" class="${GM.roles[k] === r ? 'on' : ''}">${ROLE_TXT[r]}</button>`).join('')}</div></div>`).join('');
+  $('gRoles').querySelectorAll('button').forEach(b => b.onclick = () => {
+    if (GM.on) return; GM.roles[+b.dataset.k] = b.dataset.r; store.set('roles', GM.roles); gRolesUI();
+  });
+}
+gRolesUI();
+const chebP = (a, b) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]));
+// configuration de départ tirée au hasard : le joueur, puis les gentils près de lui, les méchants loin, les fixes n'importe où,
+// les retirés dans un coin ; on garde la première qui se range sans collision (tidyPlan)
+function gRandomConfig(roles, cur) {
+  const ri = () => Math.round(Math.random() * 30);
+  for (let t = 0; t < 400; t++) {
+    const relax = Math.floor(t / 100) * 3, T = [null, null, null, null];
+    const free = p => T.every(q => !q || chebP(q, p) >= 11);
+    const pick = cond => { for (let n = 0; n < 300; n++) { const p = [ri(), ri()]; if (free(p) && cond(p)) return p; } return null; };
+    const cs = [[0, 0], [30, 0], [0, 30], [30, 30]].sort(() => Math.random() - .5);
+    let ok = true;
+    for (let k = 0; k < 3 && ok; k++) if (roles[k] === 'o') { const c = cs.find(free); if (c) T[k] = c.slice(); else ok = false; }
+    if (!ok) continue;
+    T[3] = pick(() => true); if (!T[3]) continue;
+    for (const [r, cond] of [['g', p => chebP(p, T[3]) <= 16 + relax], ['m', p => chebP(p, T[3]) >= 20 - relax], ['f', () => true]])
+      for (let k = 0; k < 3 && ok; k++) if (roles[k] === r) { T[k] = pick(cond); if (!T[k]) ok = false; }
+    if (!ok) continue;
+    const plan = tidyPlan(cur.map(q => q.slice()), T.map(q => q.slice()));
+    if (plan) return { T, plan };
+  }
+  return null;
+}
+async function gMoves(plan) {
+  for (const [k, way] of plan) for (const q of way) {
+    const r = gWait(['WOK', 'WNO'], 30000); await M.hub.stdin('W' + (k + 1) + Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100));
+    if (await r !== 'WOK') return false;
+  }
+  const r = gWait(['JOK'], 5000); await M.hub.stdin('Z');
+  return await r === 'JOK';
+}
 const fsec = ms => (Math.max(0, ms) / 1000).toFixed(1).replace('.', ',') + ' s';
 function gameUI() {
   const b = $('gGo');
-  b.textContent = !GM.on ? '▶ Lancer la poursuite' : GM.phase === 1 ? '■ Arrêter la poursuite' : 'Retour des véhicules…';
+  b.textContent = !GM.on ? '▶ Lancer la poursuite' : GM.phase === 1 ? '■ Arrêter la poursuite' : GM.phase === 0.5 ? '🎲 Placement des véhicules…' : 'Retour des véhicules…';
   b.className = 'btn ' + (GM.on ? '' : 'primary'); b.disabled = GM.on && (GM.phase !== 1 || GM.kind === 'bille');
   if (GM.on && GM.kind === 'bille') b.textContent = '▶ Lancer la poursuite';
   if (typeof tiltUI === 'function') tiltUI();
@@ -1981,6 +2027,7 @@ function onGamePos(a) {
   if (a.length < 8) return;
   GM.pos = [[a[0] / 100, a[1] / 100], [a[2] / 100, a[3] / 100], [a[4] / 100, a[5] / 100]];
   if (M.active) M.others = GM.pos.map(q => q.slice());      // le joystick évite les chasseurs là où ils sont
+  GM.p4 = [a[6] / 100, a[7] / 100];
   if (GM.kind === 'bille') { M.cmd = [a[6] / 100, a[7] / 100]; M.sent = M.cmd.slice(); }
 }
 function onGameEvent(p) {
@@ -2003,23 +2050,36 @@ $('gGo').onclick = async () => {
   if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4'); return; }
   if (!(R.st.s === 'P' || R.st.s === 'S') || R.st.pend) { toast('Mets d\'abord le spectacle en pause ou fais Stop et retour'); return; }
   if (!M.active) { await $('manGo').onclick(); if (!M.active) { gMsg('<span class="bad">Impossible de prendre la main sur le véhicule 4.</span>'); return; } }
-  GM.home = M.others.map(q => q.slice());
+  if (!GM.roles.includes('m')) { toast('Choisis au moins un méchant'); return; }
+  GM.home = M.others.map(q => q.slice()); GM.home4 = M.path[0].slice();
+  const cfg = gRandomConfig(GM.roles, [...GM.home, M.cmd.slice()]);
+  if (!cfg) { gMsg('<span class="bad">Je ne trouve pas de placement possible : essaie d\'autres rôles.</span>'); return; }
+  await M.hub.stdin('R' + GM.roles.map(r => ({ m: 0, g: 1 }[r] ?? 2)).join(''));
   await M.hub.stdin('D' + Math.round(GM.speed * 100));
+  const rp = gWait(['PON', 'JNO'], 3000); await M.hub.stdin('P');
+  if (await rp !== 'PON') { gMsg('<span class="bad">Le véhicule 4 ne connaît pas encore cette version du jeu : fais « Mettre à jour les 4 véhicules ».</span>'); return; }
+  GM.on = true; GM.kind = 'chase'; GM.phase = 0.5; GM.catches = 0; GM.pos = GM.home.map(q => q.slice()); gameUI(); manUI();
+  gMsg('🎲 Placement des véhicules au hasard, un par un…');
+  if (!await gMoves(cfg.plan)) { gMsg('<span class="bad">Le placement s\'est interrompu. Arrête la partie puis réessaie.</span>'); GM.phase = 1; gameUI(); return; }
+  M.others = cfg.T.slice(0, 3).map(q => q.slice()); GM.pos = M.others.map(q => q.slice());
+  M.cmd = cfg.T[3].slice(); M.sent = M.cmd.slice(); GM.p4 = M.cmd.slice();
   const r = gWait(['JON', 'JNO'], 3000); await M.hub.stdin('J');
-  if (await r !== 'JON') { gMsg('<span class="bad">Le véhicule 4 ne connaît pas encore le jeu : fais « Mettre à jour les 4 véhicules ».</span>'); return; }
-  GM.on = true; GM.phase = 1; GM.catches = 0; GM.roundAt = performance.now() + 1500; GM.pos = GM.home.map(q => q.slice());
-  gMsg('C\'est parti ! Fuis avec le joystick (sous le plateau) ou la télécommande.'); gameUI(); manUI();
+  if (await r !== 'JON') { gMsg('<span class="bad">Le départ n\'a pas marché. Arrête la partie puis réessaie.</span>'); GM.phase = 1; gameUI(); return; }
+  GM.phase = 1; GM.roundAt = performance.now() + 1500;
+  const n = t => GM.roles.filter(r => r === t).length;
+  gMsg(`C'est parti ! ${n('m')} méchant${n('m') > 1 ? 's' : ''} (rouge)${n('g') ? `, ${n('g')} gentil${n('g') > 1 ? 's' : ''} (bleu)` : ''}. Fuis avec le joystick (sous le plateau) ou la télécommande.`); gameUI(); manUI();
 };
 async function gameStop() {
   const cur = performance.now() - GM.roundAt;      // la manche en cours compte aussi pour le record
   if (cur > GM.best) { GM.best = Math.round(cur); store.set('best', GM.best); toast('Nouveau record : ' + fsec(cur), 3000); }
-  GM.phase = 2; gameUI(); gMsg('Les chasseurs rentrent à leur place, un par un…');
-  const r = gWait(['JOK'], 120000); await M.hub.stdin('K');
-  if (await r !== 'JOK') { gMsg('<span class="bad">Les chasseurs ne sont pas tous rentrés. Écarte le véhicule 4 puis réessaie.</span>'); GM.phase = 1; gameUI(); return; }
-  // le véhicule 4 rentre à son tour par le plus court chemin
+  GM.phase = 2; gameUI(); gMsg('Fin de partie : les 4 véhicules rentrent à leur place, un par un…');
+  const rr = gWait(['JRET'], 3000); await M.hub.stdin('K'); await rr; await sleep(700);
+  const plan = tidyPlan([...GM.pos.map(q => q.slice()), (GM.p4 || M.cmd).slice()], [...GM.home.map(q => q.slice()), GM.home4.slice()]);
+  if (!plan || !await gMoves(plan)) { gMsg('<span class="bad">Je ne trouve pas de chemin pour ranger les véhicules. Range-les à la main, puis recalibre-les dans Setup.</span>'); GM.phase = 1; gameUI(); return; }
   M.others = GM.home.map(q => q.slice()); GM.pos = GM.home.map(q => q.slice());
-  GM.phase = 3; gameUI(); gMsg('Le véhicule 4 rentre à sa place…');
-  GM.on = false; manUI(); await $('manGo').onclick();
+  M.cmd = GM.home4.slice(); M.sent = M.cmd.slice(); M.path = [M.cmd.slice()];
+  GM.phase = 3; gameUI();
+  GM.on = false; GM.kind = null; manUI(); await $('manGo').onclick();
   const t0 = performance.now(); while (M.active && performance.now() - t0 < 60000) await sleep(200);
   GM.phase = 0; GM.pos = null; gameUI();
   gMsg(`Partie terminée : attrapé ${GM.catches} fois. Record : ${GM.best ? fsec(GM.best) : '–'}.`);

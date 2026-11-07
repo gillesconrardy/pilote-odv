@@ -221,16 +221,39 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed
     if s[0] == 'D':
         try:
             CSPD = clamp(int(s[1:]) / 100000, 0.001, 0.012)
         except ValueError:
             pass
         return
+    if s[0] == 'R' and len(s) == 4:
+        # roles des vehicules 1 a 3 pour la poursuite : 0 mechant, 1 gentil (garde du corps), 2 fixe
+        for k in range(3):
+            GR[k] = int(s[k + 1]) if s[k + 1] in '012' else 0
+        return
+    if s == 'P':
+        # placement avant la poursuite : l'appli deplace les 4 vehicules un par un (W), puis Z
+        if IS_SENDER and manual and game in (0, 3) and None not in OBS:
+            for k in range(3):
+                GC[k][0] = OBS[k][0]
+                GC[k][1] = OBS[k][1]
+            B4[0] = tx
+            B4[1] = ty
+            game = 2
+            b_ret = True
+            g_placed = True
+            g_mover = -1
+            print('PON')
+        else:
+            print('JNO')
+        return
     if s == 'J':
-        b_ret = False
-        if IS_SENDER and manual and game == 0 and None not in OBS:
+        if IS_SENDER and manual and game in (0, 3) and None not in OBS:
+            b_ret = False
+            if game == 0:
+                g_placed = False
             for k in range(3):
                 GC[k][0] = OBS[k][0]
                 GC[k][1] = OBS[k][1]
@@ -279,7 +302,11 @@ def manual_line(s):
             pass
         return
     if s == 'K':
-        b_ret = game == 4
+        b_ret = game == 4 or (game == 1 and g_placed)
+        if game == 1 and g_placed:
+            # poursuite placee par l'appli : le rangement se fait aussi par l'appli (W, puis Z)
+            B4[0] = tx
+            B4[1] = ty
         if game == 4:
             TILT[0] = 0.0
             TILT[1] = 0.0
@@ -366,6 +393,8 @@ def manual_line(s):
 game = 0                      # 0 non, 1 poursuite, 2 retour des chasseurs, 3 chasseurs rentres
 GC = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]   # positions prevues des chasseurs
 GH = [(0, 0), (0, 0), (0, 0)]                # leur place au debut du jeu
+GR = [0, 0, 0]                # roles : 0 mechant, 1 gentil, 2 fixe
+g_placed = False
 CSPD = 0.005                  # vitesse des chasseurs (pas/ms), reglee par l'appli (commande D)
 g_freeze = 0
 g_round = 0
@@ -374,6 +403,7 @@ g_mover = -1
 g_way = []
 g_stuck = False
 g_next_jp = 0
+g_role = -1
 game_rx = False               # (vehicules 1 a 3) on suit les positions diffusees par le vehicule 4
 grate = 0.006
 last_game = 0
@@ -502,7 +532,7 @@ def g_ok(k, x, y):
         else:
             ox = GC[j][0]
             oy = GC[j][1]
-            mg = 11
+            mg = 10.2 if GR[k] == 1 else 11      # le garde du corps peut venir au contact d'un mechant
         dn = cheb(x, y, ox, oy)
         if dn < 10 or (dn < mg and dn < cheb(cx, cy, ox, oy) - 1e-9):
             return False
@@ -539,18 +569,50 @@ def seg_clear(ax, ay, bx, by, obs):
     return True
 
 
+def guard_target(k):
+    # garde du corps : il marque le mechant le plus proche du joueur
+    best = -1
+    bd = 1e9
+    for j in range(3):
+        if GR[j] == 0:
+            dd = cheb(GC[j][0], GC[j][1], mx, my)
+            if dd < bd:
+                bd = dd
+                best = j
+    if best < 0:
+        return GC[k][0], GC[k][1]
+    # il va se coller devant ce mechant, cote joueur, pour lui barrer la route
+    ux = mx - GC[best][0]
+    uy = my - GC[best][1]
+    m = max(abs(ux), abs(uy))
+    if m < 0.01:
+        return GC[k][0], GC[k][1]
+    return clamp(GC[best][0] + ux / m * 10.3, 0, 30), clamp(GC[best][1] + uy / m * 10.3, 0, 30)
+
+
 def game_tick(dtg, local):
     global game, g_freeze, g_round, g_catch, g_mover, g_way, g_stuck
     if game == 1 and local >= g_freeze:
         st = CSPD * dtg
         for k in range(3):
+            if GR[k] == 2:
+                continue
             c = GC[k]
-            dx = mx - c[0]
-            dy = my - c[1]
+            sk = st
+            if GR[k] == 1:
+                gx, gy = guard_target(k)
+                sk = st * 1.5
+            else:
+                gx = mx
+                gy = my
+            dx = gx - c[0]
+            dy = gy - c[1]
             d = (dx * dx + dy * dy) ** 0.5
             if d > 0.01:
-                nx = c[0] + dx * st / d
-                ny = c[1] + dy * st / d
+                if sk > d:
+                    sk = d
+                nx = c[0] + dx * sk / d
+                ny = c[1] + dy * sk / d
                 if g_ok(k, nx, ny):
                     c[0] = nx
                     c[1] = ny
@@ -558,8 +620,17 @@ def game_tick(dtg, local):
                     c[0] = nx
                 elif g_ok(k, c[0], ny):
                     c[1] = ny
+                elif GR[k] == 1:
+                    # garde du corps bloque : il glisse sur le cote pour contourner
+                    for ex, ey in ((-dy, dx), (dy, -dx)):
+                        nx = c[0] + ex * sk / d
+                        ny = c[1] + ey * sk / d
+                        if g_ok(k, nx, ny):
+                            c[0] = nx
+                            c[1] = ny
+                            break
         for k in range(3):
-            if cheb(GC[k][0], GC[k][1], mx, my) < 10.8:
+            if GR[k] == 0 and cheb(GC[k][0], GC[k][1], mx, my) < 10.8:
                 g_catch += 1
                 print('CATCH', g_catch, local - g_round)
                 g_freeze = local + 2500
@@ -572,7 +643,7 @@ def game_tick(dtg, local):
             c = GC[k]
             dx = c[0] - mx
             dy = c[1] - my
-            if cheb(c[0], c[1], mx, my) >= 15:
+            if GR[k] != 0 or cheb(c[0], c[1], mx, my) >= 15:
                 continue
             d = (dx * dx + dy * dy) ** 0.5
             if d < 0.01:
@@ -763,7 +834,8 @@ while True:
         if raw >= next_bcast and game:
             # jeu : positions prevues des 3 chasseurs (en 1/8 de pas) + leur vitesse (en 0,1 pas/s)
             b = [int(clamp(GC[k // 2][k % 2], 0, 31) * 8 + 0.5) for k in range(6)]
-            b.append(int(clamp(max(CSPD * (1.3 if game == 4 else 1), 0.006) * 10000, 1, 255)))
+            b.append(int(clamp(max(CSPD * (1.3 if game == 4 else 1.5), 0.006) * 10000, 1, 255)))
+            b.append(255 if game == 4 or not g_placed else GR[0] + 3 * GR[1] + 9 * GR[2])   # roles (LED des suiveurs)
             hub.ble.broadcast((raw + COMP, 7 + 16 * GEN, bytes(b)))
             next_bcast = raw + 150
         elif raw >= next_bcast:
@@ -789,14 +861,21 @@ while True:
                 tx = gb[2 * ME] / 8
                 ty = gb[2 * ME + 1] / 8
                 grate = gb[6] / 10000 * 1.25
-                if not game_rx:
+                role = 255
+                if len(gb) >= 8 and gb[7] < 27:
+                    role = (gb[7] // (1, 3, 9)[ME]) % 3
+                if not game_rx or role != g_role:
                     game_rx = True
-                    hub.light.on(VCOL)
+                    g_role = role
+                    # poursuite : mechant = LED rouge, gentil = LED bleue, fixe = couleur du vehicule attenuee
+                    hub.light.on(Color.RED if role == 0 else (Color.BLUE if role == 1 else (VDIM if role == 2 else VCOL)))
         elif data is not None and len(data) == 5 and data[3] // 16 == GEN:
             if game_rx:
                 # fin du jeu : on rejoint (en douceur) sa place dans la choregraphie
                 game_rx = False
+                g_role = -1
                 blend = True
+                hub.light.on(VCOL)
             if feed(data[0]):
                 count += 1
                 if not manual:
