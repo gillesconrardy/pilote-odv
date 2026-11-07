@@ -274,8 +274,10 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 #splash.out{opacity:0;pointer-events:none}
 #spStage{position:relative;width:300px;height:520px;flex:none}
 #spStage *{position:absolute;box-sizing:border-box}
-#spStage .scene{inset:0;animation:spScene .5s 4.1s ease-in both}
-@keyframes spScene{to{opacity:0;transform:translateY(-30px) scale(.9)}}
+#spStage .scene{inset:0;animation:spScene .2s 4s ease-in both}
+@keyframes spScene{to{opacity:0;filter:blur(4px)}}
+#spStage .fl{left:96px;top:126px;width:108px;height:108px;background:#fff;opacity:0;animation:spFl .35s 3.75s ease-out both}
+@keyframes spFl{0%{opacity:0}35%{opacity:.9}100%{opacity:0;transform:scale(1.6)}}
 #spStage .dot{left:148px;top:178px;width:4px;height:4px;border-radius:50%;background:#ff9a3c;animation:spDot 1s ease both}
 @keyframes spDot{0%{transform:scale(0);box-shadow:0 0 0 0 rgba(255,154,60,.8)}50%{transform:scale(2.5);box-shadow:0 0 0 0 rgba(255,154,60,.8)}100%{transform:scale(1);box-shadow:0 0 0 30px rgba(255,154,60,0)}}
 #spStage .grid{left:50px;top:80px;width:200px;height:200px;background-image:radial-gradient(circle,#3a3631 1.2px,transparent 1.6px);background-size:12.5px 12.5px;background-position:6px 6px;clip-path:circle(0 at 50% 50%);animation:spGrid .9s .7s cubic-bezier(.5,0,.2,1) both}
@@ -300,7 +302,7 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 @keyframes spV4{0%{left:202px;top:82px;opacity:0}20%{left:202px;top:82px;opacity:1}55%{left:202px;top:182px}100%{left:152px;top:182px}}
 #spStage .sq{left:96px;top:126px;width:108px;height:108px;border:2px solid #ff9a3c;border-radius:0;opacity:0;animation:spSq .5s 3.2s ease-out both}
 @keyframes spSq{0%{opacity:0;transform:scale(1.4)}60%{opacity:1}100%{opacity:1;transform:scale(1);box-shadow:0 0 24px rgba(255,154,60,.35)}}
-#spStage .name{left:0;right:0;top:300px;height:90px;animation:spName .6s 4.1s cubic-bezier(.4,0,.2,1) both}
+#spStage .name{left:0;right:0;top:300px;height:90px;animation:spName .55s 4.2s cubic-bezier(.4,0,.2,1) both}
 @keyframes spName{to{top:215px}}
 #spStage .t{left:0;right:0;top:0;text-align:center;font:400 34px "Russo One",var(--sans);letter-spacing:.05em;color:#edeae4;clip-path:inset(0 100% 0 0);animation:spT .7s 3.3s steps(9) both;white-space:nowrap}
 #spStage .t span{position:static;color:#ff9a3c}
@@ -417,7 +419,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <body>
 <div id="splash" role="img" aria-label="F4 Square"><div id="spStage">
   <div class="scene"><div class="grid"></div><div class="dot"></div><div class="c1"></div><div class="c2"></div>
-    <div class="v v1">01</div><div class="v v2">02</div><div class="v v3">03</div><div class="v v4">04</div><div class="sq"></div></div>
+    <div class="v v1">01</div><div class="v v2">02</div><div class="v v3">03</div><div class="v v4">04</div><div class="sq"></div><div class="fl"></div></div>
   <div class="name"><div class="t">F4 <span>SQUARE</span></div><div class="ln"></div><div class="sub">4 · 4 · SYNC</div></div>
   <div class="bar"><i></i></div>
 </div></div>
