@@ -85,6 +85,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    **Atelier** (« Créer une chorégraphie ») : étapes = poses des 4 véhicules (glisser sur le plateau,
    aimant 1 pas), vitesse et pause par étape, contrôle de collision (pose + trajet, via core.js),
    « Ajouter le retour au départ » (tout droit / X puis Y / Y puis X / un par un, le plus court sûr),
+   **solutions automatiques** sous chaque conflit (boutons ✨, `edFixes`, vérifiées par `segOK` = simulation core.js) : chevauchement
+   à une étape → décaler l'un des deux véhicules sur la place libre la plus proche ; collision en trajet → « tous de côté puis en
+   hauteur » / l'inverse (+1 étape), « un par un » (ordre et trajets droits ou en L), sinon « contourner un par un » (`tidyPlan`) ;
    aperçu (sous le plateau) ; enregistré dans le navigateur (localStorage `odv.custom`, champ `ed` = étapes) et
    réouvrable avec ✏️.
    **Inventer avec l'IA** (dans l'Atelier, sous les Étapes ; exemples en pastilles, bouton ✨, clé repliée) : description en français → API Anthropic (`claude-sonnet-5-5`,

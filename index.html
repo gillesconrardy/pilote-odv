@@ -409,6 +409,10 @@ canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-r
 .vall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chiprow{display:flex;gap:6px;align-items:flex-start}
 .chiprow .chips{flex:1;min-width:0}
+.fixes{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 8px 14px}
+.fixb{border:1px solid var(--accent);background:rgba(255,154,60,.08);color:var(--accent);font:500 12.5px var(--sans);padding:6px 10px;border-radius:5px;text-align:left}
+.fixb:active{background:var(--accent);color:#121314}
+.fixnone{font-size:12px;color:var(--muted);margin:3px 0 8px 14px}
 .addchip{flex:none;width:46px;height:38px;margin-top:4px;border-radius:8px;border:1px dashed var(--accent);background:none;color:var(--accent);font:600 20px var(--sans)}
 .tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:10px}
 .tools .btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;font-size:11.5px;font-weight:500}
@@ -1926,6 +1930,12 @@ function edOpen(it) {
   edRefresh();
 }
 $('edNew').onclick = () => edOpen(null);
+$('edCheck').onclick = e => {
+  const b = e.target.closest('.fixb'); if (!b) return;
+  const f = ED.fixes && ED.fixes[b.dataset.k] && ED.fixes[b.dataset.k][+b.dataset.n]; if (!f) return;
+  ED.sel = f.apply(); ED.play = null; ED.fixKey = null; edRefresh();
+  toast('Solution appliquée : ' + f.label);
+};
 $('edClose').onclick = () => { ED.play = null; $('edWrap').classList.remove('on'); document.body.style.overflow = ''; };
 function edCode() {
   const name = $('edName').value.trim() || 'Ma chorégraphie';
@@ -1942,6 +1952,73 @@ function poseBad(pos) {
   for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++)
     if (Math.max(Math.abs(pos[a][0] - pos[b][0]), Math.abs(pos[a][1] - pos[b][1])) < 10 - 1e-6) return [a + 1, b + 1];
   return null;
+}
+// ---- solutions automatiques aux conflits de l'atelier
+const P2 = q => q.map(p => p.slice());
+function segOK(A, poses, sp) {
+  // A = pose de départ ; poses = poses suivantes ; vrai si aucun chevauchement ni frôlement (pose et trajets)
+  if (poses.some(poseBad)) return false;
+  const src = poses.map(p => '    mvc.move(' + p.map(q => nf(q[0]) + ', ' + nf(q[1])).join(', ') + (sp < 100 ? ', speed=' + sp : '') + ')').join('\n') + '\n';
+  const { prog } = ODV.parse(src, 4);
+  return !ODV.collisions(ODV.simulate(prog, A), 10).length;
+}
+function dirTxt(dx, dy) {
+  const t = [];
+  if (dx) t.push(Math.abs(dx) + ' pas ' + (dx > 0 ? 'à gauche' : 'à droite'));
+  if (dy) t.push(Math.abs(dy) + ' pas ' + (dy > 0 ? 'vers le bas' : 'vers le haut'));
+  return t.join(' et ');
+}
+const perms = a => a.length <= 1 ? [a] : a.flatMap((x, i) => perms([...a.slice(0, i), ...a.slice(i + 1)]).map(r => [x, ...r]));
+const samePose = (P, Q) => P.every((p, i) => Math.abs(p[0] - Q[i][0]) < 1e-6 && Math.abs(p[1] - Q[i][1]) < 1e-6);
+function edFixes(k) {
+  const S = ED.steps, s = S[k], A = S[k - 1].pos, B = s.pos, sp = s.speed, nx = S[k + 1], out = [];
+  const bad = poseBad(B);
+  if (bad) {
+    // les véhicules se chevauchent à l'étape : on décale l'un des deux au plus près, sur une place libre
+    for (const v of bad) {
+      const i = v - 1, c = [];
+      for (let x = 0; x <= 30; x++) for (let y = 0; y <= 30; y++) {
+        const P = P2(B); P[i] = [x, y];
+        if ((x !== B[i][0] || y !== B[i][1]) && !poseBad(P)) c.push([Math.max(Math.abs(x - B[i][0]), Math.abs(y - B[i][1])) + .01 * Math.hypot(x - B[i][0], y - B[i][1]), P]);
+      }
+      c.sort((a, b) => a[0] - b[0]);
+      const good = c.slice(0, 150).find(q => segOK(A, [q[1]], sp) && (!nx || segOK(q[1], [nx.pos], nx.speed))), best = good || c[0];
+      if (best) out.push({ label: `Décaler V${v} de ${dirTxt(Math.round((best[1][i][0] - B[i][0]) * 100) / 100, Math.round((best[1][i][1] - B[i][1]) * 100) / 100)}${good ? '' : ' (le trajet sera à corriger ensuite)'}`, ok: !!good, apply: () => { s.pos = best[1]; return k; } });
+    }
+    return out.sort((a, b) => b.ok - a.ok);
+  }
+  // collision pendant le trajet : on découpe le mouvement
+  const add = (label, poses) => out.push({ label, apply: () => { S.splice(k, 1, ...poses.map((p, n) => ({ pos: p, speed: sp, wait: n === poses.length - 1 ? s.wait : 0 }))); return k; } });
+  const plus = n => n > 1 ? ` · +${n - 1} étape${n > 2 ? 's' : ''}` : '';
+  const XY = A.map((a, i) => [B[i][0], a[1]]), YX = A.map((a, i) => [a[0], B[i][1]]);
+  if (!samePose(XY, A) && !samePose(XY, B) && segOK(A, [XY, B], sp)) add('Tous de côté, puis en hauteur' + plus(2), [XY, B]);
+  if (!samePose(YX, A) && !samePose(YX, B) && segOK(A, [YX, B], sp)) add('Tous en hauteur, puis de côté' + plus(2), [YX, B]);
+  const mv = [0, 1, 2, 3].filter(i => Math.abs(A[i][0] - B[i][0]) > 1e-6 || Math.abs(A[i][1] - B[i][1]) > 1e-6);
+  let best = null;
+  for (const ord of perms(mv)) {
+    let P = P2(A), seq = [], ok = true;
+    for (const i of ord) {
+      const T = P2(P); T[i] = B[i].slice();
+      const L1 = P2(P); L1[i] = [B[i][0], P[i][1]];
+      const L2 = P2(P); L2[i] = [P[i][0], B[i][1]];
+      const o = [[T], [L1, T], [L2, T]].map(o => o.filter((q, n) => !samePose(q, n ? o[n - 1] : P))).find(o => o.length && segOK(P, o, sp));
+      if (!o) { ok = false; break; }
+      seq.push(...o); P = T;
+    }
+    if (ok && (!best || seq.length < best.seq.length)) best = { seq, ord };
+    if (best && best.seq.length === mv.length) break;
+  }
+  if (best && mv.length > 1) add(`Un par un : ${best.ord.map(i => 'V' + (i + 1)).join(' → ')}${plus(best.seq.length)}`, best.seq);
+  if (!best) {
+    // personne ne passe tout droit : un par un en contournant les autres (et en garant un véhicule si besoin)
+    const pl = tidyPlan(P2(A), P2(B));
+    if (pl && pl.length) {
+      let P = P2(A); const seq = [], who = [];
+      for (const [i, way] of pl) { if (!who.includes(i)) who.push(i); for (const q of way) { P = P2(P); P[i] = q.map(v => Math.round(v * 100) / 100); seq.push(P); } }
+      if (segOK(A, seq, sp)) add(`Contourner un par un : ${who.map(i => 'V' + (i + 1)).join(' → ')}${plus(seq.length)}`, seq);
+    }
+  }
+  return out;
 }
 function edValidate() {
   const { src, lineStep } = edCode(), issues = {};
@@ -1979,7 +2056,12 @@ function edRefresh() {
   }
   $('edDel').disabled = ED.sel === 0; $('edLeft').disabled = ED.sel <= 1; $('edRight').disabled = ED.sel === 0 || ED.sel >= ED.steps.length - 1;
   const total = ED.steps.length > 1 ? ODVGEN.buildTimeline([{ name: 'x', src: v.src }]).total : 0;
-  const list = Object.entries(ED.issues).map(([k, x]) => `<div class="${x.lvl === 'bad' ? 'bad' : 'warn'}" style="font-size:13px">● ${+k === 0 ? 'Départ' : 'Étape ' + k} : ${x.msg}</div>`).join('');
+  // solutions proposées automatiquement (3 premiers conflits)
+  const key = JSON.stringify(ED.steps);
+  if (ED.fixKey !== key) { ED.fixKey = key; ED.fixes = {}; Object.keys(ED.issues).filter(k => +k > 0).slice(0, 3).forEach(k => { try { ED.fixes[k] = edFixes(+k); } catch (e) { ED.fixes[k] = []; } }); }
+  const list = Object.entries(ED.issues).map(([k, x]) => `<div class="${x.lvl === 'bad' ? 'bad' : 'warn'}" style="font-size:13px">● ${+k === 0 ? 'Départ' : 'Étape ' + k} : ${x.msg}</div>`
+    + (!ED.fixes[k] ? '' : ED.fixes[k].length ? `<div class="fixes">${ED.fixes[k].map((f, n) => `<button type="button" class="fixb" data-k="${k}" data-n="${n}">✨ ${esc(f.label)}</button>`).join('')}</div>`
+      : '<div class="fixnone">Pas de solution automatique : ajoute une étape intermédiaire à la main.</div>')).join('');
   $('edCheck').innerHTML = (list || (ED.steps.length > 1 ? '<div class="ok" style="font-size:13px">✓ Aucune collision</div>' : ''))
     + (ED.steps.length > 1 && !v.atHome ? '<div class="warn" style="font-size:13px">● Termine au départ : touche ⌂ Retour.</div>' : '')
     + (total ? `<div class="sub" style="margin-top:4px">Durée : ${fmt(total)}</div>` : '');
