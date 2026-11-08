@@ -414,6 +414,7 @@ canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-r
 .vall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chiprow{display:flex;gap:6px;align-items:flex-start}
 .chiprow .chips{flex:1;min-width:0}
+#tiltGo[hidden],#gameCard[hidden]{display:none!important}
 .fixes{display:flex;flex-wrap:wrap;gap:6px;margin:5px 0 8px 14px}
 .fixb{border:1px solid var(--accent);background:rgba(255,154,60,.08);color:var(--accent);font:500 12.5px var(--sans);padding:6px 10px;border-radius:5px;text-align:left}
 .fixb:active{background:var(--accent);color:#121314}
@@ -532,11 +533,11 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
-      <button class="btn primary" id="tiltGo" style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
+      <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
       <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
-    <div class="card" id="gameCard">
+    <div class="card" id="gameCard" hidden>
       <h2>Jeu de poursuite <button type="button" class="tip" data-tip="Tu conduis le véhicule 4 (joystick ou télécommande). Choisis le rôle des véhicules 1, 2 et 3 : Méchant (LED rouge) te chasse ; Gentil (LED bleue) est ton garde du corps et barre la route au méchant le plus proche ; Fixe reste immobile sur le plateau, comme un obstacle ; Retiré est rangé dans un coin. Au départ, l'appli place les 4 véhicules au hasard. Personne ne percute personne : si un méchant vient se coller à toi, tu es attrapé.">i</button></h2>
       <div id="gRoles"></div>
       <div class="edrow"><label>Difficulté</label><div class="seg" id="gDiff" style="flex:1"><button data-s="3">Facile</button><button data-s="5" class="on">Moyen</button><button data-s="7">Difficile</button></div></div>

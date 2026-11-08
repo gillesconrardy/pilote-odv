@@ -42,6 +42,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      la position des 3 autres (anti-collision côté hub), `V<pas/s×100>` la vitesse ; boutons gauche = moteur
      port C (X : + → +X), droite = port A (Y : + → −Y), comme le programme télécommande de Gilles ; une cible
      `G` de l'appli est prioritaire 400 ms ; le V4 imprime `POS x y <bouge>` (×100) et `RC 0|1`.
+   - **Billes et poursuite RETIRÉS de l'appli depuis v1.55** (demande de Gilles) : le bouton `#tiltGo` et la carte `#gameCard`
+     sont masqués (`hidden`) ; le code (page + hub) est resté en place, il suffit d'enlever `hidden` pour les remettre.
    - **Jeu de poursuite** (V4 en manuel) : `D<pas/s×100>` vitesse des chasseurs, `J` départ, `K` fin. Le V4
      calcule les chasseurs V1..V3 (vont vers le joueur, jamais < 10 pas, marge 11 entre chasseurs / 10,5 du
      joueur sauf pour s'éloigner ; prise si < 10,8 → `CATCH n ms`, pause 2,5 s où ils reculent), diffuse
