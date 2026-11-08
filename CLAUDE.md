@@ -61,6 +61,16 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      fois), à 10 pas/s, sauf si bloqué (`free_at`) ; retrouvée → reprend le suivi ; sinon attend (`h_state` 0 suit / 1 cherche /
      2 attend, envoyé dans `HD <mm> <état>`). Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`, ou `HARNESS_HAND='[[t_ms, x_main, mm], …]'`
      (main vue si |x V4 − x main| ≤ 2,5 pas).
+   - **Capteur V4 pendant le spectacle** (v1.56, option « Capteur V4 » de Programme : Arrêt / Gestes / Statue, `odv.sonar`,
+     intégrée au programme par `%SMODE%`, changeable en direct par `S0|S1|S2`). Uniquement hors conduite manuelle (jeu 0).
+     `gesture_tick` (toutes les 40 ms) : **Gestes** — main < 12 cm (sortie > 20 cm) ; passage de 60–900 ms ; 1 passage (puis
+     700 ms sans autre) = lecture/pause, 2 passages = `n` chorégraphie suivante, main tenue 2 s = `h` stop et retour.
+     **Statue** — main < 25 cm pendant 150 ms en lecture → `z` ; repart (`p`) 1 s après son départ. Les commandes passent par
+     `command()` (donc +1 s de `LEAD`). Le V4 imprime `GST 1|2|H|S|R` (toast dans l'appli). `MASK` (`%MASK%`, calculé par
+     `ODVGEN.sonarMask` : intervalles où un autre véhicule est devant le capteur, même colonne ±12 pas, à < 35 cm, élargis de
+     300 ms) : mesures ignorées, sauf aux limites de chorégraphies (tous au départ). Commande `n` : à une limite, saut au début
+     de la suivante et lecture ; au milieu, retour à la limite la plus proche (comme `h`) puis saut (`next_tgt`).
+     Harness : `SMODE=1 node mkprogs.js …` + `HARNESS_SONAR`.
    - **Billes et poursuite RETIRÉS de l'appli depuis v1.55** (demande de Gilles) : le bouton `#tiltGo` et la carte `#gameCard`
      sont masqués (`hidden`) ; le code (page + hub) est resté en place, il suffit d'enlever `hidden` pour les remettre.
    - **Jeu de poursuite** (V4 en manuel) : `D<pas/s×100>` vitesse des chasseurs, `J` départ, `K` fin. Le V4

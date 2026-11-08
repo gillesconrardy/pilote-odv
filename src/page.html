@@ -482,6 +482,8 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <div class="card">
       <label class="tog" for="optLoop"><div>Jouer en boucle <button type="button" class="tip" data-tip="La suite recommence au début quand elle est finie.">i</button></div>
         <span class="sw"><input type="checkbox" id="optLoop"><span></span></span></label>
+      <div class="edrow" style="margin-top:8px"><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, tourné vers l'avant du plateau. Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
+        <div class="seg" id="optSonar" style="flex:1"><button type="button" data-m="0">Arrêt</button><button type="button" data-m="1">Gestes</button><button type="button" data-m="2">Statue</button></div></div>
       <span id="sumTxt" hidden>–</span>
       <div id="updBox">
         <button class="btn primary" id="updAll2" style="width:100%;padding:14px;margin-top:10px">⟳ Envoyer aux 4 véhicules</button>
@@ -813,6 +815,14 @@ function refresh() {
 }
 $('optLoop').checked = store.get('loop2', false);
 $('optLoop').onchange = () => { store.set('loop2', $('optLoop').checked); progCache = {}; renderVehicles(); };
+// capteur de distance du V4 pendant le spectacle : 0 arrêt, 1 gestes, 2 statue
+let SONAR = store.get('sonar', 1);
+function sonarUI() { $('optSonar').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.m === SONAR)); }
+sonarUI();
+$('optSonar').querySelectorAll('button').forEach(b => b.onclick = () => {
+  SONAR = +b.dataset.m; store.set('sonar', SONAR); progCache = {}; sonarUI(); renderVehicles();
+  if (R.hub && R.hub.connected) R.hub.stdin('S' + SONAR).catch(() => {});   // effet immédiat si le V4 est connecté
+});
 
 // add custom
 if ($('addBtn')) $('addBtn').onclick = () => { $('dlgName').value = ''; $('dlgSrc').value = ''; $('dlgMsg').textContent = ''; $('dlg').showModal(); };
@@ -853,7 +863,7 @@ let IDLE = null;
 const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Mise en place', src: '    mvc.wait_sync_ms(500)\n' }]));
 function programText(vid, homing = false, idle = false) {
   if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Mise en place'] });
-  return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name) });
+  return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name), smode: SONAR });
 }
 async function compileFor(vid, homing = false, idle = false) {
   const key = vid + (homing ? 'h' : 'n') + (idle ? 'i' : '');
@@ -1198,7 +1208,7 @@ async function updateAll() {
 }
 $('updAll').onclick = updateAll;
 $('updAll2').onclick = updateAll;
-function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked; }
+function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + SONAR; }
 
 // ====================================================================== 0. mise en place (calibrage, un véhicule à la fois)
 const SU = { done: {} };
@@ -1249,6 +1259,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
     else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'EON', 'HON', 'HNO', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
     else if (p[0] === 'HD') handShow(+p[1], +p[2]);
+    else if (p[0] === 'GST') toast({ 1: '✋ Geste : lecture / pause', 2: '✋✋ Geste : chorégraphie suivante', H: '✋ Main tenue : stop et retour', S: '🗿 Statue : le spectacle se fige', R: '🗿 Le spectacle repart' }[p[1]] || 'Geste');
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
@@ -1274,8 +1285,8 @@ $('manSpeed').value = VPAGE;
 const showManSpeed = () => { $('manSpeedV').textContent = (VPAGE * PITCH_M * 100).toFixed(1).replace('.', ',') + ' cm/s'; };
 $('manSpeed').oninput = e => { VPAGE = +e.target.value; store.set('manSpeed', VPAGE); showManSpeed(); };
 $('manSpeed').onchange = () => { if (M.active && M.hub) M.hub.stdin('V' + Math.round(VPAGE * 100)).catch(() => {}); };
-document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
-  M.mode = b.dataset.m; document.querySelectorAll('.seg button').forEach(x => x.classList.toggle('on', x === b));
+document.querySelectorAll('#manMode button').forEach(b => b.onclick = () => {
+  M.mode = b.dataset.m; document.querySelectorAll('#manMode button').forEach(x => x.classList.toggle('on', x === b));
   M.finger = null; M.joy = [0, 0]; manUI();
   if (M.active && !M.returning) manMsg(M.mode === 'drag' ? 'Touche ou fais glisser ton doigt sur le plateau : le véhicule <b>0' + M.v + '</b> se dirige vers ton doigt.' : 'Pousse le joystick (sous le plateau) pour déplacer le véhicule <b>0' + M.v + '</b>.');
 });

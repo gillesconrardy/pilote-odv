@@ -123,10 +123,25 @@ const ODVGEN = (() => {
       .replace('%TOTAL%', String(tl.total))
       .replace('%NSEG%', String(tl.segs[i].length))
       .replace('%BOUNDS%', '(' + tl.bounds.join(', ') + (tl.bounds.length === 1 ? ',' : '') + ')')
+      .replace('%SMODE%', String(vid === 4 ? (opts.smode || 0) : 0))
+      .replace('%MASK%', '(' + (vid === 4 && opts.smode ? sonarMask(tl) : []).join(', ') + ')')
       .replace('%DATA%', pyBytes(data));
   }
 
   // Position (pour l'aperçu) au temps v à partir des segments
+  // intervalles (ms) ou un autre vehicule passe devant le capteur du vehicule 4 (tourne vers +Y), elargis de 300 ms
+  function sonarMask(tl) {
+    const out = [], step = 50, pad = 300; let on = -1;
+    for (let v = 0; v <= tl.total + step; v += step) {
+      const t = Math.min(v, tl.total), p4 = posAt(tl, 3, t);
+      let m = false;
+      for (let k = 0; k < 3; k++) { const q = posAt(tl, k, t); if (Math.abs(q[0] - p4[0]) < 12 && q[1] > p4[1] + 0.5 && (q[1] - p4[1] - 10) * 12.25 < 350) m = true; }
+      if (m && on < 0) on = t;
+      if ((!m || v > tl.total) && on >= 0) { const a = Math.max(0, on - pad), b = Math.min(tl.total, t + pad);
+        if (out.length && a <= out[out.length - 1]) out[out.length - 1] = b; else out.push(a, b); on = -1; }
+    }
+    return out.map(x => Math.round(x));
+  }
   function posAt(tl, i, v) {
     const segs = tl.segs[i];
     let t0 = 0;
@@ -151,6 +166,6 @@ const ODVGEN = (() => {
     return out;
   }
 
-  return { HOME, buildTimeline, buildProgram, encode, posAt, multiMpy, prepare };
+  return { HOME, buildTimeline, buildProgram, encode, posAt, multiMpy, prepare, sonarMask };
 })();
 if (typeof module !== 'undefined') module.exports = ODVGEN;

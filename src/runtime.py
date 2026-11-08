@@ -35,6 +35,8 @@ HOME_Y = %HY%
 TOTAL = %TOTAL%               # ms : duree totale de la suite
 NSEG = %NSEG%
 BOUNDS = %BOUNDS%             # ms : debut de chaque choregraphie, puis TOTAL
+SMODE = %SMODE%               # capteur de distance du V4 pendant le spectacle : 0 rien, 1 gestes, 2 statue
+MASK = %MASK%                 # ms : intervalles (debut, fin, ...) ou un autre vehicule passe devant le capteur
 D = %DATA%
 # Enregistrement de 14 octets par segment :
 #   [0] type (0 attente, 1 ligne, 2 arc)  [2:4] duree ms
@@ -231,7 +233,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE
     if s[0] == 'D':
         try:
             CSPD = clamp(int(s[1:]) / 100000, 0.001, 0.012)
@@ -392,6 +394,9 @@ def manual_line(s):
         manual = False
         blend = True
         print('MAN', 0)
+    elif len(s) == 2 and s[0] == 'S' and s[1] in '012':
+        SMODE = int(s[1])
+        print('SMODE', SMODE)
     elif s == 'H1' or s == 'H0':
         # suivre la main avec le capteur de distance (port B, regarde vers +Y), en conduite manuelle avec evitement
         if s == 'H1' and IS_SENDER and game == 5 and sonar is not None:
@@ -1030,9 +1035,87 @@ def game_tick(dtg, local):
 if IS_SENDER:
     next_bcast = 0
     next_status = 0
+    next_tgt = [-1]               # choregraphie suivante demandee au milieu d'une autre (w du debut vise)
+
+    def masked(w):
+        if w in BOUNDS:
+            return False          # entre deux choregraphies : tout le monde est au depart, rien devant le capteur
+        i = 0
+        while i + 1 < len(MASK):
+            if MASK[i] <= w <= MASK[i + 1]:
+                return True
+            i += 2
+        return False
+
+    # gestes devant le capteur : 1 passage = lecture/pause, 2 passages = suivante, main tenue 2 s = stop et retour ;
+    # mode statue : une main devant fige le spectacle, il repart 1 s apres son depart
+    gs = [0, 0, 0, 0, 0, 0, 0, 2000]   # [prochaine lecture, dans la zone, entree, passages, dernier passage, tenue faite, statue, distance]
+
+    def gesture_tick(raw):
+        if raw < gs[0]:
+            return
+        gs[0] = raw + 40
+        try:
+            d = sonar.distance()
+        except Exception:
+            return
+        p = P1 if raw >= P1[0] else P0
+        if masked(wrap(vt(raw))):
+            d = 2000
+        if SMODE == 2:
+            if d < 250:
+                if not gs[1]:
+                    gs[1] = 1
+                    gs[2] = raw
+                elif not gs[6] and raw - gs[2] > 150 and p[2] == 1 and vt(raw) != p[3] and raw >= P1[0]:
+                    command('z', raw)
+                    gs[6] = 1
+                    print('GST S')
+                    sonar_eyes(100)
+            else:
+                if gs[1]:
+                    gs[1] = 0
+                    gs[2] = raw
+                elif gs[6] and raw - gs[2] > 1000 and raw >= P1[0]:
+                    command('p', raw)
+                    gs[6] = 0
+                    print('GST R')
+                    sonar_eyes(0)
+            return
+        near = d < 120 if not gs[1] else d < 200
+        if near and not gs[1]:
+            gs[1] = 1
+            gs[2] = raw
+            sonar_eyes(60)
+        elif near and not gs[5] and raw - gs[2] >= 2000:
+            gs[5] = 1
+            gs[3] = 0
+            if raw >= P1[0]:
+                command('h', raw)
+                print('GST H')
+        elif not near and gs[1]:
+            gs[1] = 0
+            sonar_eyes(0)
+            if not gs[5] and 60 <= raw - gs[2] <= 900:
+                gs[3] += 1
+                gs[4] = raw
+            gs[5] = 0
+        elif not gs[1] and gs[3] and raw - gs[4] > 700:
+            n = gs[3]
+            gs[3] = 0
+            if raw < P1[0]:
+                return
+            if n >= 2:
+                command('n', raw)
+                print('GST 2')
+            else:
+                command('z' if p[2] == 1 and vt(raw) != p[3] else 'p', raw)
+                print('GST 1')
 
     def command(c, raw):
         global P0, P1, next_bcast
+        if c != 'n':
+            next_tgt[0] = -1
         if c == 'x':
             v = vt(raw)
             P0 = [raw, v, 9, 0]
@@ -1058,6 +1141,29 @@ if IS_SENDER:
         elif c == 'z':
             R = 0
             S = 0
+        elif c == 'n':
+            # choregraphie suivante : a une limite (tous au depart) on saute au debut de la suivante et on joue ;
+            # au milieu, on rentre d'abord a la limite la plus proche, puis on saute
+            w = wrap(V)
+            k = chor_index(w)
+            back = w - BOUNDS[k]
+            fwd = BOUNDS[k + 1] - w
+            if back == 0 or fwd == 0:
+                tgt = BOUNDS[k + 1] if back == 0 else 0
+                if tgt >= TOTAL:
+                    tgt = 0
+                V = V - w + tgt
+                R = 1
+                S = BIG if LOOP else TOTAL
+                next_tgt[0] = -1
+            else:
+                next_tgt[0] = BOUNDS[k + 1] if BOUNDS[k + 1] < TOTAL else 0
+                if back <= fwd:
+                    R = -1
+                    S = V - back
+                else:
+                    R = 1
+                    S = V + fwd
         elif c == 'h':
             w = wrap(V)
             k = chor_index(w)
@@ -1130,7 +1236,7 @@ while True:
         c = stdin.read(1)
         if c == '\n':
             if line:
-                if IS_SENDER and line in ('p', 'z', 'h', 'x', 'e'):
+                if IS_SENDER and line in ('p', 'z', 'h', 'x', 'e', 'n'):
                     command(line, local)
                 else:
                     manual_line(line)
@@ -1237,6 +1343,17 @@ while True:
             elif free_at(tx, ny):
                 ty = ny
             rc_until = local + 300
+    if IS_SENDER and next_tgt[0] >= 0 and local >= P1[0] and vt(local) == P1[3]:
+        # arrive a la limite : on saute au debut de la choregraphie suivante et on joue
+        A = local + LEAD
+        V = vt(A)
+        P0 = P1
+        P1 = [A, V - wrap(V) + next_tgt[0], 1, BIG if LOOP else TOTAL]
+        next_tgt[0] = -1
+        next_bcast = 0
+        print('ACK n', LEAD)
+    if IS_SENDER and SMODE and sonar is not None and not manual and game == 0:
+        gesture_tick(local)
     if IS_SENDER and game == 5:
         b_snapshot(local, False)
         if hand:
