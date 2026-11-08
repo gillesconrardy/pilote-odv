@@ -5,6 +5,10 @@
 # =====================================================================
 from pybricks.hubs import TechnicHub
 from pybricks.pupdevices import Motor, Remote
+try:
+    from pybricks.pupdevices import UltrasonicSensor
+except ImportError:
+    UltrasonicSensor = None
 from pybricks.parameters import Port, Direction, Color, Button
 from pybricks.tools import wait, StopWatch
 from umath import sin, cos, pi
@@ -227,7 +231,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand
     if s[0] == 'D':
         try:
             CSPD = clamp(int(s[1:]) / 100000, 0.001, 0.012)
@@ -325,6 +329,7 @@ def manual_line(s):
             pass
         return
     if s == 'K':
+        hand = False
         b_ret = game in (4, 5) or (game == 1 and g_placed)
         if game == 5 or (game == 1 and g_placed):
             # poursuite placee par l'appli : le rangement se fait aussi par l'appli (W, puis Z)
@@ -387,7 +392,18 @@ def manual_line(s):
         manual = False
         blend = True
         print('MAN', 0)
-    elif s[0] == 'G' and manual and game != 4:
+    elif s == 'H1' or s == 'H0':
+        # suivre la main avec le capteur de distance (port B, regarde vers +Y), en conduite manuelle avec evitement
+        if s == 'H1' and IS_SENDER and game == 5 and sonar is not None:
+            hand = True
+            h_buf.clear()
+            print('HON')
+        else:
+            if s == 'H1':
+                print('HNO')
+            hand = False
+            sonar_eyes(0)
+    elif s[0] == 'G' and manual and game != 4 and not hand:
         k = s.find(',')
         if k > 1:
             try:
@@ -419,6 +435,17 @@ GH = [(0, 0), (0, 0), (0, 0)]                # leur place au debut du jeu
 GR = [0, 0, 0]                # roles : 0 mechant, 1 gentil, 2 fixe
 GS = [1, 1, 1]                # cote prefere pour contourner un obstacle
 GW = [None, None, None]       # detour d'un mechant bloque (point de passage)
+hand = False                  # suivre la main (capteur de distance du vehicule 4)
+h_buf = []
+h_next = 0
+h_print = 0
+h_dist = 2000
+sonar = None
+if IS_SENDER and UltrasonicSensor is not None:
+    try:
+        sonar = UltrasonicSensor(Port.B)
+    except Exception:
+        sonar = None
 GT = [0, 0, 0]                # fin du detour
 GB = [0, 0, 0]                # dernier controle d'avancee (ms)
 GQ = [99.0, 99.0, 99.0]       # distance au joueur a ce controle
@@ -637,6 +664,52 @@ def v4_ok(x, y):
             if dn < 10 and dn < cheb(mx, my, o[0], o[1]) - 1e-9:
                 return False
     return True
+
+
+def sonar_eyes(v):
+    try:
+        sonar.lights.on([v, v, v, v])
+    except Exception:
+        pass
+
+
+def hand_tick(dt, local):
+    # suivre la main : consigne 15 cm, zone morte 13..17 cm, recule vite si < 6 cm, perdue au-dela de 30 cm
+    global ty, h_next, h_print, h_dist
+    if local >= h_next:
+        h_next = local + 40
+        try:
+            d = sonar.distance()
+        except Exception:
+            d = 2000
+        h_buf.append(d)
+        if len(h_buf) > 4:
+            h_buf.pop(0)
+        h_dist = sorted(h_buf)[len(h_buf) // 2]
+    d = h_dist
+    vmax = 0.016
+    # ce qu'on voit est-il un vehicule devant nous (meme colonne) ? alors ce n'est pas une main
+    for o in OBS:
+        if o is not None and abs(o[0] - mx) < 10 and o[1] > my and abs((o[1] - my - 10) * 12.25 - d) < 25:
+            d = 2000
+    if d < 60:
+        v = -vmax
+    elif d < 130:
+        v = -vmax * (130 - d) / 70
+    elif d <= 170:
+        v = 0
+    elif d <= 300:
+        v = vmax * (d - 170) / 130
+    else:
+        v = 0
+    if local >= h_print:
+        h_print = local + 250
+        print('HD', int(d))
+        sonar_eyes(100 if d <= 300 else 15)
+    if v != 0:
+        ny = clamp(ty + v * dt, 0, 30)
+        if free_at(tx, ny):
+            ty = ny
 
 
 def evade_tick(dt):
@@ -1103,7 +1176,7 @@ while True:
             continue
         raw = int((1 + slope) * watch.time() + icpt)
     x, y = pos_at(wrap(vt(raw)))
-    if manual and remote is not None:
+    if manual and remote is not None and not hand:
         try:
             pr = remote.buttons.pressed()
         except OSError:
@@ -1129,6 +1202,8 @@ while True:
             rc_until = local + 300
     if IS_SENDER and game == 5:
         b_snapshot(local, False)
+        if hand:
+            hand_tick(min(local - last_loop, 50), local)
         evade_tick(local - last_loop)
     elif IS_SENDER and game == 4:
         b_snapshot(local, False)

@@ -10,6 +10,7 @@ MOCK = MOCK.replace("if (b[0] === 6) { const c = String.fromCharCode(b[1]);", ""
   if (txt === 'Z') say('JOK', 100);
   if (txt === 'K') { clearInterval(window.__jp); say('JRET', 100); }
   if (txt === 'Q') say('MAN 0');
+  if (txt === 'H1') { say('HON'); say('HD 142', 400); }
   const c = txt[0];""")
 async def main():
     async with async_playwright() as p:
@@ -23,6 +24,9 @@ async def main():
         await pg.click('#manGo'); await pg.wait_for_timeout(2500)
         print('actif', await pg.evaluate('M.active'), '| évitement', await pg.evaluate('M.evade'), '| autres', await pg.evaluate('JSON.stringify(M.others)'))
         await pg.locator('#cv').screenshot(path='/home/claude/work/evade.png')
+        await pg.click('#handGo'); await pg.wait_for_timeout(800)
+        print('main :', await pg.evaluate('M.hand'), '|', await pg.inner_text('#handSt'), '| bouton', await pg.inner_text('#handGo'), '| joystick', await pg.evaluate("document.getElementById('joyBox').style.display"))
+        await pg.locator('#manCard').screenshot(path='/home/claude/work/hand.png') if await pg.locator('#manCard').count() else None
         await pg.click('#manGo'); await pg.wait_for_function('!M.active', timeout=30000)
         st = await pg.evaluate('window.__stdin'); print('stdin:', [s for s in st if s[0] in 'MEKWZQ'])
         print('message:', await pg.inner_text('#manMsg')); print('erreurs', errs); await b.close()

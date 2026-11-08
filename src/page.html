@@ -535,6 +535,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
       <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
+      <button class="btn" id="handGo" disabled style="width:100%;margin-top:8px">✋ Suivre la main</button><div class="sub" id="handSt" style="margin-top:6px"></div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
     <div class="card" id="gameCard" hidden>
@@ -1070,7 +1071,7 @@ async function sendVehicle(v, doUpload, homing = false, idle = false) {
 
 // ---------------------------------------------------------------- tout déconnecter / tout mettre à jour
 async function disconnectAll() {
-  if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; manUI(); }
+  if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; manUI(); }
   const hubs = [];
   for (let v = 1; v <= 4; v++) {
     const h = V[v].hub;
@@ -1091,7 +1092,7 @@ async function disconnectAll() {
 $('discAll').onclick = disconnectAll;
 async function disconnectOne(v) {
   const h = V[v].hub; if (!h) return;
-  if (v === 4) { if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; manUI(); } R.hub = null; R.st = null; updateRemote(); }
+  if (v === 4) { if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; manUI(); } R.hub = null; R.st = null; updateRemote(); }
   h.onDisc = null; h.onLine = null; h.onReconnect = null; h.autoReconnect = false;
   await h.close(); V[v].hub = null;
   setSt(v, 'Déconnecté (le programme continue sur le hub)'); toast('Véhicule ' + v + ' déconnecté');
@@ -1246,7 +1247,8 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'RC') { M.rc = p[1] === '1'; M.rcBusy = false; rcUI(); toast(M.rc ? 'Télécommande connectée' : 'Télécommande introuvable ou déconnectée'); }
     else if (p[0] === 'POS') onPos(+p[1] / 100, +p[2] / 100, p[3] === '1');
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
-    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'EON', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
+    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'EON', 'HON', 'HNO', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
+    else if (p[0] === 'HD') handShow(+p[1]);
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
@@ -1285,16 +1287,37 @@ function manUI() {
   const b = $('manGo');
   b.textContent = M.returning ? 'Retour à sa place…' : M.active ? 'Rendre la main' : 'Prendre la main';
   b.disabled = M.returning || GM.on; b.className = 'btn ' + (M.active ? '' : 'primary');
-  $('joyBox').style.display = M.active && !M.returning && M.mode === 'joy' ? '' : 'none';
-  tiltUI(); rcUI();
+  $('joyBox').style.display = M.active && !M.returning && !M.hand && M.mode === 'joy' ? '' : 'none';
+  tiltUI(); rcUI(); handUI();
   $('cv').classList.toggle('drive', M.active && !M.returning && M.mode === 'drag');
   updateRemote();
 }
 const manMsg = t => $('manMsg').innerHTML = t;
+// suivre la main : capteur de distance du véhicule 4 (port B, regarde vers l'avant du plateau)
+function handUI() {
+  const b = $('handGo'); if (!b) return;
+  b.disabled = !(M.active && M.evade && !M.returning);
+  b.textContent = M.hand ? '■ Arrêter de suivre la main' : '✋ Suivre la main';
+  b.className = 'btn' + (M.hand ? ' primary' : '');
+  if (!M.hand) $('handSt').textContent = M.active && M.evade ? 'Capteur de distance sur le port B, tourné vers l\'avant du plateau.' : '';
+}
+function handShow(mm) {
+  if (!M.hand) return;
+  $('handSt').innerHTML = mm > 300 ? 'Main : <b>pas vue</b> (approche-la à 15 cm du capteur)'
+    : `Main à <b>${(mm / 10).toFixed(1).replace('.', ',')} cm</b> · ${mm < 130 ? 'il recule' : mm <= 170 ? 'il attend' : 'il avance'}`;
+}
+$('handGo').onclick = async () => {
+  if (!M.active || !M.evade) return;
+  if (M.hand) { M.hand = false; await M.hub.stdin('H0'); handUI(); return; }
+  const r = gWait(['HON', 'HNO'], 1500); await M.hub.stdin('H1');
+  if (await r !== 'HON') { $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
+  M.hand = true; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
+  $('handSt').textContent = 'Mets ta main devant le capteur, à environ 15 cm.';
+};
 $('manGo').onclick = async () => {
   if (M.active && M.evade) {
     // les 3 autres se sont écartés : l'appli les range un par un (puis le véhicule 4), par des chemins dégagés
-    M.returning = true; M.tidying = true; M.finger = null; M.joy = [0, 0]; manUI();
+    M.returning = true; M.tidying = true; M.finger = null; M.joy = [0, 0]; M.hand = false; manUI();
     manMsg('Les véhicules rentrent à leur place, un par un…');
     const rr = gWait(['JRET'], 3000); await M.hub.stdin('K'); await rr; await sleep(700);
     const P = [...(GM.pos || M.others).map(q => q.slice()), (GM.p4 || M.cmd).slice()], H = [...M.home3.map(q => q.slice()), M.path[0].slice()];
@@ -1426,7 +1449,7 @@ function onPos(x, y, rcMoving) {
 async function manualEnd() {
   try { await M.hub.stdin('G' + Math.round(M.cmd[0] * 100) + ',' + Math.round(M.cmd[1] * 100)); await sleep(250); await M.hub.stdin('Q'); } catch {}
   if (M.v !== 4) { await sleep(400); M.hub.onLine = null; await M.hub.close(); }
-  M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hub = null; M.path = [];
+  M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; M.hub = null; M.path = [];
   manMsg('Le véhicule est revenu à sa place. Tu peux relancer la Lecture ou reprendre la main.'); manUI();
 }
 function manualTick(ts) {
@@ -1434,6 +1457,7 @@ function manualTick(ts) {
   const now = performance.now(), dt = Math.min(0.1, (now - M.last) / 1000); M.last = now;
   if (GM.on && GM.kind === 'bille') { if (GM.phase === 1) billesTick(now); return; }
   if (M.tidying) return;   // rangement des véhicules en cours (commandes W)
+  if (M.hand) { if (GM.p4) { M.cmd = GM.p4.slice(); M.sent = M.cmd.slice(); } return; }   // c'est la main qui conduit
   let goal = null;
   if (M.returning) {
     while (M.path.length && Math.hypot(M.path[M.path.length - 1][0] - M.cmd[0], M.path[M.path.length - 1][1] - M.cmd[1]) < 0.02) {
@@ -1580,7 +1604,7 @@ async function billesStop() {
 }
 $('bPause').onclick = () => send('z');
 $('bHome').onclick = () => send('h');
-$('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; M.evade = false; M.tidying = false; manUI(); send('x'); };
+$('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; manUI(); send('x'); };
 function stateLabel() {
   const s = R.st; if (!s) return ['● Connecté', ''];
   const tl = R.tl, atBound = tl && tl.bounds.includes(s.w);

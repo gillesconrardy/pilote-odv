@@ -50,6 +50,13 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      suiveur en rattrapant leur retard (`rx_ok`, cibles `RXO`). `Q` refusé (BUSY) en jeu 5 : « Rendre la main » envoie `K`
      (→ `JRET`), range par `tidyPlan` + `W…`/`Z` (V4 compris), puis `G` + `Q`. Appli : `M.evade`, `M.home3`, `M.tidying`.
      Test : `t_evade.py` ; harness : physiquement jamais < 10 pas.
+   - **Suivre la main** (v1.56, capteur de distance LEGO `UltrasonicSensor` sur le **port B du V4**, tourné vers l'avant du
+     plateau = +Y) : bouton « ✋ Suivre la main » (Pilotage, en conduite manuelle avec évitement) → `H1` (→ `HON`, ou `HNO` si pas de
+     capteur) / `H0`. `hand_tick` : médiane des 4 dernières mesures (toutes les 40 ms) ; < 6 cm recule à 16 pas/s, 6–13 cm recule
+     (proportionnel), 13–17 cm immobile, 17–30 cm avance (proportionnel), > 30 cm ou véhicule reconnu devant (même colonne, distance
+     attendue ± 25 mm) → arrêt ; ne bouge que sur Y, dans 0..30, avec `free_at`. Joystick, `G` et télécommande ignorés pendant ce
+     temps. Le V4 imprime `HD <mm>` toutes les 250 ms (affiché sous le bouton), yeux du capteur allumés quand une main est vue.
+     Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`.
    - **Billes et poursuite RETIRÉS de l'appli depuis v1.55** (demande de Gilles) : le bouton `#tiltGo` et la carte `#gameCard`
      sont masqués (`hidden`) ; le code (page + hub) est resté en place, il suffit d'enlever `hidden` pour les remettre.
    - **Jeu de poursuite** (V4 en manuel) : `D<pas/s×100>` vitesse des chasseurs, `J` départ, `K` fin. Le V4
