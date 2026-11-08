@@ -56,7 +56,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      (proportionnel), 13–17 cm immobile, 17–30 cm avance (proportionnel), > 30 cm ou véhicule reconnu devant (même colonne, distance
      attendue ± 25 mm) → arrêt ; ne bouge que sur Y, dans 0..30, avec `free_at`. Joystick, `G` et télécommande ignorés pendant ce
      temps. Le V4 imprime `HD <mm>` toutes les 250 ms (affiché sous le bouton), yeux du capteur allumés quand une main est vue.
-     Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`.
+     **Latéral avec un seul capteur** : si la main disparaît > 150 ms (et que ce n'est pas un véhicule), recherche sur le côté
+     autour du dernier x où elle était vue : +4, −4, +8, −8, +12, −12 pas (× `h_dir`, le côté où on l'a retrouvée la dernière
+     fois), à 10 pas/s, sauf si bloqué (`free_at`) ; retrouvée → reprend le suivi ; sinon attend (`h_state` 0 suit / 1 cherche /
+     2 attend, envoyé dans `HD <mm> <état>`). Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`, ou `HARNESS_HAND='[[t_ms, x_main, mm], …]'`
+     (main vue si |x V4 − x main| ≤ 2,5 pas).
    - **Billes et poursuite RETIRÉS de l'appli depuis v1.55** (demande de Gilles) : le bouton `#tiltGo` et la carte `#gameCard`
      sont masqués (`hidden`) ; le code (page + hub) est resté en place, il suffit d'enlever `hidden` pour les remettre.
    - **Jeu de poursuite** (V4 en manuel) : `D<pas/s×100>` vitesse des chasseurs, `J` départ, `K` fin. Le V4

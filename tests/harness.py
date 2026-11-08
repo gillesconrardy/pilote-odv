@@ -34,7 +34,8 @@ class Remote:
         if not REMOTE['present']: raise OSError('no remote')
         self.buttons = _RButtons(); self.light = _Light()
 class Direction: CLOCKWISE = 1
-SONAR = json.loads(os.environ.get('HARNESS_SONAR', '[]'))   # [[t_ms, mm], ...] : distance vue par le capteur du V4
+SONAR = json.loads(os.environ.get('HARNESS_SONAR', '[]'))
+HAND = json.loads(os.environ.get('HARNESS_HAND', '[]'))   # [[t_ms, mm], ...] : distance vue par le capteur du V4
 class _SLights:
     def on(self, v): pass
 class UltrasonicSensor:
@@ -43,6 +44,12 @@ class UltrasonicSensor:
         t = true_ms(); d = 2000
         for a, b in SONAR:
             if t >= a: d = b
+        if HAND:
+            # main simulée : [t, x_main (pas), distance mm] ; vue seulement si elle est dans le faisceau (±2,5 pas)
+            hx = None
+            for e in HAND:
+                if t >= e[0]: hx, d = e[1], e[2]
+            if hx is not None and abs(ctx.last[0] - hx) > 2.5: d = 2000
         return d
 
 class StopWatch:

@@ -231,7 +231,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state
     if s[0] == 'D':
         try:
             CSPD = clamp(int(s[1:]) / 100000, 0.001, 0.012)
@@ -397,6 +397,7 @@ def manual_line(s):
         if s == 'H1' and IS_SENDER and game == 5 and sonar is not None:
             hand = True
             h_buf.clear()
+            h_state = 2
             print('HON')
         else:
             if s == 'H1':
@@ -440,6 +441,11 @@ h_buf = []
 h_next = 0
 h_print = 0
 h_dist = 2000
+h_state = 2                   # 0 suit la main, 1 la cherche sur le cote, 2 attend (pas de main)
+h_lost = 0
+h_cx = 0.0                    # x ou la main a ete vue pour la derniere fois
+h_wp = 0                      # etape de la recherche (4, -4, 8, -8, 12, -12 pas)
+h_dir = 1                     # cote cherche en premier (+1 ou -1)
 sonar = None
 if IS_SENDER and UltrasonicSensor is not None:
     try:
@@ -674,8 +680,10 @@ def sonar_eyes(v):
 
 
 def hand_tick(dt, local):
-    # suivre la main : consigne 15 cm, zone morte 13..17 cm, recule vite si < 6 cm, perdue au-dela de 30 cm
-    global ty, h_next, h_print, h_dist
+    # suivre la main : consigne 15 cm, zone morte 13..17 cm, recule vite si < 6 cm, perdue au-dela de 30 cm.
+    # Deplacement lateral avec un seul capteur : quand la main sort du faisceau (partie sur le cote), le vehicule
+    # la cherche a gauche puis a droite (4, 8, 12 pas), en commencant du cote ou il l'a retrouvee la derniere fois.
+    global tx, ty, h_next, h_print, h_dist, h_state, h_lost, h_cx, h_wp, h_dir
     if local >= h_next:
         h_next = local + 40
         try:
@@ -688,10 +696,39 @@ def hand_tick(dt, local):
         h_dist = sorted(h_buf)[len(h_buf) // 2]
     d = h_dist
     vmax = 0.016
+    veh = False
     # ce qu'on voit est-il un vehicule devant nous (meme colonne) ? alors ce n'est pas une main
     for o in OBS:
         if o is not None and abs(o[0] - mx) < 10 and o[1] > my and abs((o[1] - my - 10) * 12.25 - d) < 25:
             d = 2000
+            veh = True
+    if d <= 300:
+        if h_state == 1 and abs(tx - h_cx) > 0.5:
+            h_dir = 1 if tx > h_cx else -1   # retrouvee : la prochaine fois on cherchera d'abord de ce cote
+        h_state = 0
+        h_lost = local
+        h_cx = tx
+    elif h_state == 0 and not veh and local - h_lost > 150:
+        # main perdue : on part a sa recherche sur le cote
+        h_state = 1
+        h_wp = 0
+    if h_state == 1:
+        offs = (4, -4, 8, -8, 12, -12)
+        if h_wp >= len(offs):
+            h_state = 2             # pas retrouvee : on attend sur place
+        else:
+            gx = clamp(h_cx + offs[h_wp] * h_dir, 0, 30)
+            ex = gx - tx
+            stp = 0.010 * dt
+            if abs(ex) <= stp:
+                tx = gx
+                h_wp += 1
+            else:
+                nx = tx + (stp if ex > 0 else -stp)
+                if free_at(nx, ty):
+                    tx = nx
+                else:
+                    h_wp += 1       # bloque par un vehicule : on essaie l'autre cote
     if d < 60:
         v = -vmax
     elif d < 130:
@@ -704,7 +741,7 @@ def hand_tick(dt, local):
         v = 0
     if local >= h_print:
         h_print = local + 250
-        print('HD', int(d))
+        print('HD', int(d), h_state)
         sonar_eyes(100 if d <= 300 else 15)
     if v != 0:
         ny = clamp(ty + v * dt, 0, 30)

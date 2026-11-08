@@ -10,7 +10,7 @@ MOCK = MOCK.replace("if (b[0] === 6) { const c = String.fromCharCode(b[1]);", ""
   if (txt === 'Z') say('JOK', 100);
   if (txt === 'K') { clearInterval(window.__jp); say('JRET', 100); }
   if (txt === 'Q') say('MAN 0');
-  if (txt === 'H1') { say('HON'); say('HD 142', 400); }
+  if (txt === 'H1') { say('HON'); say('HD 2000 1', 400); }
   const c = txt[0];""")
 async def main():
     async with async_playwright() as p:
