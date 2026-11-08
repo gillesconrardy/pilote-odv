@@ -42,6 +42,14 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      la position des 3 autres (anti-collision côté hub), `V<pas/s×100>` la vitesse ; boutons gauche = moteur
      port C (X : + → +X), droite = port A (Y : + → −Y), comme le programme télécommande de Gilles ; une cible
      `G` de l'appli est prioritaire 400 ms ; le V4 imprime `POS x y <bouge>` (×100) et `RC 0|1`.
+   - **Évitement en conduite manuelle** (v1.56) : après `M`, l'appli envoie `E` (→ `EON`, jeu 5). Le V4 calcule V1..V3
+     (`evade_tick`) : à moins de 14 pas du V4 (cible ou position), un véhicule s'écarte (à l'opposé, sinon sur un axe, sinon de
+     côté ; `b_ok` : 11 pas, prévu ET d'il y a 250–500 ms) à 1,4× la vitesse manuelle (≤ 16,5 pas/s) ; à plus de 17 pas, il
+     revient doucement à sa place (en restant à 15 du V4). Diffusion et `JP` comme les jeux. Le V4 ne coupe pas de coin
+     (`v4_ok`) et sa cible évite aussi les positions anciennes (`free_at`, 10,5). Les suiveurs ne coupent pas le coin d'un autre
+     suiveur en rattrapant leur retard (`rx_ok`, cibles `RXO`). `Q` refusé (BUSY) en jeu 5 : « Rendre la main » envoie `K`
+     (→ `JRET`), range par `tidyPlan` + `W…`/`Z` (V4 compris), puis `G` + `Q`. Appli : `M.evade`, `M.home3`, `M.tidying`.
+     Test : `t_evade.py` ; harness : physiquement jamais < 10 pas.
    - **Billes et poursuite RETIRÉS de l'appli depuis v1.55** (demande de Gilles) : le bouton `#tiltGo` et la carte `#gameCard`
      sont masqués (`hidden`) ; le code (page + hub) est resté en place, il suffit d'enlever `hidden` pour les remettre.
    - **Jeu de poursuite** (V4 en manuel) : `D<pas/s×100>` vitesse des chasseurs, `J` départ, `K` fin. Le V4

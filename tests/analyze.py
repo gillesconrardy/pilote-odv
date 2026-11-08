@@ -11,7 +11,7 @@ def posAt(i, v):
                 a = math.radians(s['a0'] + s['rot']*f); return (s['cx'] + s['r']*math.sin(a), s['cy'] + s['r']*math.cos(a))
             return (s['x0'], s['y0'])
         t0 += s['dur']
-R = {int(k): v for k, v in d['rec'].items()}
+R = {int(k): [r for r in v if not isinstance(r[0], str)] for k, v in d['rec'].items()}   # sans les entrées 'stopped' / 'lights'
 m = R[4]; mt = [r[0] for r in m]
 def mv(t):
     k = bisect.bisect_left(mt, t); k = min(max(k, 1), len(m)-1)

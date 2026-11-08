@@ -204,6 +204,12 @@ def free_at(x, y):
     for o in OBS:
         if o is not None and abs(x - o[0]) < 10 - 1e-6 and abs(y - o[1]) < 10 - 1e-6:
             return False
+    if game == 5:
+        # les vehicules qui s'ecartent ont du retard radio : on evite aussi leur position d'il y a un instant
+        for k in range(3):
+            o = BOLD[k]
+            if abs(x - o[0]) < 10.5 and abs(y - o[1]) < 10.5:
+                return False
     return True
 
 
@@ -232,6 +238,23 @@ def manual_line(s):
         # roles des vehicules 1 a 3 pour la poursuite : 0 mechant, 1 gentil (garde du corps), 2 fixe
         for k in range(3):
             GR[k] = int(s[k + 1]) if s[k + 1] in '012' else 0
+        return
+    if s == 'E':
+        # conduite manuelle : les vehicules 1 a 3 s'ecartent quand le vehicule 4 s'approche
+        if IS_SENDER and manual and game == 0 and None not in OBS:
+            for k in range(3):
+                GC[k][0] = OBS[k][0]
+                GC[k][1] = OBS[k][1]
+                GH[k] = (OBS[k][0], OBS[k][1])
+            B4[0] = tx
+            B4[1] = ty
+            g_placed = False
+            b_ret = False
+            game = 5
+            b_snapshot(watch.time(), True)
+            print('EON')
+        else:
+            print('JNO')
         return
     if s == 'P':
         # placement avant la poursuite : l'appli deplace les 4 vehicules un par un (W), puis Z
@@ -302,15 +325,15 @@ def manual_line(s):
             pass
         return
     if s == 'K':
-        b_ret = game == 4 or (game == 1 and g_placed)
-        if game == 1 and g_placed:
+        b_ret = game in (4, 5) or (game == 1 and g_placed)
+        if game == 5 or (game == 1 and g_placed):
             # poursuite placee par l'appli : le rangement se fait aussi par l'appli (W, puis Z)
             B4[0] = tx
             B4[1] = ty
         if game == 4:
             TILT[0] = 0.0
             TILT[1] = 0.0
-        if game in (1, 4):
+        if game in (1, 4, 5):
             game = 2
             g_mover = -1
             print('JRET')
@@ -357,7 +380,7 @@ def manual_line(s):
         hub.light.on(VCOL)
         print('MAN', 1)
     elif s == 'Q':
-        if game in (1, 2, 4):
+        if game in (1, 2, 4, 5):
             print('BUSY')
             return
         game = 0
@@ -593,6 +616,79 @@ def guard_target(k):
     if m < 0.01:
         return GC[k][0], GC[k][1]
     return clamp(GC[best][0] + ux / m * 10.3, 0, 30), clamp(GC[best][1] + uy / m * 10.3, 0, 30)
+
+
+RXO = [[0.0, 0.0], [0.0, 0.0]]   # cibles des 2 autres suiveurs (recues du vehicule 4)
+
+
+def rx_ok(x, y):
+    for o in RXO:
+        dn = cheb(x, y, o[0], o[1])
+        if dn < 10 and dn < cheb(mx, my, o[0], o[1]) - 1e-9:
+            return False
+    return True
+
+
+def v4_ok(x, y):
+    # le vehicule 4 ne doit pas entrer dans un autre (on peut toujours s'eloigner)
+    for o in OBS:
+        if o is not None:
+            dn = cheb(x, y, o[0], o[1])
+            if dn < 10 and dn < cheb(mx, my, o[0], o[1]) - 1e-9:
+                return False
+    return True
+
+
+def evade_tick(dt):
+    # vehicules 1 a 3 en conduite manuelle : ils s'ecartent du vehicule 4, puis rentrent a leur place quand il est loin
+    global CSPD
+    if dt > 50:
+        dt = 50
+    CSPD = min(MSPD * 1.4, 0.0165)
+    st = CSPD * dt
+    B4[0] = tx
+    B4[1] = ty
+    for k in range(3):
+        c = GC[k]
+        dt4 = min(cheb(c[0], c[1], tx, ty), cheb(c[0], c[1], mx, my))
+        if dt4 < 14:
+            # s'ecarter : a l'oppose du vehicule 4, sinon sur un axe, sinon de cote
+            ux = c[0] - tx
+            uy = c[1] - ty
+            d = (ux * ux + uy * uy) ** 0.5
+            if d < 0.01:
+                ux = 1.0
+                uy = 0.0
+                d = 1.0
+            ux /= d
+            uy /= d
+            for vx, vy in ((ux, uy), (1 if ux > 0 else -1, 0), (0, 1 if uy > 0 else -1), (-uy, ux), (uy, -ux)):
+                nx = clamp(c[0] + vx * st, 0, 30)
+                ny = clamp(c[1] + vy * st, 0, 30)
+                if abs(nx - c[0]) + abs(ny - c[1]) < st * 0.3:
+                    continue
+                if b_ok(k, nx, ny) and min(cheb(nx, ny, tx, ty), cheb(nx, ny, mx, my)) >= dt4 - 1e-6:
+                    c[0] = nx
+                    c[1] = ny
+                    break
+        elif dt4 > 17:
+            # rentrer doucement a sa place, sans repasser pres du vehicule 4
+            hx = GH[k][0] - c[0]
+            hy = GH[k][1] - c[1]
+            d = (hx * hx + hy * hy) ** 0.5
+            if d > 0.01:
+                sk = min(st * 0.6, d)
+                for vx, vy in ((hx / d, hy / d), (hx / d, 0), (0, hy / d)):
+                    nx = c[0] + vx * sk
+                    ny = c[1] + vy * sk
+                    if abs(nx - c[0]) + abs(ny - c[1]) < sk * 0.3:
+                        continue
+                    if b_ok(k, nx, ny) and min(cheb(nx, ny, tx, ty), cheb(nx, ny, mx, my)) >= 15:
+                        c[0] = nx
+                        c[1] = ny
+                        break
+    for k in range(3):
+        OBS[k] = (GC[k][0], GC[k][1])
 
 
 def push(k, nx, ny, ux, uy, st):
@@ -962,6 +1058,12 @@ while True:
             if len(gb) >= 7:
                 tx = gb[2 * ME] / 8
                 ty = gb[2 * ME + 1] / 8
+                n = 0
+                for j in range(3):
+                    if j != ME:
+                        RXO[n][0] = gb[2 * j] / 8
+                        RXO[n][1] = gb[2 * j + 1] / 8
+                        n += 1
                 grate = gb[6] / 10000 * 1.25
                 role = 255
                 if len(gb) >= 8 and gb[7] < 27:
@@ -1025,7 +1127,10 @@ while True:
             elif free_at(tx, ny):
                 ty = ny
             rc_until = local + 300
-    if IS_SENDER and game == 4:
+    if IS_SENDER and game == 5:
+        b_snapshot(local, False)
+        evade_tick(local - last_loop)
+    elif IS_SENDER and game == 4:
         b_snapshot(local, False)
         billes_tick(local - last_loop)
         tx = B4[0]
@@ -1054,13 +1159,33 @@ while True:
         dy = gy - my
         d = (dx * dx + dy * dy) ** 0.5
         if d <= step:
-            mx = gx
-            my = gy
-            if blend:
-                blend = False
+            nx = gx
+            ny = gy
         else:
-            mx += dx * step / d
-            my += dy * step / d
+            nx = mx + dx * step / d
+            ny = my + dy * step / d
+        if game_rx and not rx_ok(nx, ny):
+            # suiveur : en rattrapant son retard, il ne doit pas couper le coin d'un autre suiveur
+            if rx_ok(nx, my):
+                ny = my
+            elif rx_ok(mx, ny):
+                nx = mx
+            else:
+                nx = mx
+                ny = my
+        if IS_SENDER and game == 5 and not v4_ok(nx, ny):
+            # pas de coin coupe dans un vehicule qui s'ecarte : on avance sur un axe, sinon on attend
+            if v4_ok(nx, my):
+                ny = my
+            elif v4_ok(mx, ny):
+                nx = mx
+            else:
+                nx = mx
+                ny = my
+        mx = nx
+        my = ny
+        if blend and mx == gx and my == gy:
+            blend = False
         x = mx
         y = my
     else:

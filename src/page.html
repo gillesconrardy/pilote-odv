@@ -530,7 +530,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div id="odo" style="margin-top:8px"></div>
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
-      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
+      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Quand le véhicule 4 s'approche d'un autre véhicule, celui-ci s'écarte, puis revient à sa place quand tu t'éloignes. Rendre la main range tout le monde, un par un, sans collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
@@ -1070,7 +1070,7 @@ async function sendVehicle(v, doUpload, homing = false, idle = false) {
 
 // ---------------------------------------------------------------- tout déconnecter / tout mettre à jour
 async function disconnectAll() {
-  if (M.active) { M.active = false; M.returning = false; manUI(); }
+  if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; manUI(); }
   const hubs = [];
   for (let v = 1; v <= 4; v++) {
     const h = V[v].hub;
@@ -1091,7 +1091,7 @@ async function disconnectAll() {
 $('discAll').onclick = disconnectAll;
 async function disconnectOne(v) {
   const h = V[v].hub; if (!h) return;
-  if (v === 4) { if (M.active) { M.active = false; M.returning = false; manUI(); } R.hub = null; R.st = null; updateRemote(); }
+  if (v === 4) { if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; manUI(); } R.hub = null; R.st = null; updateRemote(); }
   h.onDisc = null; h.onLine = null; h.onReconnect = null; h.autoReconnect = false;
   await h.close(); V[v].hub = null;
   setSt(v, 'Déconnecté (le programme continue sur le hub)'); toast('Véhicule ' + v + ' déconnecté');
@@ -1246,7 +1246,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'RC') { M.rc = p[1] === '1'; M.rcBusy = false; rcUI(); toast(M.rc ? 'Télécommande connectée' : 'Télécommande introuvable ou déconnectée'); }
     else if (p[0] === 'POS') onPos(+p[1] / 100, +p[2] / 100, p[3] === '1');
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
-    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
+    else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'EON', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
@@ -1292,6 +1292,18 @@ function manUI() {
 }
 const manMsg = t => $('manMsg').innerHTML = t;
 $('manGo').onclick = async () => {
+  if (M.active && M.evade) {
+    // les 3 autres se sont écartés : l'appli les range un par un (puis le véhicule 4), par des chemins dégagés
+    M.returning = true; M.tidying = true; M.finger = null; M.joy = [0, 0]; manUI();
+    manMsg('Les véhicules rentrent à leur place, un par un…');
+    const rr = gWait(['JRET'], 3000); await M.hub.stdin('K'); await rr; await sleep(700);
+    const P = [...(GM.pos || M.others).map(q => q.slice()), (GM.p4 || M.cmd).slice()], H = [...M.home3.map(q => q.slice()), M.path[0].slice()];
+    const plan = tidyPlan(P, H);
+    if (!plan || !await gMoves(plan)) { manMsg('<span class="bad">⚠ Je ne trouve pas de chemin pour ranger les véhicules. Range-les à la main, puis recalibre-les dans Setup.</span>'); M.tidying = false; return; }
+    M.others = M.home3.map(q => q.slice()); M.cmd = M.path[0].slice(); M.sent = M.cmd.slice(); M.path = [M.cmd.slice()];
+    M.evade = false; M.tidying = false; GM.pos = null;
+    await manualEnd(); return;
+  }
   if (M.active) {
     M.returning = true; M.finger = null; M.joy = [0, 0];
     // chemin le plus court qui contourne les véhicules immobiles ; sinon on refait le chemin parcouru
@@ -1323,6 +1335,9 @@ $('manGo').onclick = async () => {
     // le véhicule 4 apprend où sont les autres et la vitesse, pour la télécommande physique
     for (let k = 0; k < 3; k++) await h.stdin('O' + (k + 1) + Math.round(M.others[k][0] * 100) + ',' + Math.round(M.others[k][1] * 100));
     await h.stdin('V' + Math.round(VPAGE * 100));
+    // les 3 autres s'écartent quand le véhicule 4 s'approche (programme à jour seulement)
+    M.evade = false; M.home3 = M.others.map(q => q.slice()); GM.pos = null;
+    if (v === 4) { const re = gWait(['EON', 'JNO'], 1500); await h.stdin('E'); M.evade = await re === 'EON'; if (M.evade) GM.pos = M.home3.map(q => q.slice()); }
     M.active = true; M.last = performance.now();
     $('cv').scrollIntoView({ behavior: 'smooth', block: 'start' });
     manMsg('Pousse le joystick sous le plateau, ou utilise la télécommande, pour déplacer le véhicule <b>04</b>.');
@@ -1411,13 +1426,14 @@ function onPos(x, y, rcMoving) {
 async function manualEnd() {
   try { await M.hub.stdin('G' + Math.round(M.cmd[0] * 100) + ',' + Math.round(M.cmd[1] * 100)); await sleep(250); await M.hub.stdin('Q'); } catch {}
   if (M.v !== 4) { await sleep(400); M.hub.onLine = null; await M.hub.close(); }
-  M.active = false; M.returning = false; M.hub = null; M.path = [];
+  M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hub = null; M.path = [];
   manMsg('Le véhicule est revenu à sa place. Tu peux relancer la Lecture ou reprendre la main.'); manUI();
 }
 function manualTick(ts) {
   if (!M.active) return;
   const now = performance.now(), dt = Math.min(0.1, (now - M.last) / 1000); M.last = now;
   if (GM.on && GM.kind === 'bille') { if (GM.phase === 1) billesTick(now); return; }
+  if (M.tidying) return;   // rangement des véhicules en cours (commandes W)
   let goal = null;
   if (M.returning) {
     while (M.path.length && Math.hypot(M.path[M.path.length - 1][0] - M.cmd[0], M.path[M.path.length - 1][1] - M.cmd[1]) < 0.02) {
@@ -1564,7 +1580,7 @@ async function billesStop() {
 }
 $('bPause').onclick = () => send('z');
 $('bHome').onclick = () => send('h');
-$('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; manUI(); send('x'); };
+$('bStop').onclick = () => { if (M.active && M.v !== 4 && M.hub) { M.hub.close(); } M.active = false; M.returning = false; M.evade = false; M.tidying = false; manUI(); send('x'); };
 function stateLabel() {
   const s = R.st; if (!s) return ['● Connecté', ''];
   const tl = R.tl, atBound = tl && tl.bounds.includes(s.w);
@@ -2347,7 +2363,7 @@ function drawPlate(c, tl, w, man, trails, ovr) {
 function drawBoard() {
   const tl = R.tl || TL;
   const w = R.st ? estW() : 0;
-  drawPlate(cv, tl, w, M.active ? M : null, false, GM.on && GM.pos ? GM.pos : null);
+  drawPlate(cv, tl, w, M.active ? M : null, false, (GM.on || M.evade) && GM.pos ? GM.pos : null);
   if (R.st && tl) {
     const k = R.st.k, b0 = tl.bounds[k], b1 = tl.bounds[k + 1] || tl.total;
     $('stProg').style.width = (100 * Math.min(1, Math.max(0, (w - b0) / (b1 - b0)))) + '%';
