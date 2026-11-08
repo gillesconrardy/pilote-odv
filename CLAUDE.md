@@ -42,7 +42,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      la position des 3 autres (anti-collision côté hub), `V<pas/s×100>` la vitesse ; boutons gauche = moteur
      port C (X : + → +X), droite = port A (Y : + → −Y), comme le programme télécommande de Gilles ; une cible
      `G` de l'appli est prioritaire 400 ms ; le V4 imprime `POS x y <bouge>` (×100) et `RC 0|1`.
-   - **Évitement en conduite manuelle** (v1.56) : après `M`, l'appli envoie `E` (→ `EON`, jeu 5). Le V4 calcule V1..V3
+   - **Évitement en conduite manuelle** (v1.55) : après `M`, l'appli envoie `E` (→ `EON`, jeu 5). Le V4 calcule V1..V3
      (`evade_tick`) : à moins de 14 pas du V4 (cible ou position), un véhicule s'écarte (à l'opposé, sinon sur un axe, sinon de
      côté ; `b_ok` : 11 pas, prévu ET d'il y a 250–500 ms) à 1,4× la vitesse manuelle (≤ 16,5 pas/s) ; à plus de 17 pas, il
      revient doucement à sa place (en restant à 15 du V4). Diffusion et `JP` comme les jeux. Le V4 ne coupe pas de coin
