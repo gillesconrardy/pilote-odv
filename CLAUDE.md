@@ -166,11 +166,6 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   + Space Mono (Google Fonts), coins « crochets » ambre sur les cartes, titres `> EN CAPITALES` en mono, plateau
   sombre à points avec règle 0–40. Bloc CSS « Thème Holo ambre » en fin de `<style>` dans `src/page.html`.
   Le simulateur a le même thème (bloc « Thème Holo ambre » en fin de `<style>` de `simulateur/template.html`).
-- **Chorégraphie d'origine corrigée** (v1.57) : `choregraphies/7_origine_corrigee.py` (utilisée dans `CHORS` à la place du
-  programme d'origine, qui reste en référence) : sans les 3 déplacements de mise en place ; 8 des V1..V3 écrasé en hauteur
-  (y' = 10,3 + y × 19,7/30) pour que le V4 garde sa ligne y = 0 ; entrée/sortie du 8 en 3 temps (V1/V2, puis V3 le long du
-  haut, puis V3 descend pendant que V4 avance). core.js : 0 collision, écart mini 10 ; hubs simulés : 9,74 dans le tour du
-  plateau en convoi (côte à côte, gigue de synchro, comme les autres chorégraphies).
 - Nouvelle chorégraphie : fichier de lignes `mvc.*` indentées de 4 espaces dans `choregraphies/`,
   partant de et revenant à (30,0)(20,0)(10,0)(0,0), sans chevauchement ; l'ajouter à `CHORS` dans
   `build.py`. `gen_cinq.py` / `gen_vague_spirale.py` montrent comment les générer et les valider.

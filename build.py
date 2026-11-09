@@ -24,7 +24,7 @@ CHORS = [  # (nom, fichier, coche par defaut dans Pilote ODV)
     ('Carrousel', '1_carrousel.py', 1), ('Kaléidoscope', '2_kaleidoscope.py', 1),
     ('Tourbillons', '3_tourbillons.py', 1), ('Petit train', '4_petit_train.py', 1),
     ('Formation', '5_formation.py', 1), ('Vague + Spirale + Pulsation', '6_vague_spirale_pulsation.py', 0),
-    ("Chorégraphie d'origine (8, boucles, cercles…)", '7_origine_corrigee.py', 0)]
+    ("Chorégraphie d'origine (8, boucles, cercles…)", '0_origine_ODV_Cfg05_Vehicle01.py', 0)]
 core = rd('src/core.js')
 
 # --- Pilote ODV (index.html)
