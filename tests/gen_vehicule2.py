@@ -190,22 +190,6 @@ def remote_connect():
     hub.light.on(VCOL)
 def manual_line(s):
     global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE
-    if s == 'E':
-        if IS_SENDER and manual and game == 0 and None not in OBS:
-            for k in range(3):
-                GC[k][0] = OBS[k][0]
-                GC[k][1] = OBS[k][1]
-                GH[k] = (OBS[k][0], OBS[k][1])
-            B4[0] = tx
-            B4[1] = ty
-            g_placed = False
-            b_ret = False
-            game = 5
-            b_snapshot(watch.time(), True)
-            print('EON')
-        else:
-            print('JNO')
-        return
     if s == 'K':
         hand = False
         b_ret = game in (4, 5) or (game == 1 and g_placed)
@@ -269,7 +253,7 @@ def manual_line(s):
         SMODE = int(s[1])
         print('SMODE', SMODE)
     elif s == 'H1' or s == 'H0':
-        if s == 'H1' and IS_SENDER and game == 5 and sonar is not None:
+        if s == 'H1' and IS_SENDER and manual and game in (0, 5) and sonar is not None:
             hand = True
             h_buf.clear()
             h_state = 2
@@ -462,53 +446,6 @@ def hand_tick(dt, local):
         ny = clamp(ty + v * dt, 0, 30)
         if free_at(tx, ny):
             ty = ny
-def evade_tick(dt):
-    global CSPD
-    if dt > 50:
-        dt = 50
-    CSPD = min(MSPD * 1.4, 0.0165)
-    st = CSPD * dt
-    B4[0] = tx
-    B4[1] = ty
-    for k in range(3):
-        c = GC[k]
-        dt4 = min(cheb(c[0], c[1], tx, ty), cheb(c[0], c[1], mx, my))
-        if dt4 < 14:
-            ux = c[0] - tx
-            uy = c[1] - ty
-            d = (ux * ux + uy * uy) ** 0.5
-            if d < 0.01:
-                ux = 1.0
-                uy = 0.0
-                d = 1.0
-            ux /= d
-            uy /= d
-            for vx, vy in ((ux, uy), (1 if ux > 0 else -1, 0), (0, 1 if uy > 0 else -1), (-uy, ux), (uy, -ux)):
-                nx = clamp(c[0] + vx * st, 0, 30)
-                ny = clamp(c[1] + vy * st, 0, 30)
-                if abs(nx - c[0]) + abs(ny - c[1]) < st * 0.3:
-                    continue
-                if b_ok(k, nx, ny) and min(cheb(nx, ny, tx, ty), cheb(nx, ny, mx, my)) >= dt4 - 1e-6:
-                    c[0] = nx
-                    c[1] = ny
-                    break
-        elif dt4 > 17:
-            hx = GH[k][0] - c[0]
-            hy = GH[k][1] - c[1]
-            d = (hx * hx + hy * hy) ** 0.5
-            if d > 0.01:
-                sk = min(st * 0.6, d)
-                for vx, vy in ((hx / d, hy / d), (hx / d, 0), (0, hy / d)):
-                    nx = c[0] + vx * sk
-                    ny = c[1] + vy * sk
-                    if abs(nx - c[0]) + abs(ny - c[1]) < sk * 0.3:
-                        continue
-                    if b_ok(k, nx, ny) and min(cheb(nx, ny, tx, ty), cheb(nx, ny, mx, my)) >= 15:
-                        c[0] = nx
-                        c[1] = ny
-                        break
-    for k in range(3):
-        OBS[k] = (GC[k][0], GC[k][1])
 def game_tick(dtg, local):
     global game, g_freeze, g_round, g_catch, g_mover, g_way, g_stuck
     if game == 2:
@@ -834,11 +771,8 @@ while True:
         print('ACK n', LEAD)
     if IS_SENDER and SMODE and sonar is not None and not manual and game == 0:
         gesture_tick(local)
-    if IS_SENDER and game == 5:
-        b_snapshot(local, False)
-        if hand:
-            hand_tick(min(local - last_loop, 50), local)
-        evade_tick(local - last_loop)
+    if IS_SENDER and hand and manual and game in (0, 5):
+        hand_tick(min(local - last_loop, 50), local)
     elif IS_SENDER and game:
         game_tick(local - last_loop, local)
         if b_ret and game in (2, 3):

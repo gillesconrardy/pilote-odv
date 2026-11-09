@@ -259,7 +259,6 @@ def manual_line(s):
         for k in range(3):
             GR[k] = int(s[k + 1]) if s[k + 1] in '012' else 0
         return
-#]JEUX
     if s == 'E':
         # conduite manuelle : les vehicules 1 a 3 s'ecartent quand le vehicule 4 s'approche
         if IS_SENDER and manual and game == 0 and None not in OBS:
@@ -277,7 +276,6 @@ def manual_line(s):
         else:
             print('JNO')
         return
-#[JEUX
     if s == 'P':
         # placement avant la poursuite : l'appli deplace les 4 vehicules un par un (W), puis Z
         if IS_SENDER and manual and game in (0, 3) and None not in OBS:
@@ -418,7 +416,7 @@ def manual_line(s):
         print('SMODE', SMODE)
     elif s == 'H1' or s == 'H0':
         # suivre la main avec le capteur de distance (port B, regarde vers +Y), en conduite manuelle avec evitement
-        if s == 'H1' and IS_SENDER and game == 5 and sonar is not None:
+        if s == 'H1' and IS_SENDER and manual and game in (0, 5) and sonar is not None:
             hand = True
             h_buf.clear()
             h_state = 2
@@ -777,6 +775,7 @@ def hand_tick(dt, local):
             ty = ny
 
 
+#[JEUX
 def evade_tick(dt):
     # vehicules 1 a 3 en conduite manuelle : ils s'ecartent du vehicule 4, puis rentrent a leur place quand il est loin
     global CSPD
@@ -829,6 +828,7 @@ def evade_tick(dt):
         OBS[k] = (GC[k][0], GC[k][1])
 
 
+#]JEUX
 #[JEUX
 def push(k, nx, ny, ux, uy, st):
     # le mechant est plus fort : il bouscule le gentil qui le gene (devant lui, ou sur le cote)
@@ -1381,11 +1381,13 @@ while True:
         print('ACK n', LEAD)
     if IS_SENDER and SMODE and sonar is not None and not manual and game == 0:
         gesture_tick(local)
+    if IS_SENDER and hand and manual and game in (0, 5):
+        hand_tick(min(local - last_loop, 50), local)
+#[JEUX
     if IS_SENDER and game == 5:
         b_snapshot(local, False)
-        if hand:
-            hand_tick(min(local - last_loop, 50), local)
         evade_tick(local - last_loop)
+#]JEUX
 #[JEUX
     elif IS_SENDER and game == 4:
         b_snapshot(local, False)

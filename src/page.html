@@ -532,7 +532,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div id="odo" style="margin-top:8px"></div>
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
-      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Avec « Suivre la main », le véhicule 4 garde ta main à 15 cm devant son capteur (port B) ; déplace ta main sur le côté : il sort du faisceau, le véhicule la cherche à gauche puis à droite et la suit. Quand le véhicule 4 s'approche d'un autre véhicule, celui-ci s'écarte, puis revient à sa place quand tu t'éloignes. Rendre la main range tout le monde, un par un, sans collision.">i</button></h2>
+      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Avec « Suivre la main », le véhicule 4 garde ta main à 15 cm devant son capteur (port B) ; déplace ta main sur le côté : il sort du faisceau, le véhicule la cherche à gauche puis à droite et la suit. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
@@ -1331,10 +1331,10 @@ const manMsg = t => $('manMsg').innerHTML = t;
 // suivre la main : capteur de distance du véhicule 4 (port B, regarde vers l'avant du plateau)
 function handUI() {
   const b = $('handGo'); if (!b) return;
-  b.disabled = !(M.active && M.evade && !M.returning);
+  b.disabled = !(M.active && M.v === 4 && !M.returning);
   b.textContent = M.hand ? '■ Arrêter de suivre la main' : '✋ Suivre la main';
   b.className = 'btn' + (M.hand ? ' primary' : '');
-  if (!M.hand) $('handSt').textContent = M.active && M.evade ? 'Capteur de distance sur le port B, tourné vers l\'avant du plateau.' : '';
+  if (!M.hand) $('handSt').textContent = M.active && M.v === 4 ? 'Capteur de distance sur le port B, tourné vers l\'avant du plateau.' : '';
 }
 function handShow(mm, st) {
   if (!M.hand) return;
@@ -1343,7 +1343,7 @@ function handShow(mm, st) {
     : `Main à <b>${(mm / 10).toFixed(1).replace('.', ',')} cm</b> · ${mm < 130 ? 'il recule' : mm <= 170 ? 'il attend' : 'il avance'}`;
 }
 $('handGo').onclick = async () => {
-  if (!M.active || !M.evade) return;
+  if (!M.active || M.v !== 4) return;
   if (M.hand) { M.hand = false; await M.hub.stdin('H0'); handUI(); return; }
   const r = gWait(['HON', 'HNO'], 1500); await M.hub.stdin('H1');
   if (await r !== 'HON') { $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
@@ -1396,7 +1396,7 @@ $('manGo').onclick = async () => {
     await h.stdin('V' + Math.round(VPAGE * 100));
     // les 3 autres s'écartent quand le véhicule 4 s'approche (programme à jour seulement)
     M.evade = false; M.home3 = M.others.map(q => q.slice()); GM.pos = null;
-    if (v === 4) { const re = gWait(['EON', 'JNO'], 1500); await h.stdin('E'); M.evade = await re === 'EON'; if (M.evade) GM.pos = M.home3.map(q => q.slice()); }
+    // (v1.59 : plus d'écartement automatique des autres véhicules pendant la conduite manuelle, à la demande de Gilles)
     M.active = true; M.last = performance.now();
     $('cv').scrollIntoView({ behavior: 'smooth', block: 'start' });
     manMsg('Pousse le joystick sous le plateau, ou utilise la télécommande, pour déplacer le véhicule <b>04</b>.');
