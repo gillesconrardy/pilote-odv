@@ -464,7 +464,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
   <!-- ======================= 0. MISE EN PLACE (toujours avec calibrage) ======================= -->
   <section id="setup">
     <div class="card">
-      <h2>Mise en place <button type="button" class="tip" data-tip="Chaque véhicule se cale contre la clôture puis rejoint sa place de départ et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Un seul véhicule sur le plateau à la fois, dans l'ordre 1, 2, 3 puis 4. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
+      <h2>Mise en place <button type="button" class="tip" data-tip="Pose les 4 véhicules en colonne contre la clôture de droite : le 1 dans le coin du haut, puis 2, 3 et 4 en dessous. Chaque véhicule se cale contre la clôture puis rejoint sa place le long du haut et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Le suivant devient disponible dès que le précédent a quitté la colonne de droite ; un bouton reste grisé tant qu'il y a un risque de collision. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
       <div class="sunext" id="suNext"></div>
       <div id="suList"></div>
       <button class="btn primary" id="suGo" style="width:100%;padding:14px;margin-top:10px" hidden>Choisir les chorégraphies →</button>
@@ -1060,10 +1060,17 @@ async function sendVehicle(v, doUpload, homing = false, idle = false) {
       await h.upload(prog, f => { setBar(v, f); setSt(v, 'Envoi ' + Math.round(f * 100) + ' %'); });
       setBar(v, null);
     }
-    let gotBat = null;
-    if (v !== 4) h.onLine = line => { const q = line.split(/\s+/); if (q[0] === 'BAT') gotBat = +q[1]; };
+    let gotBat = null, clr = false;
+    if (v !== 4) h.onLine = line => { const q = line.split(/\s+/); if (q[0] === 'BAT') gotBat = +q[1]; if (q[0] === 'CLR') clr = true; };
     await h.start();
-    if (v !== 4) { for (let k = 0; k < 15 && gotBat === null; k++) await sleep(100); if (gotBat) setBat(v, gotBat); h.onLine = null; }
+    if (v !== 4) { for (let k = 0; k < 15 && gotBat === null; k++) await sleep(100); if (gotBat) setBat(v, gotBat); }
+    if (v !== 4 && homing) {
+      // calibrage : on reste à l'écoute jusqu'à ce que le véhicule ait quitté la colonne de droite (CLR)
+      setSt(v, 'Calibrage… (il rejoint sa place)');
+      for (let k = 0; k < 900 && !clr && h.connected; k++) await sleep(100);
+      if (!clr) throw new Error('Le véhicule n\'a pas signalé la fin de son calibrage');
+    }
+    if (v !== 4) h.onLine = null;
     if (v === 4) { attachRemote(h, idle); setSt(v, `✓ En marche sur « ${esc(h.name)} » · télécommande prête`, 'ok'); toast('Véhicule 4 prêt : passe à la télécommande'); }
     else { await sleep(300); await h.close(); setSt(v, `✓ En marche sur « ${esc(h.name)} » ${homing && doUpload ? '· calibrage puis attente du véhicule 4' : '· attend le véhicule 4'}`, 'ok'); }
     return true;
@@ -1223,14 +1230,19 @@ function suRender() {
     $('su' + v).onclick = () => suGo(v);
   }
   const next = [1, 2, 3, 4].find(v => !SU.done[v]);
+  // sans risque de collision : tous les précédents ont quitté la colonne de droite, et aucun suivant n'est déjà parti
+  const can = v => !V[v].busy && [1, 2, 3, 4].every(u => u < v ? SU.done[u] : u > v ? !SU.done[u] && !V[u].busy : true);
   for (let v = 1; v <= 4; v++) {
-    const b = $('su' + v); b.disabled = V[v].busy;
+    const b = $('su' + v); b.disabled = !can(v);
     b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? 'Refaire' : 'Calibrer';
     b.parentElement.classList.toggle('next', v === next); b.parentElement.classList.toggle('ok', !!SU.done[v]);
   }
   // à placer d'abord (dans l'ordre), puis ceux déjà en place, en vert, en bas de la liste
   for (const v of [1, 2, 3, 4].filter(v => !SU.done[v]).concat([1, 2, 3, 4].filter(v => SU.done[v]))) box.appendChild($('surow' + v));
-  $('suNext').innerHTML = next ? (next === 1 ? `Pose le <b>véhicule 1 seul</b> sur le plateau, puis touche « Calibrer ».` : `Pose le <b>véhicule ${next}</b> sur le plateau, puis touche « Calibrer ».`)
+  const run = [1, 2, 3, 4].find(v => V[v].busy);
+  $('suNext').innerHTML = next ? (run && run === next ? `Le <b>véhicule ${run}</b> se calibre…` + (run < 4 ? ` Le ${run + 1} pourra partir dès qu'il aura quitté la colonne de droite.` : '')
+      : next === 1 ? `Pose les 4 véhicules <b>en colonne contre la clôture de droite</b> : le 1 dans le coin du haut, puis 2, 3 et 4 en dessous (laisse 2 cm entre le 1 et le 2). Touche « Calibrer » pour le 1.`
+      : `Touche « Calibrer » pour le <b>véhicule ${next}</b>.`)
     : '<span class="ok">✓ Les 4 véhicules sont en place.</span> Choisis maintenant les chorégraphies.';
   $('suGo').hidden = !!next;
 }

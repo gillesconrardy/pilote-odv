@@ -168,6 +168,18 @@ hub.light.on(VCOL)
 print('BAT', hub.battery.voltage())
 if DO_HOMING:
     homing()
+    # vers sa place le long du haut ; CLR des qu'il a quitte la colonne de droite : le vehicule suivant peut se calibrer
+    a = 0.0
+    clr = False
+    while a < HOME_X * GEAR:
+        a = min(HOME_X * GEAR, a + 16)
+        x_motor.track_target(a)
+        if not clr and a >= 12 * GEAR:
+            print('CLR')
+            clr = True
+        wait(20)
+    if not clr:
+        print('CLR')
 x_motor.run_target(1000, HOME_X * GEAR)
 y_motor.run_target(1000, HOME_Y * GEAR)
 watch = StopWatch()
