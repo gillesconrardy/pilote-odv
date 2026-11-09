@@ -195,6 +195,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   Toute nouvelle fonction du hub doit rester petite ; mettre ce qui n'est plus utilisé entre marqueurs.
 - Paramètre `reset_angle=` de `Motor` (utilisé sans recalage) et taille max du programme par hub.
 - Ressenti du joystick (8 envois/s) ; charge radio du V4 connecté + diffusion.
+- Perte de liaison V4 au joystick (signalée de nouveau le 09/11, v1.61) : la puce Bluetooth du Technic Hub peut se bloquer si la
+  diffusion (`ble.broadcast`) est mise à jour trop souvent pendant une connexion (problème connu de Pybricks) → en conduite manuelle
+  le V4 ne diffuse plus que toutes les 3 s (au lieu de 0,5 s). Après une reconnexion, l'appli vérifie que le programme tourne encore
+  (sinon : hub redémarré, batterie faible ?) et l'affiche dans Pilotage. À confirmer sur le vrai matériel.
+- « Tout déconnecter » remet aussi la Mise en place à zéro (plus de véhicule en vert, « ○ Déconnecté »).
 - Gilles a signalé : « Stop et retour » OK après coup ; perte de liaison V4 pendant le joystick
   (corrigé par allègement radio + reconnexion auto, à confirmer) ; déconnexion difficile (corrigée,
   à confirmer).

@@ -57,6 +57,8 @@ async def main():
         print('picks after update', await pg.evaluate('window.__picks'), 'tab', await pg.evaluate("document.querySelector('section.on').id"))
         await pg.click('#discAll2'); await pg.wait_for_timeout(200)
         print('disconnects', await pg.evaluate('window.__disc'), 'state', await pg.inner_text('#stBig'))
+        await pg.wait_for_timeout(1500)
+        print('setup apres tout deconnecter: verts', await pg.evaluate("document.querySelectorAll('#suList .surow.ok').length"), '|', (await pg.inner_text('#sust1')).strip())
         await pg.click('nav button[data-tab=envoi]'); await pg.click('#send1'); await pg.wait_for_timeout(1500)
         print('picks after disconnect+send1', await pg.evaluate('window.__picks'))
         await pg.screenshot(path='p4.png', full_page=True)

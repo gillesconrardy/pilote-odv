@@ -1287,8 +1287,8 @@ while True:
             next_bcast = raw + 150
         elif raw >= next_bcast:
             hub.ble.broadcast((raw + COMP, P1[0], P1[1], P1[2] + 1 + 16 * GEN, P1[3]))
-            # pendant la conduite manuelle, la radio est soulagee (les autres sont immobiles)
-            next_bcast = raw + (BCAST_MS * 2 if manual else BCAST_MS)
+            # conduite manuelle : radio soulagee (les autres sont immobiles ; trop de mises a jour bloquent la puce BLE du Technic Hub)
+            next_bcast = raw + (3000 if manual else BCAST_MS)
             count += 1
             if not manual:
                 hub.light.on(battery_color() if count % 2 else VDIM)

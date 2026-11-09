@@ -1103,9 +1103,11 @@ async function disconnectAll() {
   }
   if (M.hub) { await M.hub.close(); M.hub = null; }
   R.hub = null; R.st = null; updateRemote(); renderVehicles();
+  // Mise en place : plus rien n'est connecté ni calibré (plus de véhicules en vert)
+  SU.done = {}; SU.hy = {}; SU.clr = {}; suRender();
   await sleep(1200);
   const still = hubs.filter(([v, h]) => h.device.gatt.connected);
-  for (let v = 1; v <= 4; v++) if (!V[v].busy) setSt(v, still.some(x => x[0] === v) ? '⚠ toujours connecté' : 'Déconnecté (le programme continue sur le hub)', still.some(x => x[0] === v) ? 'bad' : '');
+  for (let v = 1; v <= 4; v++) if (!V[v].busy) setSt(v, still.some(x => x[0] === v) ? '⚠ toujours connecté' : '○ Déconnecté (le programme continue sur le hub)', still.some(x => x[0] === v) ? 'bad' : '');
   const msg = still.length
     ? `<span class="bad">⚠ Le téléphone garde encore la liaison avec ${still.map(x => 'V' + x[0]).join(', ')}. Désactive puis réactive le Bluetooth du téléphone pour la couper.</span>`
     : '✓ Les 4 véhicules sont déconnectés. Leurs programmes continuent de tourner.';
@@ -1118,7 +1120,7 @@ async function disconnectOne(v) {
   if (v === 4) { if (M.active) { M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; manUI(); } R.hub = null; R.st = null; updateRemote(); }
   h.onDisc = null; h.onLine = null; h.onReconnect = null; h.autoReconnect = false;
   await h.close(); V[v].hub = null;
-  setSt(v, 'Déconnecté (le programme continue sur le hub)'); toast('Véhicule ' + v + ' déconnecté');
+  setSt(v, '○ Déconnecté (le programme continue sur le hub)'); toast('Véhicule ' + v + ' déconnecté');
 }
 setInterval(() => { for (let v = 1; v <= 4; v++) { showBat(v); const h = V[v].hub, el = $('cn' + v); if (!el) continue;
   const sb = $('send' + v); if (sb && !V[v].busy) { const c = !!(h && h.connected); sb.textContent = c ? 'Déconnecter' : 'Reconnecter'; sb.classList.toggle('primary', !c); }
@@ -1297,9 +1299,18 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'GST') toast({ 1: '✋ Geste : lecture / pause', 2: '✋✋ Geste : chorégraphie suivante', H: '✋ Main tenue : stop et retour', S: '🗿 Statue : le spectacle se fige', R: '🗿 Le spectacle repart' }[p[1]] || 'Geste');
   };
   h.autoReconnect = true;
-  h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…'); } };
-  h.onReconnect = () => { toast('Véhicule 4 reconnecté'); updateRemote(); };
-  h.onDisc = () => { R.st = null; updateRemote(); toast('Véhicule 4 déconnecté'); };
+  h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…');
+    if (M.active && M.v === 4) manMsg('Liaison avec le véhicule 4 perdue, reconnexion… (il reste immobile en attendant)'); } };
+  h.onReconnect = async () => {
+    toast('Véhicule 4 reconnecté'); updateRemote();
+    await sleep(800);   // l'état du hub arrive juste après la reconnexion
+    if (!h.running) {   // le hub a redémarré (batterie trop faible sous l'effort ?) : son programme ne tourne plus
+      const msg = 'Le programme du véhicule 4 s\'est arrêté (batterie faible ou redémarrage du hub ?). Va dans Véhicules et reconnecte-le.';
+      if (M.active && M.v === 4) manMsg('<span class="bad">⚠ ' + msg + '</span>'); else toast(msg);
+    } else if (M.active && M.v === 4) { M.sent = [-99, -99]; manMsg('Véhicule 4 reconnecté, tu peux continuer.'); }
+  };
+  h.onDisc = () => { R.st = null; updateRemote(); toast('Véhicule 4 déconnecté');
+    if (M.active && M.v === 4) manMsg('<span class="bad">⚠ Véhicule 4 perdu. Il est resté où il était. Reconnecte-le (onglet Véhicules) puis rends la main.</span>'); };
   updateRemote();
 }
 $('connect4').onclick = async () => {
