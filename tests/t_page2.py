@@ -12,7 +12,7 @@ window.__picks = 0; navigator.bluetooth = { requestDevice: async (o) => { window
   const cmd = { addEventListener: (e, f) => listeners.push(f), startNotifications: async () => {},
     writeValueWithResponse: async v => { const b = Array.from(v); W.push(b);
       if (b[0] === 0) { running = false; clearInterval(timer); status(); }
-      if (b[0] === 1) { running = true; status(); let w = 0, st = 'P'; setTimeout(() => notify([1, ...new TextEncoder().encode('CLR\n')]), 600);
+      if (b[0] === 1) { running = true; status(); let w = 0, st = 'P'; setTimeout(() => notify([1, ...new TextEncoder().encode('HY\n')]), 300); setTimeout(() => notify([1, ...new TextEncoder().encode('CLR\n')]), 600);
         timer = setInterval(() => { if (st === 'F') w += 400; if (st === 'H') { st = 'S'; w = 0; } const line = `ST ${st} ${w} 0 0 7900\n`; notify([1, ...new TextEncoder().encode(line)]); }, 400);
         window.__setSt = s => st = s; }
       if (b[0] === 6) { const c = String.fromCharCode(b[1]); window.__setSt && window.__setSt(c === 'p' ? 'F' : c === 'z' ? 'P' : c === 'h' ? 'H' : 'P'); }

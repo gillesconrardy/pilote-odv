@@ -142,6 +142,7 @@ def battery_color():
 
 def homing():
     y_motor.run_until_stalled(-200, duty_limit=35)
+    print('HY')
     wait(200)
     y_motor.run_angle(1400, 110)
     wait(200)
