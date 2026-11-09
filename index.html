@@ -1577,7 +1577,13 @@ async function updateAll() {
   } catch (e) { msg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); }
   finally { updating = false; UPD.v = 0; $('updAll').disabled = false; $('updAll2').disabled = !PLAY.length; UPD.hide = setTimeout(() => updProg(null), 6000); }
 }
-$('updAll').onclick = updateAll;
+// « Tout reconnecter » : on repart du calibrage, les 4 véhicules remis dans leur colonne de départ (onglet Setup)
+$('updAll').onclick = () => {
+  if (updating) return;
+  if (M.active) { toast('Rends d\'abord la main du véhicule 4'); return; }
+  $('suReset').onclick(); showTab('setup'); window.scrollTo(0, 0);
+  toast('Remets les 4 véhicules dans leur colonne de départ, puis calibre-les');
+};
 $('updAll2').onclick = updateAll;
 function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + SONAR; }
 

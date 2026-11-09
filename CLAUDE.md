@@ -118,7 +118,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    commande de démarrage qu'après le `CLR` du précédent (« Prêt : il démarrera dès que… »).
    Test : `t_setup_order.py` ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
    sans recalage), **Véhicules** (`#envoi` : cartes, « Reconnecter » = renvoi sans recalage / « Déconnecter » par
-   véhicule, « Tout reconnecter » = `updateAll`, « Tout déconnecter » ; barre de chargement hachurée animée pendant `updateAll`, dans Programme et Véhicules : `updProg`, étapes 0–22 % puis ≈ 19,5 % par véhicule suivant `setBar`), **Pilotage** (`#tele`).
+   véhicule, « Tout reconnecter » = (depuis v1.61) remise à zéro du calibrage et onglet Setup (les 4 véhicules remis en colonne), « Tout déconnecter » ; barre de chargement hachurée animée pendant `updateAll`, dans Programme et Véhicules : `updProg`, étapes 0–22 % puis ≈ 19,5 % par véhicule suivant `setBar`), **Pilotage** (`#tele`).
    Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale.
    5ᵉ onglet **Statistiques** (`#stats`, sous les 4 autres) : collecte dans `odoTick` (`statAdd`/`statFrame`) — distance,
    temps en mouvement, vitesse max, carte de chaleur 20×20 (cases de 2 pas, emprise 10×10), rose des directions
