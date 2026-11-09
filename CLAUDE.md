@@ -116,6 +116,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    de v actif dès que les précédents ont touché la clôture du haut (`HY`, imprimé après le calage en Y) et qu'aucun suivant
    n'est parti (`can(v)` dans `suRender`) ; son programme est envoyé tout de suite mais `sendVehicle(…, gate)` n'envoie la
    commande de démarrage qu'après le `CLR` du précédent (« Prêt : il démarrera dès que… »).
+   Le bouton disponible et pas encore fait (`go`) est orange et « respire » (`suPulse`, coupé si réduire les animations ; tests : `click(force=True)`).
    Test : `t_setup_order.py` ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
    sans recalage), **Véhicules** (`#envoi` : cartes, « Reconnecter » = renvoi sans recalage / « Déconnecter » par
    véhicule, « Tout reconnecter » = (depuis v1.61) remise à zéro du calibrage et onglet Setup (les 4 véhicules remis en colonne), « Tout déconnecter » ; barre de chargement hachurée animée pendant `updateAll`, dans Programme et Véhicules : `updProg`, étapes 0–22 % puis ≈ 19,5 % par véhicule suivant `setBar`), **Pilotage** (`#tele`).

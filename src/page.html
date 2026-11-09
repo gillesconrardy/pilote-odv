@@ -411,6 +411,10 @@ canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-r
 .surow.ok b::after{content:"  ✓"}
 .surow b{font-size:15px}
 .surow .btn{flex:none;min-width:96px}
+/* bouton « Calibrer » qui vient de devenir disponible : il respire doucement pour inviter à toucher */
+.surow .btn.go{animation:suPulse 1.6s ease-in-out infinite}
+@keyframes suPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,154,60,.6)}50%{transform:scale(1.06);box-shadow:0 0 0 7px rgba(255,154,60,0)}}
+@media (prefers-reduced-motion:reduce){.surow .btn.go{animation:none}}
 .vall{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chiprow{display:flex;gap:6px;align-items:flex-start}
 .chiprow .chips{flex:1;min-width:0}
@@ -1244,7 +1248,8 @@ function suRender() {
   const can = v => !V[v].busy && [1, 2, 3, 4].every(u => u < v ? SU.done[u] || SU.hy[u] || SU.clr[u] : u > v ? !SU.done[u] && !V[u].busy : true);
   for (let v = 1; v <= 4; v++) {
     const b = $('su' + v); b.disabled = !can(v);
-    b.classList.toggle('primary', v === next); b.textContent = SU.done[v] ? 'Refaire' : 'Calibrer';
+    const go = can(v) && !SU.done[v];
+    b.classList.toggle('primary', go || (v === next && !b.disabled)); b.classList.toggle('go', go); b.textContent = SU.done[v] ? 'Refaire' : 'Calibrer';
     b.parentElement.classList.toggle('next', v === next); b.parentElement.classList.toggle('ok', !!SU.done[v]);
   }
   // à placer d'abord (dans l'ordre), puis ceux déjà en place, en vert, en bas de la liste
