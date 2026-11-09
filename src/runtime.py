@@ -181,8 +181,9 @@ if DO_HOMING:
         wait(20)
     if not clr:
         print('CLR')
-x_motor.run_target(1000, HOME_X * GEAR)
-y_motor.run_target(1000, HOME_Y * GEAR)
+if DO_HOMING:
+    x_motor.run_target(1000, HOME_X * GEAR)
+    y_motor.run_target(1000, HOME_Y * GEAR)
 watch = StopWatch()
 
 # Commandes du telephone (une par ligne) :
@@ -198,6 +199,11 @@ manual = False
 blend = False                 # True : retour progressif vers la choregraphie apres Q
 mx = HOME_X
 my = HOME_Y
+# reconnexion (sans calibrage) : le vehicule ne bouge pas tant que le spectacle ne demarre pas
+still = not DO_HOMING
+if still:
+    mx = x_motor.angle() / GEAR
+    my = y_motor.angle() / GEAR
 tx = HOME_X
 ty = HOME_Y
 last_loop = 0
@@ -1346,6 +1352,14 @@ while True:
             continue
         raw = int((1 + slope) * watch.time() + icpt)
     x, y = pos_at(wrap(vt(raw)))
+    if still:
+        p = P1 if raw >= P1[0] else P0
+        if manual or game_rx or p[2] in (1, -1):
+            still = False
+            blend = True          # au depart du spectacle : il rejoint sa place en douceur
+        else:
+            x = mx
+            y = my
     if manual and remote is not None and not hand:
         try:
             pr = remote.buttons.pressed()

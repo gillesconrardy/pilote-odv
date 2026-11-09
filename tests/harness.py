@@ -88,13 +88,14 @@ class TechnicHub:
 
 class Motor:
     def __init__(self, port, direction, reset_angle=True):
-        self.port = port; self.angle = 0
-    def run_until_stalled(self, *a, **k): self.angle = 0
-    def run_angle(self, s, a): self.angle += a
-    def reset_angle(self, a): self.angle = a
-    def run_target(self, s, a): self.angle = a
+        self.port = port; self._a = 0 if reset_angle or port != 'C' else (4 - int(ctx.vid)) * 10 * 80   # sans recalage : deja a sa place
+    def run_until_stalled(self, *a, **k): self._a = 0
+    def run_angle(self, s, a): self._a += a
+    def reset_angle(self, a): self._a = a
+    def run_target(self, s, a): self._a = a
+    def angle(self): return self._a
     def track_target(self, a):
-        self.angle = a
+        self._a = a
         r = ctx.last
         if self.port == 'C': r[0] = a / 80
         else:
