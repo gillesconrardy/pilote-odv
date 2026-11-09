@@ -234,6 +234,7 @@ def remote_connect():
 
 def manual_line(s):
     global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE
+#[JEUX
     if s[0] == 'D':
         try:
             CSPD = clamp(int(s[1:]) / 100000, 0.001, 0.012)
@@ -245,6 +246,7 @@ def manual_line(s):
         for k in range(3):
             GR[k] = int(s[k + 1]) if s[k + 1] in '012' else 0
         return
+#]JEUX
     if s == 'E':
         # conduite manuelle : les vehicules 1 a 3 s'ecartent quand le vehicule 4 s'approche
         if IS_SENDER and manual and game == 0 and None not in OBS:
@@ -262,6 +264,7 @@ def manual_line(s):
         else:
             print('JNO')
         return
+#[JEUX
     if s == 'P':
         # placement avant la poursuite : l'appli deplace les 4 vehicules un par un (W), puis Z
         if IS_SENDER and manual and game in (0, 3) and None not in OBS:
@@ -330,6 +333,7 @@ def manual_line(s):
         except (ValueError, IndexError):
             pass
         return
+#]JEUX
     if s == 'K':
         hand = False
         b_ret = game in (4, 5) or (game == 1 and g_placed)
@@ -337,9 +341,11 @@ def manual_line(s):
             # poursuite placee par l'appli : le rangement se fait aussi par l'appli (W, puis Z)
             B4[0] = tx
             B4[1] = ty
+#[JEUX
         if game == 4:
             TILT[0] = 0.0
             TILT[1] = 0.0
+#]JEUX
         if game in (1, 4, 5):
             game = 2
             g_mover = -1
@@ -528,6 +534,7 @@ def b_snapshot(local, reset):
             BNOW[k][1] = p[1]
 
 
+#[JEUX
 def billes_tick(dt):
     # la +X du plateau est vers la gauche : pencher a droite (TILT[0] > 0) fait diminuer x
     if dt > 50:
@@ -575,12 +582,14 @@ def billes_tick(dt):
             v[1] = 0.0
 
 
+#]JEUX
 def cheb(ax, ay, bx, by):
     dx = ax - bx
     dy = ay - by
     return max(dx if dx > 0 else -dx, dy if dy > 0 else -dy)
 
 
+#[JEUX
 def g_ok(k, x, y):
     # un chasseur peut-il aller en (x, y) ? jamais a moins de 10 pas d'un autre vehicule ; sous la marge
     # (11 pas entre chasseurs, 10,5 du joueur) il ne peut que s'eloigner ou rester a distance egale
@@ -656,6 +665,7 @@ def guard_target(k):
     return clamp(GC[best][0] + ux / m * 10.3, 0, 30), clamp(GC[best][1] + uy / m * 10.3, 0, 30)
 
 
+#]JEUX
 RXO = [[0.0, 0.0], [0.0, 0.0]]   # cibles des 2 autres suiveurs (recues du vehicule 4)
 
 
@@ -806,6 +816,7 @@ def evade_tick(dt):
         OBS[k] = (GC[k][0], GC[k][1])
 
 
+#[JEUX
 def push(k, nx, ny, ux, uy, st):
     # le mechant est plus fort : il bouscule le gentil qui le gene (devant lui, ou sur le cote)
     for j in range(3):
@@ -861,8 +872,10 @@ def detour(k, ux, uy, local):
             return
 
 
+#]JEUX
 def game_tick(dtg, local):
     global game, g_freeze, g_round, g_catch, g_mover, g_way, g_stuck
+#[JEUX
     if game == 1 and local >= g_freeze:
         st = CSPD * dtg
         for k in range(3):
@@ -972,13 +985,31 @@ def game_tick(dtg, local):
                 c[0] = nx
             elif g_ok(k, c[0], ny):
                 c[1] = ny
-    elif game == 2:
-        # retour un par un ; apres les billes, le vehicule 4 fait partie du retour (B4 -> B4H)
+#]JEUX
+    if game == 2:
+        # retour un par un : l'appli envoie les deplacements (W, puis Z) ; sans elle (poursuite), le hub les choisit
         sp = max(CSPD, 0.006) * dtg
-        n = 4 if b_ret else 3
-        if g_mover < 0 and b_ret:
-            pass                  # apres les billes, l'appli envoie les deplacements un par un (W, puis Z)
-        elif g_mover < 0:
+        if g_mover >= 0:
+            c = b_pos(g_mover)
+            w = g_way[0]
+            dx = w[0] - c[0]
+            dy = w[1] - c[1]
+            d = (dx * dx + dy * dy) ** 0.5
+            if d <= sp:
+                c[0] = w[0]
+                c[1] = w[1]
+                g_way.pop(0)
+                if not g_way:
+                    g_mover = -1
+                    g_stuck = False
+                    if b_ret:
+                        print('WOK')
+            else:
+                c[0] += dx * sp / d
+                c[1] += dy * sp / d
+#[JEUX
+        elif not b_ret:
+            n = 3
             if all(cheb(b_pos(k)[0], b_pos(k)[1], b_home(k)[0], b_home(k)[1]) < 0.02 for k in range(n)):
                 game = 3
                 print('JOK')
@@ -1010,24 +1041,7 @@ def game_tick(dtg, local):
                 if g_mover < 0 and not g_stuck:
                     g_stuck = True
                     print('JSTUCK')
-        else:
-            c = b_pos(g_mover)
-            w = g_way[0]
-            dx = w[0] - c[0]
-            dy = w[1] - c[1]
-            d = (dx * dx + dy * dy) ** 0.5
-            if d <= sp:
-                c[0] = w[0]
-                c[1] = w[1]
-                g_way.pop(0)
-                if not g_way:
-                    g_mover = -1
-                    g_stuck = False
-                    if b_ret:
-                        print('WOK')
-            else:
-                c[0] += dx * sp / d
-                c[1] += dy * sp / d
+#]JEUX
     for k in range(3):
         OBS[k] = (GC[k][0], GC[k][1])
 
@@ -1359,11 +1373,13 @@ while True:
         if hand:
             hand_tick(min(local - last_loop, 50), local)
         evade_tick(local - last_loop)
+#[JEUX
     elif IS_SENDER and game == 4:
         b_snapshot(local, False)
         billes_tick(local - last_loop)
         tx = B4[0]
         ty = B4[1]
+#]JEUX
     elif IS_SENDER and game:
         game_tick(local - last_loop, local)
         if b_ret and game in (2, 3):

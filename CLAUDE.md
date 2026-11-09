@@ -171,6 +171,10 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   `build.py`. `gen_cinq.py` / `gen_vague_spirale.py` montrent comment les générer et les valider.
 
 ## Non vérifié sur le vrai matériel (à surveiller)
+- **Taille du programme** : la v1.56 était trop grosse pour le hub (Gilles, 09/11). Depuis v1.57, `ODVGEN.buildProgram` enlève
+  les blocs `#[JEUX` … `#]JEUX` de `runtime.py` (poursuite, billes ; `opts.games` pour les garder) et tous les commentaires /
+  lignes vides (`stripPy`). Source envoyée au hub (sans les données) : ≈ 26 k caractères (v1.54 qui marchait : ≈ 28,5 k).
+  Toute nouvelle fonction du hub doit rester petite ; mettre ce qui n'est plus utilisé entre marqueurs.
 - Paramètre `reset_angle=` de `Motor` (utilisé sans recalage) et taille max du programme par hub.
 - Ressenti du joystick (8 envois/s) ; charge radio du V4 connecté + diffusion.
 - Gilles a signalé : « Stop et retour » OK après coup ; perte de liaison V4 pendant le joystick

@@ -108,10 +108,28 @@ const ODVGEN = (() => {
     return s + "'";
   }
 
+  // enleve les commentaires et les lignes vides d'un programme Python (sans toucher aux chaines)
+  function stripPy(src) {
+    return src.split('\n').map(l => {
+      if (/^\s*#/.test(l)) return '';
+      let q = null;
+      for (let k = 0; k < l.length; k++) {
+        const c = l[k];
+        if (q) { if (c === q) q = null; }
+        else if (c === '"' || c === "'") q = c;
+        else if (c === '#') return l.slice(0, k).replace(/\s+$/, '');
+      }
+      return l.replace(/\s+$/, '');
+    }).filter(l => l.trim()).join('\n') + '\n';
+  }
   function buildProgram(template, tl, vid, opts) {
     const i = vid - 1;
     const data = encode(tl.segs[i]);
     const names = (opts.names || []).join(', ').replace(/[^\x20-\x7e]/g, c => ({ 'é': 'e', 'è': 'e', 'ê': 'e', 'à': 'a', 'ç': 'c', 'ô': 'o', 'É': 'E', '·': '-', '×': 'x' }[c] || '?'));
+    // les jeux (poursuite, billes) sont retires de l'appli : on enleve leur code pour que le programme tienne dans le hub
+    if (!opts.games) template = template.replace(/^#\[JEUX\n[\s\S]*?^#\]JEUX\n/gm, '');
+    // les commentaires et lignes vides ne servent a rien sur le hub
+    template = stripPy(template);
     return template
       .replace(/%VID%/g, String(vid))
       .replace('%GEN%', String(opts.gen || 0))
