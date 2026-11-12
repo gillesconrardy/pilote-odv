@@ -170,7 +170,7 @@ def mshow(pat, col):
         pass
 
 
-mshow('x.xxxx..x', VCOL)               # le chiffre 4
+mshow('xxxxxxxxx', Color(28, 100, 20))  # au demarrage : tout orange (v1.88)
 RING = (0, 1, 2, 5, 8, 7, 6, 3)        # tour de la matrice, dans le sens des aiguilles d'une montre
 COMET = (Color(0, 90, 100), Color(0, 90, 40), Color(0, 90, 15))
 ORDIM = Color(28, 100, 20)
@@ -208,8 +208,11 @@ def mtick(t):
     m_last[3] = t + 100
     if not m_last[2]:
         m_last[2] = t
-    if t - m_last[2] < 2500:
-        return                          # le chiffre 4 reste affiche au demarrage
+    if t - m_last[2] < 3000:
+        # au demarrage : les 9 cases en orange qui clignotent doucement en fondu
+        k = (t - m_last[2]) % 1500 / 750
+        mshow('xxxxxxxxx', Color(28, 100, int(10 + 90 * (k if k <= 1 else 2 - k))))
+        return
     if m_last[5] > t:
         mshow(('.x..x..x.', 'xx..x..xx', 'xxx.xxxxx')[min(2, (m_last[5] - t) // 1000)], Color.ORANGE)
         return

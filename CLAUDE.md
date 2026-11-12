@@ -144,7 +144,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      zone morte 3°, plein à 20°) ; le joystick fait aussi pencher. Tests : `tests/t_billes.py`, harness (`B`, `T…`).
    - **Matrice lumineuse 3×3 du V4** (v1.77, `ColorLightMatrix` sur le **port D du V4**, seulement le V4 ; `MX`, `mshow(motif, couleur)`
      = 9 caractères ligne par ligne, 'x' allumé, ne renvoie rien si inchangé ; `mtick` toutes les 100 ms) :
-     **démarrage** « 4 » couleur du V4 (rouge) ; **calibrage** flèche orange vers la clôture du haut puis de droite (`homing`) ; **tableau de bord** :
+     **démarrage** (v1.88, demande de Gilles) : les 9 cases en orange qui clignotent en fondu pendant 3 s (l'arc-en-ciel avant l'envoi du programme vient de la matrice / du firmware, on ne peut pas le changer) ; **calibrage** flèche orange vers la clôture du haut puis de droite (`homing`) ; **tableau de bord** :
      ▶ vert en lecture, ◀ cyan en retour, ❚❚ orange en pause, **au départ (veille, v1.81, choix « A · Comète » de Gilles) = comète
      rouge (violette avant v1.87) avec traînée de 2 pixels qui fait le tour (`RING`, `COMET`, 110 ms par case) et point central orange qui clignote** (plus de batterie),
      ✕ rouge en urgence ; **compte à rebours** : `p` depuis le début d'une chorégraphie (pas en reprise) démarre 3 s plus tard au lieu
