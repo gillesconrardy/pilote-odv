@@ -252,7 +252,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE, u_on, h_mode, h_v
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE, u_on, h_mode, h_v, h_lost
 #[JEUX
     if s[0] == 'D':
         try:
@@ -432,6 +432,7 @@ def manual_line(s):
             hand = True
             h_mode = int(s[1])
             h_v = 0.0
+            h_lost = 0
             h_buf.clear()
             h_state = 2
             print('HON')
@@ -752,6 +753,7 @@ def hand_tick(dt, local):
         # pousser : main a moins de 5 cm -> il s'eloigne d'une glissade (~10 pas, freine tout seul) dans la direction
         # la plus degagee qui l'ecarte de la main (jamais vers elle) ; un vehicule tout proche devant n'est pas une main
         if h_v > 0.0005:
+            h_lost = 0
             nx = clamp(tx + h_gx * h_v * dt, 0, 30)
             ny = clamp(ty + h_gy * h_v * dt, 0, 30)
             if (nx != tx or ny != ty) and free_at(nx, ny):
@@ -761,6 +763,13 @@ def hand_tick(dt, local):
             else:
                 h_v = 0
         elif d < 50 and not veh and not any(o is not None and abs(o[0] - mx) < 10 and 0 <= o[1] - my - 10 < 6 for o in OBS):
+            # la main doit rester 2 s devant le capteur avant la poussee
+            if not h_lost:
+                h_lost = local
+        else:
+            h_lost = 0
+        if h_lost and local - h_lost >= 2000:
+            h_lost = 0
             best = 0
             for gx, gy in ((0, -1), (0.71, -0.71), (-0.71, -0.71), (1, 0), (-1, 0)):
                 k = 0
@@ -773,7 +782,7 @@ def hand_tick(dt, local):
             if best >= 1:
                 h_v = vmax
                 print('PU', int(h_gx * 100), int(h_gy * 100))
-        h_state = 5 if h_v > 0.0005 else 6
+        h_state = 5 if h_v > 0.0005 else 7 if h_lost else 6
         if local >= h_print:
             h_print = local + 250
             print('HD', int(d), h_state)

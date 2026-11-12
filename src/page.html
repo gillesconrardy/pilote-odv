@@ -1406,7 +1406,7 @@ const manMsg = t => $('manMsg').innerHTML = t;
 function handUI() {
   const b = $('handGo'), a = $('axGo'); if (!b) return;
   const ok = M.active && M.v === 4 && !M.returning;
-  b.disabled = !ok || (M.hand && M.hmode === 2); a.disabled = !ok || (M.hand && M.hmode === 1);
+  b.disabled = !ok; a.disabled = !ok;
   b.textContent = M.hand && M.hmode === 1 ? '■ Arrêter de suivre la main' : '✋ Suivre la main';
   a.textContent = M.hand && M.hmode === 2 ? '■ Arrêter de pousser avec la main' : '👋 Pousser avec la main';
   b.className = 'btn' + (M.hand && M.hmode === 1 ? ' primary' : ''); a.className = 'btn' + (M.hand && M.hmode === 2 ? ' primary' : '');
@@ -1414,10 +1414,12 @@ function handUI() {
 }
 function handShow(mm, st) {
   if (!M.hand) return;
-  if (st >= 5) {   // pousser avec la main : 5 = il glisse, 6 = il attend
+  if (st === 7) { if (!SNS.hold) SNS.hold = performance.now(); } else SNS.hold = 0;
+  if (st >= 5) {   // pousser avec la main : 5 = il glisse, 6 = il attend, 7 = main tenue (2 s avant la poussée)
     $('handSt').innerHTML = st === 5 ? '<b>Poussé !</b> Il s\'éloigne de ta main…'
+      : st === 7 ? `Garde ta main… <b>${Math.max(0, 2 - (performance.now() - SNS.hold) / 1000).toFixed(1).replace('.', ',')} s</b>`
       : mm < 50 ? 'Main tout près, mais <b>pas de place</b> pour s\'éloigner (clôture ou véhicule)'
-      : 'Approche ta main <b>à moins de 5 cm</b> du capteur : il s\'éloigne comme si tu l\'avais poussé.' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
+      : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne comme si tu l\'avais poussé.' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
     return;
   }
   $('handSt').innerHTML = st === 1 ? 'Main sortie du faisceau : <b>il la cherche sur le côté…</b>'
@@ -1425,7 +1427,7 @@ function handShow(mm, st) {
     : `Main à <b>${(mm / 10).toFixed(1).replace('.', ',')} cm</b> · ${mm < 130 ? 'il recule' : mm <= 170 ? 'il attend' : 'il avance'}`;
 }
 // distance du capteur du V4, affichée dans Pilotage (le hub l'envoie 4 fois/s quand on lui demande « U1 »)
-const SNS = { mm: 2000, at: 0, push: null };   // dernière mesure du capteur du V4 (pour le plateau) et dernière poussée
+const SNS = { mm: 2000, at: 0, push: null, hold: 0 };   // dernière mesure du capteur du V4 (pour le plateau) et dernière poussée
 function dsShow(mm) {
   SNS.mm = mm; SNS.at = performance.now();
   const v = $('dsVal'), t = $('dsTxt'), k = $('dsMk'); if (!v) return;
@@ -1440,14 +1442,18 @@ setInterval(() => {
   if (!(R.hub && R.hub.connected)) { if (R.uOn) { R.uOn = false; } $('dsVal').textContent = '—'; $('dsTxt').textContent = 'Connecte le véhicule 4'; $('dsMk').hidden = true; return; }
   if (on !== R.uOn) { R.uOn = on; R.hub.stdin(on ? 'U1' : 'U0').catch(() => { R.uOn = false; }); if (on) $('dsTxt').textContent = 'Mesure…'; }
 }, 1000);
-async function handStart(mode) {
+async function handStart(mode, quiet = false) {
   if (!M.active || M.v !== 4) return;
-  if (M.hand) { M.hand = false; await M.hub.stdin('H0'); handUI(); manUI(); return; }
+  if (M.hand && M.hmode === mode) {   // arrêter ; en quittant « Suivre la main », on revient à « Pousser » (actif par défaut)
+    M.hand = false; await M.hub.stdin('H0'); handUI(); manUI();
+    if (mode === 1) return handStart(2, true);
+    return;
+  }
   const r = gWait(['HON', 'HNO'], 1500); await M.hub.stdin('H' + mode);
-  if (await r !== 'HON') { $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
+  if (await r !== 'HON') { if (!quiet) $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
   M.hand = true; M.hmode = mode; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
   $('handSt').innerHTML = mode === 1 ? 'Mets ta main devant le capteur, à environ 15 cm.'
-    : 'Approche ta main <b>à moins de 5 cm</b> du capteur : il s\'éloigne d\'une glissade (environ 12 cm), vers l\'arrière ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
+    : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne d\'une glissade (environ 12 cm), vers l\'arrière ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
 }
 $('handGo').onclick = () => handStart(1);
 $('axGo').onclick = () => handStart(2);
@@ -1502,6 +1508,7 @@ $('manGo').onclick = async () => {
     $('cv').scrollIntoView({ behavior: 'smooth', block: 'start' });
     manMsg('Pousse le joystick sous le plateau, ou utilise la télécommande, pour déplacer le véhicule <b>04</b>.');
     manUI();
+    if (v === 4) handStart(2, true);   // « Pousser avec la main » actif par défaut (si le capteur est branché)
   } catch (e) { manMsg('<span class="bad">⚠ ' + esc(e.message || String(e)) + '</span>'); if (M.v !== 4 && M.hub) { M.hub.close(); } M.hub = null; }
 };
 // ---------------------------------------------------------------- plus court chemin (véhicule seul, autres immobiles)
@@ -2551,6 +2558,11 @@ function drawSensor(c, p) {
       cx.strokeStyle = near ? '#ff4d43' : '#ff9a3c'; cx.lineWidth = u * .35; cx.globalAlpha = .55 + .45 * pulse;
       cx.beginPath(); cx.arc(sx, sy + L - u * 2.2, u * 2.2 + L * wd, Math.PI * .3, Math.PI * .7); cx.stroke();
       cx.fillStyle = cx.strokeStyle; cx.beginPath(); cx.arc(sx, sy + L, u * (.8 + .5 * pulse), 0, 7); cx.fill();
+      if (SNS.hold) {   // main tenue : l'anneau se remplit en 2 s, puis poussée
+        const f = Math.min(1, (now - SNS.hold) / 2000);
+        cx.globalAlpha = 1; cx.strokeStyle = '#ff4d43'; cx.lineWidth = u * .5;
+        cx.beginPath(); cx.arc(sx, sy + L, u * 2.6, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); cx.stroke();
+      }
     }
   }
   const pu = SNS.push, age = pu ? now - pu.t : 1e9;

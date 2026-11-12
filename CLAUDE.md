@@ -69,6 +69,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      droite (`free_at` pas à pas sur 10 pas, bonus aux directions vers l'arrière) ; imprime `PU` ; bloqué → arrêt. Un véhicule à
      < 6 pas juste devant n'est pas une main. `HD <mm> <5|6>` (5 glisse, 6 attend). Le joystick reste utilisable dans ce mode
      (`G` accepté quand il ne glisse pas) ; `POS` toutes les 200 ms en mode main. Test : `t_push.py` + harness.
+     **Depuis v1.69** (demande de Gilles) : actif par défaut dès la prise en main du V4 (`manGo` → `handStart(2, true)`, silencieux
+     si pas de capteur) ; la main doit rester **2 s** à < 5 cm (`h_lost` = début de l'appui, `HD … 7` pendant l'attente : compte à
+     rebours sous le bouton, anneau rouge qui se remplit sur le plateau, `SNS.hold`). Quitter « Suivre la main » revient à « Pousser ».
      **Sur le plateau de Pilotage** (`drawSensor`, état `SNS`, alimenté par `DS`/`HD` et `PU <gx×100> <gy×100>`) : faisceau ambre
      vers l'avant du V4 (40 cm ≈ 32,6 pas), écho + point qui pulse là où il voit quelque chose (rouge < 5 cm) ; à la poussée,
      ondes de choc à l'endroit de la main, traînée derrière le V4 et flèche dans le sens de la glissade (1 s).
