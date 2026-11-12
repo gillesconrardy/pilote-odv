@@ -12,6 +12,10 @@ except ImportError:
 from pybricks.parameters import Port, Direction, Color, Button
 from pybricks.tools import wait, StopWatch
 from umath import sin, cos, pi
+try:
+    from urandom import randint
+except ImportError:
+    from random import randint
 
 VEHICLE_ID = %VID%
 SENDER_ID = 4                 # le vehicule 4 diffuse l'horloge et recoit les commandes du telephone
@@ -762,7 +766,7 @@ def hand_tick(dt, local):
                 h_v *= 1 - dt / 600
             else:
                 h_v = 0
-            if h_v <= 0.0005 and h_gx < 0:
+            if h_v <= 0.0005 and h_gx == -1:
                 hub.light.on(VCOL)          # fin de l'attaque : couleur du vehicule
         elif d < 100 and not veh and not any(o is not None and abs(o[1] - my) < 10 and 0 <= mx - o[0] - 10 < 10 for o in OBS):
             # la main doit rester 1 s a moins de 10 cm avant la poussee
@@ -773,16 +777,22 @@ def hand_tick(dt, local):
         if h_lost and local - h_lost >= 1000:
             h_lost = 0
             best = 0
-            for gx, gy in ((1, 0), (0.71, -0.71), (0.71, 0.71), (0, -1), (0, 1)):
+            # direction au hasard parmi celles ou il a de la place (au moins 4 pas), sinon la plus degagee
+            ok = []
+            for gx, gy in ((1, 0), (0.71, -0.71), (0.71, 0.71), (0, -1), (0, 1), (-0.71, -0.71), (-0.71, 0.71)):
                 k = 0
                 while k < 10 and 0 <= tx + gx * (k + 1) <= 30 and 0 <= ty + gy * (k + 1) <= 30 and free_at(tx + gx * (k + 1), ty + gy * (k + 1)):
                     k += 1
-                if k + (0.5 if gx else 0) > best:
-                    best = k + (0.5 if gx else 0)
+                if k >= 4:
+                    ok.append((gx, gy))
+                if k > best:
+                    best = k
                     h_gx = gx
                     h_gy = gy
+            if ok:
+                h_gx, h_gy = ok[randint(0, len(ok) - 1)]
             # une fois sur deux (au hasard) il fonce vers la main au lieu de s'ecarter, s'il a la place (LED rouge)
-            if local % 2 and mx >= 1.5 and free_at(tx - 1, ty):
+            if randint(0, 1) and mx >= 1.5 and free_at(tx - 1, ty):
                 h_gx = -1
                 h_gy = 0
                 best = 1
@@ -794,7 +804,7 @@ def hand_tick(dt, local):
         if local >= h_print:
             h_print = local + 250
             print('HD', int(d), h_state)
-            sonar_eyes((100 if (local // 250) % 2 else 0) if h_v > 0.0005 and h_gx < 0 else 100 if d < 100 or h_v > 0.0005 else 15)
+            sonar_eyes((100 if (local // 250) % 2 else 0) if h_v > 0.0005 and h_gx == -1 else 100 if d < 100 or h_v > 0.0005 else 15)
         return
     elif d <= 300:
         if h_state == 1 and abs(ty - h_cx) > 0.5:

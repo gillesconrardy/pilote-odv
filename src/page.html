@@ -1416,7 +1416,7 @@ function handShow(mm, st) {
   if (!M.hand) return;
   if (st === 7) { if (!SNS.hold) SNS.hold = performance.now(); } else SNS.hold = 0;
   if (st >= 5) {   // pousser avec la main : 5 = il glisse, 6 = il attend, 7 = main tenue (2 s avant la poussée)
-    $('handSt').innerHTML = st === 5 ? (SNS.push && SNS.push.gx < 0 ? '<b style="color:#ff4d43">Attaque !</b> Il fonce vers ta main…' : '<b>Poussé !</b> Il s\'éloigne de ta main…')
+    $('handSt').innerHTML = st === 5 ? (SNS.push && SNS.push.gx === -1 ? '<b style="color:#ff4d43">Attaque !</b> Il fonce vers ta main…' : '<b>Poussé !</b> Il s\'éloigne de ta main…')
       : st === 7 ? `Garde ta main… <b>${Math.max(0, 1 - (performance.now() - SNS.hold) / 1000).toFixed(1).replace('.', ',')} s</b>`
       : mm < 100 ? 'Main tout près, mais <b>pas de place</b> pour s\'éloigner (clôture ou véhicule)'
       : 'Capteur : main <b>à moins de 10 cm pendant 1 s</b> = il est poussé… ou il attaque !' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
@@ -2577,7 +2577,7 @@ function drawSensor(c, p) {
   }
   const pu = SNS.push, age = pu ? now - pu.t : 1e9;
   if (age < 1000) {
-    const k = age / 1000, hx = sx + handL(pu.mm < 400 ? pu.mm : 30), hy = sy, atk = pu.gx < 0, rgb = atk ? '255,77,67' : '255,154,60';
+    const k = age / 1000, hx = sx + handL(pu.mm < 400 ? pu.mm : 30), hy = sy, atk = pu.gx === -1, rgb = atk ? '255,77,67' : '255,154,60';
     cx.globalAlpha = 1;
     for (let r = 0; r < 3; r++) {   // ondes de choc à l'endroit de la main
       const kk = k * 1.4 - r * .18; if (kk <= 0 || kk >= 1) continue;

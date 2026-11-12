@@ -83,6 +83,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      (`local % 2`) : poussée (s'écarte) ou **attaque** : il fonce vers la main (−X, `PU -100 0`) s'il a la place (x ≥ 1,5), LED du hub
      rouge pendant la glissade puis `VCOL`, yeux du capteur qui clignotent (le capteur n'a que des LED blanches). Appli : flèche et ondes
      rouges, « Attaque ! » sous Conduite manuelle.
+     **Depuis v1.73** : la poussée part dans une direction **au hasard** (`urandom.randint`) parmi les 7 directions (tout sauf −X pur,
+     réservé à l'attaque) qui ont au moins 4 pas de place, sinon la plus dégagée ; l'attaque = `h_gx == -1` (exactement −X).
      **Sur le plateau de Pilotage** (`drawSensor`, état `SNS`, alimenté par `DS`/`HD` et `PU <gx×100> <gy×100>`) : faisceau ambre
      vers l'avant du V4 (40 cm ≈ 32,6 pas), écho + point qui pulse là où il voit quelque chose (rouge < 5 cm) ; à la poussée,
      ondes de choc à l'endroit de la main, traînée derrière le V4 et flèche dans le sens de la glissade (1 s).
