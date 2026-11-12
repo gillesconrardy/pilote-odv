@@ -566,7 +566,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
       <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
-      <button class="btn" id="handGo" disabled style="width:100%;margin-top:8px">✋ Suivre la main</button><div class="sub" id="handSt" style="margin-top:6px"></div>
+      <button class="btn" id="handGo" disabled style="width:100%;margin-top:8px">✋ Suivre la main</button><button class="btn" id="axGo" disabled style="width:100%;margin-top:8px">☝ Piloter avec la main</button><div class="sub" id="handSt" style="margin-top:6px"></div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
     <div class="card" id="gameCard" hidden>
@@ -1345,6 +1345,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
     else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'EON', 'HON', 'HNO', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
     else if (p[0] === 'HD') { handShow(+p[1], +p[2]); dsShow(+p[1]); }
+    else if (p[0] === 'AX') toast(p[1] === '1' ? '↔ Axe gauche / droite' : '↕ Axe avant / arrière');
     else if (p[0] === 'DS') dsShow(+p[1]);
     else if (p[0] === 'GST') toast({ 1: '✋ Geste : lecture / pause', 2: '✋✋ Geste : chorégraphie suivante', H: '✋ Main tenue : stop et retour', S: '🗿 Statue : le spectacle se fige', R: '🗿 Le spectacle repart' }[p[1]] || 'Geste');
   };
@@ -1403,14 +1404,22 @@ function manUI() {
 const manMsg = t => $('manMsg').innerHTML = t;
 // suivre la main : capteur de distance du véhicule 4 (port B, regarde vers l'avant du plateau)
 function handUI() {
-  const b = $('handGo'); if (!b) return;
-  b.disabled = !(M.active && M.v === 4 && !M.returning);
-  b.textContent = M.hand ? '■ Arrêter de suivre la main' : '✋ Suivre la main';
-  b.className = 'btn' + (M.hand ? ' primary' : '');
+  const b = $('handGo'), a = $('axGo'); if (!b) return;
+  const ok = M.active && M.v === 4 && !M.returning;
+  b.disabled = !ok || (M.hand && M.hmode === 2); a.disabled = !ok || (M.hand && M.hmode === 1);
+  b.textContent = M.hand && M.hmode === 1 ? '■ Arrêter de suivre la main' : '✋ Suivre la main';
+  a.textContent = M.hand && M.hmode === 2 ? '■ Arrêter de piloter avec la main' : '☝ Piloter avec la main';
+  b.className = 'btn' + (M.hand && M.hmode === 1 ? ' primary' : ''); a.className = 'btn' + (M.hand && M.hmode === 2 ? ' primary' : '');
   if (!M.hand) $('handSt').textContent = M.active && M.v === 4 ? 'Capteur de distance sur le port B, tourné vers l\'avant du plateau.' : '';
 }
 function handShow(mm, st) {
   if (!M.hand) return;
+  if (st >= 3) {   // piloter avec la main : axe 3 = avant/arrière, 4 = gauche/droite
+    const ax = st === 3 ? '<b>↕ avant / arrière</b>' : '<b>↔ gauche / droite</b>';
+    $('handSt').innerHTML = `Axe : ${ax} · ` + (mm > 300 ? 'main tenue devant le capteur pour bouger, petite tape pour changer d\'axe'
+      : `main à ${(mm / 10).toFixed(1).replace('.', ',')} cm · ${mm <= 170 && mm >= 130 ? 'il attend' : st === 3 ? (mm < 130 ? 'il recule' : 'il avance') : (mm < 130 ? 'il va à gauche' : 'il va à droite')}`);
+    return;
+  }
   $('handSt').innerHTML = st === 1 ? 'Main sortie du faisceau : <b>il la cherche sur le côté…</b>'
     : mm > 300 ? 'Main : <b>pas vue</b> (mets-la devant le capteur, à 15 cm)'
     : `Main à <b>${(mm / 10).toFixed(1).replace('.', ',')} cm</b> · ${mm < 130 ? 'il recule' : mm <= 170 ? 'il attend' : 'il avance'}`;
@@ -1429,14 +1438,17 @@ setInterval(() => {
   if (!(R.hub && R.hub.connected)) { if (R.uOn) { R.uOn = false; } $('dsVal').textContent = '—'; $('dsTxt').textContent = 'Connecte le véhicule 4'; $('dsMk').hidden = true; return; }
   if (on !== R.uOn) { R.uOn = on; R.hub.stdin(on ? 'U1' : 'U0').catch(() => { R.uOn = false; }); if (on) $('dsTxt').textContent = 'Mesure…'; }
 }, 1000);
-$('handGo').onclick = async () => {
+async function handStart(mode) {
   if (!M.active || M.v !== 4) return;
-  if (M.hand) { M.hand = false; await M.hub.stdin('H0'); handUI(); return; }
-  const r = gWait(['HON', 'HNO'], 1500); await M.hub.stdin('H1');
+  if (M.hand) { M.hand = false; await M.hub.stdin('H0'); handUI(); manUI(); return; }
+  const r = gWait(['HON', 'HNO'], 1500); await M.hub.stdin('H' + mode);
   if (await r !== 'HON') { $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
-  M.hand = true; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
-  $('handSt').textContent = 'Mets ta main devant le capteur, à environ 15 cm.';
-};
+  M.hand = true; M.hmode = mode; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
+  $('handSt').innerHTML = mode === 1 ? 'Mets ta main devant le capteur, à environ 15 cm.'
+    : 'Axe : <b>↕ avant / arrière</b>. Tiens ta main devant le capteur : proche = il recule, loin = il avance, 15 cm = il attend. Une petite tape rapide change d\'axe (↔ : proche = gauche, loin = droite).';
+}
+$('handGo').onclick = () => handStart(1);
+$('axGo').onclick = () => handStart(2);
 $('manGo').onclick = async () => {
   if (M.active && M.evade) {
     // les 3 autres se sont écartés : l'appli les range un par un (puis le véhicule 4), par des chemins dégagés

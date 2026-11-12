@@ -63,6 +63,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      fois), à 10 pas/s, sauf si bloqué (`free_at`) ; retrouvée → reprend le suivi ; sinon attend (`h_state` 0 suit / 1 cherche /
      2 attend, envoyé dans `HD <mm> <état>`). Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`, ou `HARNESS_HAND='[[t_ms, x_main, mm], …]'`
      (main vue si |x V4 − x main| ≤ 2,5 pas).
+   - **Piloter avec la main** (v1.67, bouton « ☝ Piloter avec la main » `#axGo`, `H2` → `HON` ; `hand_tick` avec `h_mode = 2`) :
+     une tape brève devant le capteur (main vue 60–450 ms puis partie) change d'axe (`h_ax` 0 = avant/arrière Y, 1 = gauche/droite X,
+     imprime `AX 0|1`, toast) ; main tenue > 450 ms : mêmes distances que « Suivre la main » (proche = recule / gauche +X, 13–17 cm
+     immobile, loin = avance / droite −X), avec `free_at`. Pas de recherche latérale. `HD <mm> <3|4>` (3 = axe Y, 4 = axe X).
+     Yeux du capteur : 4 allumés en Y, 2 sur 4 en X. Test : `t_axes.py` + harness (`HARNESS_SONAR`).
    - **Distance du capteur dans Pilotage** (v1.63) : carte « Capteur de distance · V4 » (`#dsCard`, valeur en cm + barre 0–40 cm
      avec les zones de « Suivre la main »). Tant que l'onglet Pilotage est ouvert et le V4 connecté, l'appli envoie `U1` (sinon `U0`) ;
      le V4 imprime `DS <mm>` toutes les 250 ms (`DS -1` = pas de capteur) ; en « Suivre la main », c'est `HD` qui alimente la carte.
