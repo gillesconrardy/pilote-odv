@@ -133,7 +133,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    - **Matrice lumineuse 3×3 du V4** (v1.77, `ColorLightMatrix` sur le **port D du V4**, seulement le V4 ; `MX`, `mshow(motif, couleur)`
      = 9 caractères ligne par ligne, 'x' allumé, ne renvoie rien si inchangé ; `mtick` toutes les 100 ms) :
      **démarrage** « 4 » violet ; **calibrage** flèche orange vers la clôture du haut puis de droite (`homing`) ; **tableau de bord** :
-     ▶ vert en lecture, ◀ cyan en retour, ❚❚ orange en pause, au départ = barres de batterie (3 vertes > 7,8 V, 2 jaunes > 7,2 V, 1 rouge),
+     ▶ vert en lecture, ◀ cyan en retour, ❚❚ orange en pause, **au départ (veille, v1.81, choix « A · Comète » de Gilles) = comète
+     violette avec traînée de 2 pixels qui fait le tour (`RING`, `COMET`, 110 ms par case) et point central orange qui clignote** (plus de batterie),
      ✕ rouge en urgence ; **compte à rebours** : `p` depuis le début d'une chorégraphie (pas en reprise) démarre 3 s plus tard au lieu
      de 1 s (`m_last[5]`), la matrice affiche 3, 2, 1 (les autres suivent l'horloge, donc synchrones) ; **visage** en conduite manuelle :
      yeux qui regardent dans le sens du mouvement, yeux fermés (atténués) après 4 s immobile, orange pendant l'appui de la main,

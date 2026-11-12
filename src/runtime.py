@@ -171,6 +171,9 @@ def mshow(pat, col):
 
 
 mshow('x.xxxx..x', VCOL)               # le chiffre 4
+RING = (0, 1, 2, 5, 8, 7, 6, 3)        # tour de la matrice, dans le sens des aiguilles d'une montre
+COMET = (Color(270, 90, 100), Color(270, 90, 40), Color(270, 90, 15))
+ORDIM = Color(28, 100, 20)
 
 
 def homing():
@@ -233,12 +236,20 @@ def mtick(t):
     elif p[2] == -1:
         mshow('..x.xx..x', Color.CYAN)          # retour
     elif wrap(vt(t)) in BOUNDS:
-        if t >= m_last[7]:
-            m_last[7] = t + 5000
-            m_last[4] = hub.battery.voltage()
-        b = m_last[4]
-        mshow(('......xxx', '...xxxxxx', 'xxxxxxxxx')[2 if b > 7800 else 1 if b > 7200 else 0],
-              Color.GREEN if b > 7800 else Color.YELLOW if b > 7200 else Color.RED)
+        # veille : une comete violette fait le tour, le point du centre clignote en orange
+        f = t // 110
+        if f == m_last[7] and m_last[0] == '':
+            return
+        m_last[7] = f
+        c = [Color.NONE] * 9
+        for k in range(3):
+            c[RING[(f - k) % 8]] = COMET[k]
+        c[4] = Color.ORANGE if (f // 4) % 2 else ORDIM
+        m_last[0] = ''
+        try:
+            MX.on(c)
+        except Exception:
+            pass
     else:
         mshow('x.xx.xx.x', Color.ORANGE)        # pause
 
