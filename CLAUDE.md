@@ -177,7 +177,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    de Gilles) : « MODE SOLO », « PLAYER 04 », bouton « ▶ PRESS START » qui pulse (`.solob`, `soloPu`), bulle d'aide en coin) : V1..V3 déjà garés le long du haut,
    V4 posé dans le coin en haut à droite ; calibre le V4 seul (programme idle), ouvre Pilotage et prend la main (`manGo`) ; joystick,
    télécommande, « Suivre la main ». `manGo` accepte le programme idle (`genId(idleTL(), false)` si `R.idle`). Test : `t_solo.py`.
-   Test : `t_setup_order.py` ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,
+   Test : `t_setup_order.py` ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll` (depuis v1.85 bouton graphique `.sendb` « Brique » choisi par Gilles : carré orange flèche ↑ qui pulse, « ×4 », 4 véhicules `.vbk`, bande orange en bas ; réglages Capteur V4 et boucle cachés par `style=display:none` car `.edrow` écrase `hidden`),
    sans recalage), **Véhicules** (`#envoi` : cartes, « Reconnecter » = renvoi sans recalage / « Déconnecter » par
    véhicule, « Tout reconnecter » = (depuis v1.61) remise à zéro du calibrage et onglet Setup (les 4 véhicules remis en colonne), « Tout déconnecter » ; barre de chargement hachurée animée pendant `updateAll`, dans Programme et Véhicules : `updProg`, étapes 0–22 % puis ≈ 19,5 % par véhicule suivant `setBar`), **Pilotage** (`#tele`).
    Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale.
@@ -199,7 +199,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    `body.focus` (posé par `manUI`) cache la barre d'onglets, l'en-tête, l'état/boutons du spectacle et tout sauf la 1ʳᵉ carte de Pilotage ;
    la jauge `#dsBar` se pose en transparence sur le bas du plateau (`.cvw`) ; `#joyBox` devient une console (bande orange) :
    bouton rond `#fRc` à gauche (icône SVG de télécommande LEGO, cyan si connectée, « respire » pendant la recherche → `rcGo`),
-   joystick, bouton rond orange `#fBack` « Rendre » à droite (→ `manGo`). `#fMsg` reprend `manMsg`. Le bouton « Connecter la
+   joystick, bouton rond orange `#fBack` « Rendre » à droite (→ `manGo`) ; depuis v1.85 (design « B · Briques » de Gilles) les deux `.fb` sont des blocs graphite 70×190 (hauteur du joystick) avec bande en bas (cyan téléco, orange Rendre), icônes seules. `#fMsg` reprend `manMsg`. Le bouton « Connecter la
    télécommande » et son état sous Conduite manuelle sont masqués (`hidden`). Tests : `t_joy.py`/`t_push.py` cliquent `#fBack`.
    **Joystick carré** (v1.66, design « A · Pavé » choisi par Gilles) : `.joy` carré à coins ambre (`.jc`), manette carrée 64 px ;
    `joyAt` borne chaque axe séparément (−1..1, coins atteignables).

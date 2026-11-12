@@ -266,6 +266,17 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .btn.close.flash{animation-name:btnFlashGrey}
 @keyframes btnFlashGrey{0%{background:#fff;color:#121314}100%{}}
 @keyframes btnFlash{0%{background:#fff}100%{background:var(--accent)}}
+/* bouton « Envoyer aux 4 véhicules » (v1.85, design 3 · Brique de Gilles) */
+.sendb{width:100%;display:flex;align-items:center;gap:14px;padding:12px 16px 18px;background:#1f2124;border:1.5px solid var(--accent);border-radius:5px;cursor:pointer;position:relative;overflow:hidden;color:#edeae4}
+.sendb::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:var(--accent)}
+.sendb .sa{width:42px;height:42px;background:var(--accent);display:grid;place-items:center;flex:none;animation:sendPu 1.6s ease-in-out infinite}
+.sendb b{font:700 22px "Tomorrow",var(--mono)}
+.sendb .sv{display:flex;gap:8px;margin-left:auto}
+.sendb .sv .vbk{width:34px;height:34px;display:grid;place-items:center;font-size:13px}
+.sendb:active{transform:translateY(2px)}
+.sendb:disabled{opacity:.4;cursor:default}.sendb:disabled .sa{animation:none}
+@keyframes sendPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.5)}50%{box-shadow:0 0 0 6px rgba(255,154,60,0)}}
+@media (prefers-reduced-motion:reduce){.sendb .sa{animation:none}}
 /* ===== véhicule (design 1 hachuré, police Tomorrow) : étiquettes HTML ===== */
 .vbk{position:relative;border:0!important;border-radius:0!important;box-shadow:none;color:#edeae4!important;font-family:"Tomorrow",var(--mono)!important;font-weight:700!important;padding-bottom:3px;
   background:linear-gradient(#ff9a3c,#ff9a3c) 50% calc(100% - 3px)/64% 3px no-repeat,repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 32%,transparent) 0 1.5px,transparent 1.5px 5px),#1f2124!important}
@@ -466,12 +477,15 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .joy .jc.b{right:-1px;bottom:-1px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent)}
 /* conduite du V4 : mode focus « B · Cockpit » (v1.79) — plateau, jauge posée sur le plateau, console joystick */
 .cvw{position:relative}
-#joyBox{background:#1a1c1e;border-top:2px solid var(--accent);border-radius:0 0 10px 10px;margin-top:8px;padding:10px 8px;align-items:center;justify-content:space-between;gap:8px}
+#joyBox{background:#1a1c1e;border-top:2px solid var(--accent);border-radius:0 0 10px 10px;margin-top:8px;padding:10px 8px;align-items:stretch;justify-content:space-between;gap:8px}
 #joyBox:not([style*="none"]){display:flex}
 #joyBox .joy{margin:0}
-.fb{width:64px;height:64px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:transparent;border:1px solid #3a3530;color:#edeae4;padding:0;cursor:pointer}
-.fb.back{background:var(--accent);border-color:var(--accent);color:#121314}.fb.back span{font:600 10px 'Space Grotesk',sans-serif}
-.fb.on{border-color:#22d3ee;color:#22d3ee}.fb.busy{animation:suPulse 1.2s ease-in-out infinite}
+/* boutons de la console à la hauteur du joystick, design « B · Briques » (v1.85) : bloc graphite, bande colorée en bas */
+.fb{width:70px;height:190px;border-radius:0;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:#1f2124;border:0;color:#edeae4;padding:0 0 8px;cursor:pointer;position:relative}
+.fb::after{content:"";position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(34,211,238,.55)}
+.fb:active{transform:translateY(2px)}
+.fb.back{color:var(--accent)}.fb.back::after{background:var(--accent)}.fb.back span{display:none}
+.fb.on{color:#22d3ee}.fb.on::after{background:#22d3ee}.fb.busy{animation:suPulse 1.2s ease-in-out infinite}
 .fb:disabled{opacity:.4}
 #fMsg{text-align:center;margin-top:6px}#fMsg:empty{display:none}
 body.focus nav.tabbar,body.focus header,body.focus #tele .state,body.focus #tele .prog,body.focus #stTime,body.focus #tele .remote,body.focus #tele>:not(:first-child){display:none!important}
@@ -550,11 +564,11 @@ body.focus #dsBar .dsh b{font-size:17px}
     </div>
     <div class="card">
       <input type="checkbox" id="optLoop" hidden>
-      <div class="edrow" hidden><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, sur son côté droit, au-dessus de la clôture (la main se présente à l'extérieur du plateau, à droite). Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
+      <div class="edrow" style="display:none"><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, sur son côté droit, au-dessus de la clôture (la main se présente à l'extérieur du plateau, à droite). Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
         <div class="seg" id="optSonar" style="flex:1"><button type="button" data-m="0">Arrêt</button><button type="button" data-m="1">Gestes</button><button type="button" data-m="2">Statue</button></div></div>
       <span id="sumTxt" hidden>–</span>
       <div id="updBox">
-        <button class="btn primary" id="updAll2" style="width:100%;padding:14px">⟳ Envoyer aux 4 véhicules</button>
+        <button class="sendb" id="updAll2" aria-label="Envoyer aux 4 véhicules"><span class="sa"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M12 20V5M5 11.5l7-7 7 7" stroke="#121314" stroke-width="3.2" fill="none" stroke-linecap="square"/></svg></span><b>×4</b><span class="sv"><span class="vbk" style="--c:var(--v1)">01</span><span class="vbk" style="--c:var(--v2)">02</span><span class="vbk" style="--c:var(--v3)">03</span><span class="vbk" style="--c:var(--v4)">04</span></span></button>
         <div class="uprog" id="updProg2" hidden><div class="ut"><span class="ul">Envoi</span><b>0 %</b></div><div class="uk"><i></i></div></div><div class="sub" id="updMsg2" style="margin-top:8px"></div>
       </div>
       <div id="sumWarn"></div>
@@ -594,7 +608,7 @@ body.focus #dsBar .dsh b{font-size:17px}
       </div>
       <div class="cvw"><canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
       <div id="dsBar" hidden><div class="dsh"><span>DISTANCE · CAPTEUR V4</span><b id="dsBV">—</b></div><div class="dst"><i></i><span id="dsBK"></span></div><div class="dsax"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 cm</span></div></div></div>
-      <div id="joyBox" style="display:none"><button type="button" class="fb" id="fRc" title="Connecter la télécommande LEGO" aria-label="Connecter la télécommande LEGO"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="7.6" y="5.5" width="3.2" height="8" rx="1.6"/><rect x="13.2" y="5.5" width="3.2" height="8" rx="1.6"/><path d="M9.2 7.4v1.4M8.5 8.1h1.4M8.5 11.6h1.4M14.8 7.4v1.4M14.1 8.1h1.4M14.1 11.6h1.4" stroke-width="1.1"/><circle cx="12" cy="17.6" r="1.5" fill="#22c55e" stroke="none"/></svg></button><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div><button type="button" class="fb back" id="fBack" title="Rendre la main" aria-label="Rendre la main"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 14l7-8 7 8z"/><path d="M5 19h14"/></svg><span>Rendre</span></button></div>
+      <div id="joyBox" style="display:none"><button type="button" class="fb" id="fRc" title="Connecter la télécommande LEGO" aria-label="Connecter la télécommande LEGO"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="7.6" y="5.5" width="3.2" height="8" rx="1.6"/><rect x="13.2" y="5.5" width="3.2" height="8" rx="1.6"/><path d="M9.2 7.4v1.4M8.5 8.1h1.4M8.5 11.6h1.4M14.8 7.4v1.4M14.1 8.1h1.4M14.1 11.6h1.4" stroke-width="1.1"/><circle cx="12" cy="17.6" r="1.5" fill="#22c55e" stroke="none"/></svg></button><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div><button type="button" class="fb back" id="fBack" title="Rendre la main" aria-label="Rendre la main"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 14l7-8 7 8z"/><path d="M5 19h14"/></svg><span>Rendre</span></button></div>
       <div class="sub" id="fMsg"></div>
     </div>
     <div class="card" id="watchCard" hidden>
