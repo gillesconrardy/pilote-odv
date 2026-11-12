@@ -123,6 +123,18 @@ mod('pybricks.tools', wait=wait, StopWatch=StopWatch)
 mod('umath', sin=math.sin, cos=math.cos, pi=math.pi)
 mod('usys', stdin=_Stdin()); mod('uselect', poll=_Poll)
 
+def _app_sp():
+    # comme l'appli : apres « SP 1 », elle donne au V4 la position (en pause) des 3 autres
+    time.sleep(1.3 / SPEED)
+    for k in (1, 2, 3):
+        r = [e for e in REC[k] if e[0] != 'stopped'][-1]
+        for c in 'O%d%d,%d\n' % (k, round(r[2] * 100), round(r[3] * 100)): STDINS[4].put(c)
+def _out(vid, a):
+    txt = ' '.join(str(x) for x in a)
+    OUT.append((true_ms(), 'V%d ' % vid + txt))
+    if vid == 4 and txt.startswith('SP 1') and os.environ.get('HARNESS_APP_SP', '1') == '1':
+        threading.Thread(target=_app_sp, daemon=True).start()
+
 def run_vehicle(vid, src, delay_ms, drift):
     time.sleep(delay_ms / 1000 / SPEED)
     ctx.vid = vid; ctx.drift = drift; ctx.last = [0, 0]; ctx.stopped = False; ctx.light = None
@@ -131,7 +143,7 @@ def run_vehicle(vid, src, delay_ms, drift):
                       "    _REC.append((_true(), wrap(vt(raw)), x, y))\n    last_loop = local\n    x_motor.track_target")
     assert '_REC.append' in src
     g = {'__name__': '__main__', '_REC': REC[vid], '_true': true_ms,
-         'print': (lambda *a: OUT.append((true_ms(), 'V%d ' % vid + ' '.join(str(x) for x in a))))}
+         'print': (lambda *a: _out(vid, a))}
     try:
         exec(compile(src, 'vehicle%d.py' % vid, 'exec'), g)
     except SystemExit:

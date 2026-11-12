@@ -549,13 +549,12 @@ body.focus #dsBar .dsh b{font-size:17px}
       <button class="btn primary" id="edNew" style="width:100%;margin-top:10px;padding:14px">✏️ Créer une chorégraphie</button>
     </div>
     <div class="card">
-      <label class="tog" for="optLoop"><div>Jouer en boucle <button type="button" class="tip" data-tip="La suite recommence au début quand elle est finie.">i</button></div>
-        <span class="sw"><input type="checkbox" id="optLoop"><span></span></span></label>
-      <div class="edrow" style="margin-top:8px"><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, sur son côté droit, au-dessus de la clôture (la main se présente à l'extérieur du plateau, à droite). Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
+      <input type="checkbox" id="optLoop" hidden>
+      <div class="edrow" hidden><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, sur son côté droit, au-dessus de la clôture (la main se présente à l'extérieur du plateau, à droite). Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
         <div class="seg" id="optSonar" style="flex:1"><button type="button" data-m="0">Arrêt</button><button type="button" data-m="1">Gestes</button><button type="button" data-m="2">Statue</button></div></div>
       <span id="sumTxt" hidden>–</span>
       <div id="updBox">
-        <button class="btn primary" id="updAll2" style="width:100%;padding:14px;margin-top:10px">⟳ Envoyer aux 4 véhicules</button>
+        <button class="btn primary" id="updAll2" style="width:100%;padding:14px">⟳ Envoyer aux 4 véhicules</button>
         <div class="uprog" id="updProg2" hidden><div class="ut"><span class="ul">Envoi</span><b>0 %</b></div><div class="uk"><i></i></div></div><div class="sub" id="updMsg2" style="margin-top:8px"></div>
       </div>
       <div id="sumWarn"></div>
@@ -896,10 +895,10 @@ function refresh() {
   renderVehicles();
   drawBoard();
 }
-$('optLoop').checked = store.get('loop2', false);
+$('optLoop').checked = false;   // « Jouer en boucle » retiré (v1.84)
 $('optLoop').onchange = () => { store.set('loop2', $('optLoop').checked); progCache = {}; renderVehicles(); };
 // capteur de distance du V4 pendant le spectacle : 0 arrêt, 1 gestes, 2 statue
-let SONAR = store.get('sonar', 1);
+let SONAR = 1;   // capteur V4 toujours en « Gestes » pendant le spectacle (réglage retiré en v1.84)
 function sonarUI() { $('optSonar').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.m === SONAR)); }
 sonarUI();
 $('optSonar').querySelectorAll('button').forEach(b => b.onclick = () => {
@@ -948,7 +947,7 @@ let IDLE = null;
 const ROUTINE = /*ROUTINE*/;
 const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Spirale + Pulsation', src: ROUTINE }]));
 function programText(vid, homing = false, idle = false) {
-  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Spirale + Pulsation'] });
+  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Spirale + Pulsation'], smode: SONAR });
   return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name), smode: SONAR });
 }
 async function compileFor(vid, homing = false, idle = false) {
@@ -1431,6 +1430,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'HD') { handShow(+p[1], +p[2]); dsShow(+p[1]); }
     else if (p[0] === 'DS') dsShow(+p[1]);
     else if (p[0] === 'PU') SNS.push = { t: performance.now(), gx: +p[1] / 100 || 0, gy: p[2] == null ? -1 : +p[2] / 100, mm: SNS.mm };
+    else if (p[0] === 'SP') spLine(p);
     else if (p[0] === 'GST') toast({ 1: '✋ Geste : lecture / pause', 2: '✋✋ Geste : chorégraphie suivante', H: '✋ Main tenue : stop et retour', S: '🗿 Statue : le spectacle se fige', R: '🗿 Le spectacle repart' }[p[1]] || 'Geste');
   };
   h.autoReconnect = true;
@@ -1681,7 +1681,18 @@ $('rcGo').onclick = async () => {
   try { await M.hub.stdin('C'); } catch { M.rcBusy = false; rcUI(); }
   setTimeout(() => { if (M.rcBusy) { M.rcBusy = false; rcUI(); } }, 9000);
 };
+// main devant le capteur pendant le spectacle (v1.84) : le V4 met en pause, demande où sont les autres, pousse / attaque, puis reprend
+const SP = { on: false, pos: null };
+async function spLine(p) {
+  const tl = R.tl || TL;
+  if (p[1] === '1') {
+    const w = +p[2]; SP.on = true; SP.pos = ODVGEN.posAt(tl, 3, w);
+    try { for (let k = 0; k < 3; k++) { const q = ODVGEN.posAt(tl, k, w); await R.hub.stdin('O' + (k + 1) + Math.round(q[0] * 100) + ',' + Math.round(q[1] * 100)); } } catch {}
+    toast('✋ Main devant le capteur : pause');
+  } else { SP.on = false; SP.pos = null; toast('Le véhicule 4 rentre à sa place, le spectacle reprend'); }
+}
 function onPos(x, y, rcMoving) {
+  if (SP.on && !M.active) { SP.pos = [x, y]; return; }
   // position renvoyée par le véhicule 4 : on la suit quand le joystick de l'écran n'est pas utilisé
   if (!M.active || M.returning || M.v !== 4) return;
   if (M.joy[0] || M.joy[1]) return;
@@ -2691,8 +2702,9 @@ function drawPlate(c, tl, w, man, trails, ovr) {
 function drawBoard() {
   const tl = R.tl || TL;
   const w = R.st ? estW() : 0;
-  drawPlate(cv, tl, w, M.active ? M : null, false, (GM.on || M.evade) && GM.pos ? GM.pos : null);
-  if (R.hub && R.hub.connected) drawSensor(cv, M.active && M.v === 4 ? M.cmd : ODVGEN.posAt(tl, 3, w));
+  const sp = SP.on && SP.pos && !M.active ? [0, 1, 2].map(i => ODVGEN.posAt(tl, i, w)).concat([SP.pos]) : null;
+  drawPlate(cv, tl, w, M.active ? M : null, false, (GM.on || M.evade) && GM.pos ? GM.pos : sp);
+  if (R.hub && R.hub.connected) drawSensor(cv, M.active && M.v === 4 ? M.cmd : sp ? SP.pos : ODVGEN.posAt(tl, 3, w));
   if (R.st && tl) {
     const k = R.st.k, b0 = tl.bounds[k], b1 = tl.bounds[k + 1] || tl.total;
     $('stProg').style.width = (100 * Math.min(1, Math.max(0, (w - b0) / (b1 - b0)))) + '%';

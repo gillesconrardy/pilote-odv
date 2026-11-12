@@ -493,6 +493,8 @@ def manual_line(s):
             pass
         return
     if s == 'M':
+        if IS_SENDER:
+            sp[0] = 0
         manual = True
         blend = False
         tx = mx
@@ -1242,6 +1244,67 @@ if IS_SENDER:
             i += 2
         return False
 
+    # main devant le capteur pendant le spectacle (v1.84) : pause, puis poussee / attaque comme en conduite manuelle,
+    # puis retour a sa place et reprise. sp = [etat, debut, reprise demandee, prochaine mesure]
+    # etat 0 surveille, 1 pause demandee (attend la pause et la position des autres), 2 main, 3 retour a sa place
+    sp = [0, 0, 0, 0]
+
+    def show_hand(raw):
+        global manual, hand, h_mode, h_v, h_lost, tx, ty, blend
+        if sp[0] == 0:
+            if manual or raw < sp[3]:
+                return
+            sp[3] = raw + 40
+            if P1[2] not in (1, -1) or raw < P1[0] or next_tgt[0] >= 0 or vt(raw) == P1[3]:
+                sp[1] = 0
+                return
+            try:
+                d = sonar.distance()
+            except Exception:
+                return
+            if d < 100 and not masked(wrap(vt(raw))):
+                if not sp[1]:
+                    sp[1] = raw
+                elif raw - sp[1] >= 80:
+                    command('z', raw)
+                    OBS[0] = OBS[1] = OBS[2] = None
+                    sp[0] = 1
+                    sp[2] = 0
+                    print('SP', 1, wrap(P1[1]))
+                    sonar_eyes(100)
+            else:
+                sp[1] = 0
+        elif sp[0] == 1:
+            if raw >= P1[0] and None not in OBS:
+                manual = True
+                tx = mx
+                ty = my
+                hand = True
+                h_mode = 2
+                h_v = 0.0
+                h_lost = sp[1]
+                h_buf.clear()
+                sp[0] = 2
+                sp[1] = raw
+            elif raw - sp[1] > 4000:
+                sp[0] = 3            # l'appli n'a pas donne la position des autres : on reprend sans bouger
+        elif sp[0] == 2:
+            if h_v > 0.0005 or h_lost or h_dist < 300:
+                sp[1] = raw
+            elif raw - sp[1] > 2500 or sp[2]:
+                manual = False
+                hand = False
+                blend = True
+                sonar_eyes(0)
+                hub.light.on(VCOL)
+                sp[0] = 3
+                print('SP', 0)
+        elif not blend:
+            sp[0] = 0
+            sp[1] = 0
+            command('p', raw)
+
+#[JEUX
     # gestes devant le capteur : 1 passage = lecture/pause, 2 passages = suivante, main tenue 2 s = stop et retour ;
     # mode statue : une main devant fige le spectacle, il repart 1 s apres son depart
     gs = [0, 0, 0, 0, 0, 0, 0, 2000]   # [prochaine lecture, dans la zone, entree, passages, dernier passage, tenue faite, statue, distance]
@@ -1307,6 +1370,8 @@ if IS_SENDER:
                 command('z' if p[2] == 1 and vt(raw) != p[3] else 'p', raw)
                 print('GST 1')
 
+#]JEUX
+
     def command(c, raw):
         global P0, P1, next_bcast
         if c != 'n':
@@ -1322,6 +1387,12 @@ if IS_SENDER:
             P1 = [raw, vt(raw), 12, 0]
             next_bcast = 0
             print('ACK e 0')
+            return
+        if sp[0] and c in 'pzhn':
+            if c == 'p':
+                sp[2] = 1
+            else:
+                print('BUSY')
             return
         if raw < P1[0]:
             print('BUSY')
@@ -1563,8 +1634,8 @@ while True:
         print('ACK n', LEAD)
     if MX is not None and local >= m_last[3]:
         mtick(local)
-    if IS_SENDER and SMODE and sonar is not None and not manual and game == 0:
-        gesture_tick(local)
+    if IS_SENDER and SMODE and sonar is not None and game == 0:
+        show_hand(local)
     if IS_SENDER and hand and manual and game in (0, 5):
         hand_tick(min(local - last_loop, 50), local)
     elif u_on and local >= u_next:

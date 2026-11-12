@@ -95,7 +95,17 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      avec les zones de « Suivre la main »). Tant que l'onglet Pilotage est ouvert et le V4 connecté, l'appli envoie `U1` (sinon `U0`) ;
      le V4 imprime `DS <mm>` toutes les 250 ms (`DS -1` = pas de capteur) ; en « Suivre la main », c'est `HD` qui alimente la carte.
      Test : `t_dist.py`.
-   - **Capteur V4 pendant le spectacle** (v1.56, option « Capteur V4 » de Programme : Arrêt / Gestes / Statue, `odv.sonar`,
+   - **Main devant le capteur pendant le spectacle** (v1.84, demande de Gilles, remplace Gestes/Statue qui sont passés entre marqueurs
+     `#[JEUX`) : réglage retiré de Programme, `SONAR` = 1 toujours (aussi dans le programme idle de la routine). `show_hand` (V4, état
+     `sp = [état, début, reprise demandée, prochaine mesure]`) : en lecture/retour seulement (le capteur n'est pas lu à l'arrêt), main
+     < 10 cm (hors `MASK` = pas un véhicule) pendant 80 ms → `z` + `SP 1 <w>` et `OBS` remis à None ; l'appli (`spLine`) renvoie
+     `O1..O3` (positions en pause, `posAt`) ; dès la pause effective et les positions reçues, le V4 passe en conduite manuelle interne
+     (`manual`, `hand`, `h_mode = 2`, `h_lost` = début de la détection → poussée / attaque comme en manuel) ; main partie depuis 2,5 s
+     (ou `p` reçu, ex. montre) → `SP 0`, `blend` vers sa place, puis `p` (reprise). Sans positions en 4 s : reprise sans bouger.
+     Pendant ce temps `z h n` → BUSY. Appli : `SP` (position du V4 suivie par `POS`, dessinée sur le plateau et pour `drawSensor`).
+     Tests : harness (`SMODE=1`, `HARNESS_SONAR`, le harness répond à `SP 1` comme l'appli ; `HARNESS_APP_SP=0` pour couper),
+     `t_showpush.py`.
+   - **Capteur V4 pendant le spectacle** (v1.56 ; depuis v1.84 le réglage est retiré de Programme (`.edrow` caché) et `SONAR` vaut toujours 1 = Gestes ; avant : option « Capteur V4 » Arrêt / Gestes / Statue, `odv.sonar`,
      intégrée au programme par `%SMODE%`, changeable en direct par `S0|S1|S2`). Uniquement hors conduite manuelle (jeu 0).
      `gesture_tick` (toutes les 40 ms) : **Gestes** — main < 12 cm (sortie > 20 cm) ; passage de 60–900 ms ; 1 passage (puis
      700 ms sans autre) = lecture/pause, 2 passages = `n` chorégraphie suivante, main tenue 2 s = `h` stop et retour.
@@ -180,7 +190,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub
    (format multi-mpy6 : taille u32 + `__main__\0` + mpy ; commandes 0 stop, 3 meta, 4 RAM, 1 start,
    6 stdin), service Pybricks `c5f50001-8280-46da-89f4-6d8051e4aeef`.
-   Fonctions : choix/ordre des chorégraphies (glisser-déposer par la poignée ⠿), aperçu animé (bouton radar, icône SVG ambre), boucle, recalage,
+   Fonctions : choix/ordre des chorégraphies (glisser-déposer par la poignée ⠿), aperçu animé (bouton radar, icône SVG ambre), recalage (« Jouer en boucle » retiré en v1.84 : `#optLoop` caché, toujours décoché),
    « Mettre à jour les 4 véhicules » (retour au départ → `e` → arrêt V4 → envoi 1,2,3,4 sans recalage ;
    une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
    reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30) ;
