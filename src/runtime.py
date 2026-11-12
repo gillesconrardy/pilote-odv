@@ -750,7 +750,7 @@ def hand_tick(dt, local):
             d = 2000
             veh = True
     if h_mode == 2:
-        # pousser : main a moins de 5 cm -> il s'eloigne d'une glissade (~10 pas, freine tout seul) dans la direction
+        # pousser : main a moins de 10 cm pendant 1 s -> il s'eloigne d'une glissade (~10 pas, freine tout seul) dans la direction
         # la plus degagee qui l'ecarte de la main (jamais vers elle) ; un vehicule tout proche devant n'est pas une main
         if h_v > 0.0005:
             h_lost = 0
@@ -762,13 +762,13 @@ def hand_tick(dt, local):
                 h_v *= 1 - dt / 600
             else:
                 h_v = 0
-        elif d < 50 and not veh and not any(o is not None and abs(o[1] - my) < 10 and 0 <= mx - o[0] - 10 < 6 for o in OBS):
-            # la main doit rester 2 s devant le capteur avant la poussee
+        elif d < 100 and not veh and not any(o is not None and abs(o[1] - my) < 10 and 0 <= mx - o[0] - 10 < 10 for o in OBS):
+            # la main doit rester 1 s a moins de 10 cm avant la poussee
             if not h_lost:
                 h_lost = local
         else:
             h_lost = 0
-        if h_lost and local - h_lost >= 2000:
+        if h_lost and local - h_lost >= 1000:
             h_lost = 0
             best = 0
             for gx, gy in ((1, 0), (0.71, -0.71), (0.71, 0.71), (0, -1), (0, 1)):
@@ -786,7 +786,7 @@ def hand_tick(dt, local):
         if local >= h_print:
             h_print = local + 250
             print('HD', int(d), h_state)
-            sonar_eyes(100 if d < 50 or h_v > 0.0005 else 15)
+            sonar_eyes(100 if d < 100 or h_v > 0.0005 else 15)
         return
     elif d <= 300:
         if h_state == 1 and abs(ty - h_cx) > 0.5:

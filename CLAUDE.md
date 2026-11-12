@@ -77,10 +77,12 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      **Depuis v1.69** (demande de Gilles) : actif par défaut dès la prise en main du V4 (`manGo` → `handStart(2, true)`, silencieux
      si pas de capteur) ; la main doit rester **2 s** à < 5 cm (`h_lost` = début de l'appui, `HD … 7` pendant l'attente : compte à
      rebours sous le bouton, anneau rouge qui se remplit sur le plateau, `SNS.hold`). Quitter « Suivre la main » revient à « Pousser ».
+     **Depuis v1.71** : seuil **10 cm pendant 1 s** (au lieu de 5 cm / 2 s) ; un véhicule à < 10 pas juste à droite n'est pas une main.
      **Sur le plateau de Pilotage** (`drawSensor`, état `SNS`, alimenté par `DS`/`HD` et `PU <gx×100> <gy×100>`) : faisceau ambre
      vers l'avant du V4 (40 cm ≈ 32,6 pas), écho + point qui pulse là où il voit quelque chose (rouge < 5 cm) ; à la poussée,
      ondes de choc à l'endroit de la main, traînée derrière le V4 et flèche dans le sens de la glissade (1 s).
-   - **Distance du capteur dans Pilotage** (v1.63) : carte « Capteur de distance · V4 » (`#dsCard`, valeur en cm + barre 0–40 cm
+   - **Distance du capteur dans Pilotage** (v1.63 ; depuis v1.71 la carte `#dsCard` est masquée et la distance s'écrit en petit
+     sur le plateau, au-dessus du faisceau, dans `drawSensor`) : carte « Capteur de distance · V4 » (`#dsCard`, valeur en cm + barre 0–40 cm
      avec les zones de « Suivre la main »). Tant que l'onglet Pilotage est ouvert et le V4 connecté, l'appli envoie `U1` (sinon `U0`) ;
      le V4 imprime `DS <mm>` toutes les 250 ms (`DS -1` = pas de capteur) ; en « Suivre la main », c'est `HD` qui alimente la carte.
      Test : `t_dist.py`.

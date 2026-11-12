@@ -554,7 +554,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs <button type="button" class="tip" data-tip="Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas = 12,25 mm).">i</button></h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
       <div id="odo" style="margin-top:8px"></div>
     </div>
-    <div class="card" style="margin-top:12px" id="dsCard">
+    <div class="card" style="margin-top:12px" id="dsCard" hidden>
       <h2>Capteur de distance · V4 <button type="button" class="tip" data-tip="Distance mesurée par le capteur du véhicule 4 (port B, sur son côté droit, au-dessus de la clôture) : approche ta main pour la voir changer. Mesure jusqu'à 40 cm environ ; au-delà, « rien devant ». Affichée tant que cet onglet est ouvert et que le véhicule 4 est connecté.">i</button></h2>
       <div class="dsrow"><b id="dsVal">—</b><span class="sub" id="dsTxt">Connecte le véhicule 4</span></div>
       <div class="dsbar"><i class="z1"></i><i class="z2"></i><i class="z3"></i><span id="dsMk" hidden></span></div>
@@ -1417,9 +1417,9 @@ function handShow(mm, st) {
   if (st === 7) { if (!SNS.hold) SNS.hold = performance.now(); } else SNS.hold = 0;
   if (st >= 5) {   // pousser avec la main : 5 = il glisse, 6 = il attend, 7 = main tenue (2 s avant la poussée)
     $('handSt').innerHTML = st === 5 ? '<b>Poussé !</b> Il s\'éloigne de ta main…'
-      : st === 7 ? `Garde ta main… <b>${Math.max(0, 2 - (performance.now() - SNS.hold) / 1000).toFixed(1).replace('.', ',')} s</b>`
-      : mm < 50 ? 'Main tout près, mais <b>pas de place</b> pour s\'éloigner (clôture ou véhicule)'
-      : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne comme si tu l\'avais poussé.' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
+      : st === 7 ? `Garde ta main… <b>${Math.max(0, 1 - (performance.now() - SNS.hold) / 1000).toFixed(1).replace('.', ',')} s</b>`
+      : mm < 100 ? 'Main tout près, mais <b>pas de place</b> pour s\'éloigner (clôture ou véhicule)'
+      : 'Garde ta main <b>à moins de 10 cm</b> du capteur pendant <b>1 s</b> : il s\'éloigne comme si tu l\'avais poussé.' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
     return;
   }
   $('handSt').innerHTML = st === 1 ? 'Main sortie du faisceau : <b>il la cherche vers le haut et le bas…</b>'
@@ -1453,7 +1453,7 @@ async function handStart(mode, quiet = false) {
   if (await r !== 'HON') { if (!quiet) $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
   M.hand = true; M.hmode = mode; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
   $('handSt').innerHTML = mode === 1 ? 'Mets ta main devant le capteur, à environ 15 cm.'
-    : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne d\'une glissade (environ 12 cm), vers la gauche ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
+    : 'Garde ta main <b>à moins de 10 cm</b> du capteur pendant <b>1 s</b> : il s\'éloigne d\'une glissade (environ 12 cm), vers la gauche ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
 }
 $('handGo').onclick = () => handStart(1);
 $('axGo').onclick = () => handStart(2);
@@ -2557,12 +2557,18 @@ function drawSensor(c, p) {
     const g = cx.createLinearGradient(0, 0, 0, maxL); g.addColorStop(0, 'rgba(255,154,60,.28)'); g.addColorStop(1, 'rgba(255,154,60,0)');
     cx.fillStyle = g; cx.beginPath(); cx.moveTo(-u, 0); cx.lineTo(-u - L * wd, L); cx.lineTo(u + L * wd, L); cx.lineTo(u, 0); cx.closePath(); cx.fill();
     if (seen) {
-      const near = SNS.mm < 50, pulse = 0.5 + 0.5 * Math.sin(now / (near ? 70 : 160));
+      const near = SNS.mm < 100, pulse = 0.5 + 0.5 * Math.sin(now / (near ? 70 : 160));
       cx.strokeStyle = near ? '#ff4d43' : '#ff9a3c'; cx.lineWidth = u * .35; cx.globalAlpha = .55 + .45 * pulse;
       cx.beginPath(); cx.arc(0, L - u * 2.2, u * 2.2 + L * wd, Math.PI * .3, Math.PI * .7); cx.stroke();
       cx.fillStyle = cx.strokeStyle; cx.beginPath(); cx.arc(0, L, u * (.8 + .5 * pulse), 0, 7); cx.fill();
-      if (SNS.hold) {   // main tenue : l'anneau se remplit en 2 s, puis poussée
-        const f = Math.min(1, (now - SNS.hold) / 2000);
+      cx.restore(); cx.save();   // distance en petit, au-dessus du faisceau (discret, à côté du véhicule)
+      const lx = Math.max(sx + u * 3.6, Math.min(sx + L / 2 + u * 1.5, c.width - u * 3.2));
+      cx.globalAlpha = .85; cx.fillStyle = near ? '#ff4d43' : '#ff9a3c'; cx.font = `${1.25 * u}px "Space Mono",ui-monospace,monospace`;
+      cx.textAlign = 'center'; cx.textBaseline = 'bottom';
+      cx.fillText((SNS.mm / 10).toFixed(SNS.mm < 100 ? 1 : 0).replace('.', ',') + ' cm', lx, sy - u * (2.6 + L * wd / u));
+      cx.restore(); cx.save(); cx.translate(sx, sy); cx.rotate(-Math.PI / 2);
+      if (SNS.hold) {   // main tenue : l'anneau se remplit en 1 s, puis poussée
+        const f = Math.min(1, (now - SNS.hold) / 1000);
         cx.globalAlpha = 1; cx.strokeStyle = '#ff4d43'; cx.lineWidth = u * .5;
         cx.beginPath(); cx.arc(0, L, u * 2.6, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); cx.stroke();
       }

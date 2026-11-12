@@ -13,7 +13,7 @@ async def main():
         await pg.click('nav button[data-tab=tele]'); await pg.wait_for_timeout(2200)
         st = await pg.evaluate('window.__stdin'); print('U envoyés:', [t for n, t in st if t[0] == 'U'])
         await pg.evaluate("R.hub.onLine('DS 182')"); print('affiché:', await pg.inner_text('#dsVal'), '|', await pg.inner_text('#dsTxt'))
-        await pg.locator('#dsCard').screenshot(path='ds.png')
+        await pg.locator('#cv').screenshot(path='ds.png')
         await pg.evaluate("R.hub.onLine('DS 2000')"); print('loin:', await pg.inner_text('#dsVal'))
         await pg.click('nav button[data-tab=stats]'); await pg.wait_for_timeout(1500)
         st = await pg.evaluate('window.__stdin'); print('après changement d onglet:', [t for n, t in st if t[0] == 'U'])
