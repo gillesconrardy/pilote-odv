@@ -187,7 +187,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    1 par défaut car la chorégraphie d'origine déborde de 0,7), `bdBox`, `plateGeo(W)` = repère commun de tous les plateaux canvas
    (`drawPlate`, `drawSensor`, `boardPt`, `edPt`, Atelier ; 4×4 = l'ancien u = W/44) : **Pilotage et Atelier dessinent le plateau validé**
    (blocs, clôtures en haut/à droite du coin, décharge) ; véhicule hors plateau encadré en rouge ; **chorégraphies qui sortent du
-   plateau bloquées** dans Programme (`tlFits`, `it.fit`, badge « ⛔ sort du plateau », case désactivée, exclues de `PLAY`) ;
+   plateau bloquées** dans Programme (`tlFits`, `it.fit`, badge « HORS ZONE » (v1.92, design « 5 · Mini plan » : petit bloc gris + véhicule rouge qui déborde, `.badge.hz`), case désactivée, exclues de `PLAY`) ;
    joystick limité aux blocs (`freeAt` → `bdFits(p, 0.01)`). Les programmes reçoivent le plateau (`opts.board` = `bdPairs()`,
    marqueur `%BOARD%` → `BOARD = ((bx, by), …)`, défaut 4×4) ; `genId` et `keyNow` en tiennent compte (renvoi nécessaire après
    validation). Hub : `on_board` dans `free_at` (télécommande et poussée restent sur les blocs) ; `G` borné à ±200 (c'est l'appli qui

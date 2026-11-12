@@ -277,6 +277,8 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .sendb:disabled{opacity:.4;cursor:default}.sendb:disabled .sa{animation:none}
 @keyframes sendPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.5)}50%{box-shadow:0 0 0 6px rgba(255,154,60,0)}}
 @media (prefers-reduced-motion:reduce){.sendb .sa{animation:none}}
+/* badge « Hors zone » (v1.92, design 5 · Mini plan de Gilles) */
+.badge.hz{display:inline-flex;align-items:center;gap:5px;background:#1f2124!important;color:#ff6b5e!important;border:1px solid #3a3631!important;padding:2px 7px 2px 4px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.04em}
 /* éditeur de plateau (v1.90 : en haut de Setup, replié, à valider) */
 #boardCard summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
 #boardCard summary::-webkit-details-marker{display:none}
@@ -538,7 +540,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.91</b><br>publiée le 12/11/2026 22:43</div>
+    <div class="ver" title="Version de l'application"><b>v1.92</b><br>publiée le 12/11/2026 22:54</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -1235,7 +1237,7 @@ function renderList() {
   items.forEach((it, idx) => {
     const d = document.createElement('div'); d.className = 'ch';
     const badge = !it.ok ? `<span class="badge bad">⚠ ${it.msg}</span>`
-      : it.fit === false ? `<span class="badge bad">⛔ sort du plateau</span>`
+      : it.fit === false ? `<span class="badge hz" title="Cette chorégraphie sort du plateau validé (Setup)"><svg width="22" height="14" viewBox="0 0 22 14" aria-hidden="true"><rect x="1" y="1" width="12" height="12" fill="#26292c" stroke="#4a443d"/><rect x="11" y="4" width="8" height="8" fill="none" stroke="#e8392a" stroke-width="1.5"/><path d="M17 2h4M21 2v4" stroke="#e8392a" stroke-width="1.4"/></svg>HORS ZONE</span>`
       : it.col ? `<span class="badge bad">${it.col} chevauchement</span>`
       : it.gr ? `<span class="badge warn">${it.gr} frôlement${it.gr > 1 ? 's' : ''}</span>` : `<span class="badge ok">✓ sans collision</span>`;
     d.dataset.id = it.id;
@@ -1296,7 +1298,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.91';
+const MY_VER = '1.92';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
