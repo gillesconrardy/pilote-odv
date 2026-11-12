@@ -203,6 +203,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   diffusion (`ble.broadcast`) est mise à jour trop souvent pendant une connexion (problème connu de Pybricks) → en conduite manuelle
   le V4 ne diffuse plus que toutes les 3 s (au lieu de 0,5 s). Après une reconnexion, l'appli vérifie que le programme tourne encore
   (sinon : hub redémarré, batterie faible ?) et l'affiche dans Pilotage. À confirmer sur le vrai matériel.
+- **Chrome s'est fermé** pendant l'envoi du programme au V4 lors du calibrage (Gilles, 12/11, capteur tout juste branché sur le
+  port B). Cause non trouvée (rien côté hub n'utilise le capteur pendant la mise en place : `%SMODE%` = 0 dans le programme idle) ;
+  piste : batterie du V4 / hub qui redémarre pendant une écriture Bluetooth (plantage connu de Chrome Android). Depuis v1.64, la
+  Mise en place est mémorisée (`odv.su`, 30 min : véhicules faits ou sortis de la colonne) pour reprendre après une fermeture
+  (test `t_su_resume.py`).
 - « Tout déconnecter » remet aussi la Mise en place à zéro (plus de véhicule en vert, « ○ Déconnecté »).
 - Gilles a signalé : « Stop et retour » OK après coup ; perte de liaison V4 pendant le joystick
   (corrigé par allègement radio + reconnexion auto, à confirmer) ; déconnexion difficile (corrigée,

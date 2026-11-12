@@ -463,7 +463,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.63</b><br>publiée le 12/11/2026 13:44</div>
+    <div class="ver" title="Version de l'application"><b>v1.64</b><br>publiée le 12/11/2026 15:53</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -1160,7 +1160,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.63';
+const MY_VER = '1.64';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1611,7 +1611,17 @@ function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked 
 
 // ====================================================================== 0. mise en place (calibrage, un véhicule à la fois)
 const SU = { done: {}, hy: {}, clr: {} };
+// si Chrome se ferme pendant la mise en place, on reprend où on en était (les véhicules déjà sortis de la colonne restent calibrés)
+let suRestored = 0;
+try {
+  const o = JSON.parse(localStorage.getItem('odv.su') || 'null');
+  if (o && Date.now() - o.t < 30 * 60000) for (const v of o.ok || []) { SU.done[v] = true; suRestored++; }
+} catch (e) {}
+function suSave() {
+  try { localStorage.setItem('odv.su', JSON.stringify({ t: Date.now(), ok: [1, 2, 3, 4].filter(v => SU.done[v] || SU.clr[v]) })); } catch (e) {}
+}
 function suRender() {
+  suSave();
   const box = $('suList');
   if (!box.children.length) for (let v = 1; v <= 4; v++) {
     const d = document.createElement('div'); d.className = 'surow'; d.id = 'surow' + v; d.style.setProperty('--vc', `var(--v${v})`);
@@ -1657,6 +1667,7 @@ async function suGo(v) {
 }
 $('suReset').onclick = () => { SU.done = {}; SU.hy = {}; SU.clr = {}; for (let v = 1; v <= 4; v++) $('sust' + v).innerHTML = ''; suRender(); };
 $('suGo').onclick = () => showTab('choix');
+if (suRestored && suRestored < 4) setTimeout(() => toast(`Mise en place reprise : ${[1, 2, 3, 4].filter(v => SU.done[v]).map(v => 'V' + v).join(', ')} déjà calibré${suRestored > 1 ? 's' : ''}. Continue avec le suivant.`), 5500);
 
 // ====================================================================== 3. remote
 let R = { hub: null, st: null, at: 0, last: null, lastCmd: null, lock: 0 };
