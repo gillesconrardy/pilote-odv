@@ -25,8 +25,8 @@ VEHICLE_ID = %VID%
 SENDER_ID = 4                 # le vehicule 4 diffuse l'horloge et recoit les commandes du telephone
 IS_SENDER = VEHICLE_ID == SENDER_ID
 ME = VEHICLE_ID - 1            # indice du vehicule (0 a 3)
-# couleur de la LED du hub = couleur du vehicule dans l'appli (V1 bleu, V2 orange, V3 vert, V4 violet)
-VHUE = (215, 28, 140, 270)[ME]
+# couleur de la LED du hub = couleur du vehicule dans l'appli (V1 bleu, V2 orange, V3 vert, V4 rouge, depuis v1.87)
+VHUE = (215, 28, 140, 0)[ME]
 VCOL = Color(VHUE, 100, 100)
 VDIM = Color(VHUE, 100, 30)   # pulsation : couleur pleine / couleur attenuee
 CHANNEL = 1
@@ -172,7 +172,7 @@ def mshow(pat, col):
 
 mshow('x.xxxx..x', VCOL)               # le chiffre 4
 RING = (0, 1, 2, 5, 8, 7, 6, 3)        # tour de la matrice, dans le sens des aiguilles d'une montre
-COMET = (Color(270, 90, 100), Color(270, 90, 40), Color(270, 90, 15))
+COMET = (Color(0, 90, 100), Color(0, 90, 40), Color(0, 90, 15))
 ORDIM = Color(28, 100, 20)
 
 
@@ -219,7 +219,7 @@ def mtick(t):
         if abs(dx) + abs(dy) > 0.3 or h_v > 0.0005 or h_lost:
             m_last[6] = t
         if hand and h_v > 0.0005:
-            mshow('x.x...xxx' if h_gx == -1 else 'x.x....x.', Color.RED if h_gx == -1 else Color.YELLOW)
+            mshow('x.x...xxx' if h_gx == -1 else 'x.x....x.', Color.MAGENTA if h_gx == -1 else Color.YELLOW)
         elif hand and h_lost:
             mshow('x.x.x....', Color.ORANGE)
         else:
@@ -236,7 +236,7 @@ def mtick(t):
     elif p[2] == -1:
         mshow('..x.xx..x', Color.CYAN)          # retour
     elif wrap(vt(t)) in BOUNDS:
-        # veille : une comete violette fait le tour, le point du centre clignote en orange
+        # veille : une comete rouge fait le tour, le point du centre clignote en orange
         f = t // 110
         if f == m_last[7] and m_last[0] == '':
             return
@@ -884,7 +884,7 @@ def hand_tick(dt, local):
                 h_gx = -1
                 h_gy = 0
                 best = 1
-                hub.light.on(Color.RED)
+                hub.light.on(Color.MAGENTA)
             if best >= 1:
                 h_v = vmax
                 print('PU', int(h_gx * 100), int(h_gy * 100))

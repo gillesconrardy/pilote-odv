@@ -11,6 +11,8 @@ il pilote depuis Chrome sur Android (Safari/Chrome iPhone n'ont pas le Bluetooth
 - Ne publier (git push) que quand Gilles le demande.
 - Nom de l'application : **F4 Square** (depuis v1.29 ; titre, en-tête, manifest, simulateur), écrit en police **Russo One** (Google Fonts), « F4 » en clair et « SQUARE » en ambre (`h1.brand`). Le dépôt et l'adresse restent `pilote-odv`.
 
+**Couleurs des véhicules** : V1 bleu, V2 orange, V3 vert, **V4 rouge depuis v1.87** (demande de Gilles ; `--v4` dans la page et le simulateur, `VHUE`, comète de la matrice, plan de Mise en place).
+
 ## Le matériel et le code d'origine
 `choregraphies/0_origine_ODV_Cfg05_Vehicle01.py` = programme d'origine (4 fichiers identiques sauf
 `VEHICLE_ID`). Unités : pas de grille, `GEAR_RATIO` 80°/pas, vitesse max 1400°/s, pas de 4 ms.
@@ -142,17 +144,17 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      zone morte 3°, plein à 20°) ; le joystick fait aussi pencher. Tests : `tests/t_billes.py`, harness (`B`, `T…`).
    - **Matrice lumineuse 3×3 du V4** (v1.77, `ColorLightMatrix` sur le **port D du V4**, seulement le V4 ; `MX`, `mshow(motif, couleur)`
      = 9 caractères ligne par ligne, 'x' allumé, ne renvoie rien si inchangé ; `mtick` toutes les 100 ms) :
-     **démarrage** « 4 » violet ; **calibrage** flèche orange vers la clôture du haut puis de droite (`homing`) ; **tableau de bord** :
+     **démarrage** « 4 » couleur du V4 (rouge) ; **calibrage** flèche orange vers la clôture du haut puis de droite (`homing`) ; **tableau de bord** :
      ▶ vert en lecture, ◀ cyan en retour, ❚❚ orange en pause, **au départ (veille, v1.81, choix « A · Comète » de Gilles) = comète
-     violette avec traînée de 2 pixels qui fait le tour (`RING`, `COMET`, 110 ms par case) et point central orange qui clignote** (plus de batterie),
+     rouge (violette avant v1.87) avec traînée de 2 pixels qui fait le tour (`RING`, `COMET`, 110 ms par case) et point central orange qui clignote** (plus de batterie),
      ✕ rouge en urgence ; **compte à rebours** : `p` depuis le début d'une chorégraphie (pas en reprise) démarre 3 s plus tard au lieu
      de 1 s (`m_last[5]`), la matrice affiche 3, 2, 1 (les autres suivent l'horloge, donc synchrones) ; **visage** en conduite manuelle :
      yeux qui regardent dans le sens du mouvement, yeux fermés (atténués) après 4 s immobile, orange pendant l'appui de la main,
-     rouges + bouche (attaque), jaunes + bouche ronde (poussé). Sans matrice : rien ne change (pas de délai de 3 s).
+     magenta + bouche (attaque ; rouge avant v1.87, le V4 étant devenu rouge, LED du hub aussi magenta), jaunes + bouche ronde (poussé). Sans matrice : rien ne change (pas de délai de 3 s).
      Harness : stub `ColorLightMatrix`, motifs dans `harness_out.json` → `matrix`. **Orientation de la matrice sur le véhicule à vérifier.**
      Pour la place : le mode « suivre la main » (H1), `rx_ok`/`v4_ok`/`RXO` et la réception des jeux par les suiveurs sont passés
      entre marqueurs `#[JEUX` (source V4 sans données ≈ 26,6 k, comme avant la matrice).
-   - LED du hub = couleur du véhicule (`VCOL` : V1 bleu 215°, V2 orange 28°, V3 vert 140°, V4 violet 270°, `Color(h,100,100)`) ;
+   - LED du hub = couleur du véhicule (`VCOL` : V1 bleu 215°, V2 orange 28°, V3 vert 140°, V4 **rouge 0° depuis v1.87** (avant violet 270°), `Color(h,100,100)`) ;
      en marche elle pulse couleur pleine / atténuée (`VDIM`, v = 30) ; restent : rouge = urgence, jaune/rouge = batterie faible
      (< 7,0 / 6,5 V), cyan = connexion télécommande.
    - **Reconnexion sans calibrage** (v1.60, demande de Gilles) : au démarrage sans `DO_HOMING`, le hub ne va plus à sa place
