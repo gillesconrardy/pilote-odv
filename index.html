@@ -463,7 +463,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.64</b><br>publiée le 12/11/2026 15:53</div>
+    <div class="ver" title="Version de l'application"><b>v1.65</b><br>publiée le 12/11/2026 16:44</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -483,6 +483,11 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div id="suList"></div>
       <button class="btn primary" id="suGo" style="width:100%;padding:14px;margin-top:10px" hidden>Choisir les chorégraphies →</button>
       <button class="btn" id="suReset" style="width:100%;margin-top:8px">↺ Recommencer la mise en place</button>
+    </div>
+    <div class="card" id="soloCard">
+      <h2>Piloter seulement le V4 <button type="button" class="tip" data-tip="Les véhicules 1, 2 et 3 sont déjà à leur place le long du haut (30, 20 et 10). Pose le véhicule 4 dans le coin en haut à droite, contre les deux clôtures. Il se calibre seul, sans chorégraphie, puis l'appli ouvre Pilotage et te donne la main : joystick, télécommande LEGO ou « Suivre la main » avec le capteur. Les 3 autres ne bougent pas et le véhicule 4 ne peut pas les toucher.">i</button></h2>
+      <div class="sub">Les véhicules 1, 2 et 3 sont déjà en ligne en haut ; le 4 est posé dans le coin en haut à droite, contre les clôtures.</div>
+      <button class="btn" id="suSolo" style="width:100%;margin-top:10px">🕹 Calibrer seulement le véhicule 4 et piloter</button>
     </div>
   </section>
 
@@ -1160,7 +1165,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.64';
+const MY_VER = '1.65';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1667,6 +1672,19 @@ async function suGo(v) {
 }
 $('suReset').onclick = () => { SU.done = {}; SU.hy = {}; SU.clr = {}; for (let v = 1; v <= 4; v++) $('sust' + v).innerHTML = ''; suRender(); };
 $('suGo').onclick = () => showTab('choix');
+// mode solo : seul le véhicule 4 se calibre (les autres sont déjà à leur place), puis prise en main directe
+$('suSolo').onclick = async () => {
+  if ([1, 2, 3, 4].some(u => V[u].busy) || M.active) return;
+  $('suSolo').disabled = true; $('sust4').innerHTML = ''; SU.hy[4] = SU.clr[4] = false;
+  try {
+    const ok = await sendVehicle(4, true, true, true);
+    if (!ok) return;
+    SU.done[4] = true; suRender();
+    showTab('tele'); window.scrollTo(0, 0);
+    for (let k = 0; k < 60 && !(R.st && (R.st.s === 'P' || R.st.s === 'S') && !R.st.pend); k++) await sleep(200);
+    M.v = 4; await $('manGo').onclick();
+  } finally { $('suSolo').disabled = false; }
+};
 if (suRestored && suRestored < 4) setTimeout(() => toast(`Mise en place reprise : ${[1, 2, 3, 4].filter(v => SU.done[v]).map(v => 'V' + v).join(', ')} déjà calibré${suRestored > 1 ? 's' : ''}. Continue avec le suivant.`), 5500);
 
 // ====================================================================== 3. remote
@@ -1800,7 +1818,7 @@ $('manGo').onclick = async () => {
   }
   if (!R.hub || !R.hub.connected || !R.st) { toast('Connecte d\'abord le véhicule 4 (il donne la position de tous)'); return; }
   if (!(R.st.s === 'P' || R.st.s === 'S') || R.st.pend) { toast('Mets d\'abord le spectacle en pause ou fais Stop et retour'); return; }
-  if (R.st.gen && R.st.gen !== genId()) { toast('Le véhicule 4 joue une autre sélection : mets d\'abord les 4 véhicules à jour'); return; }
+  if (R.st.gen && R.st.gen !== (R.idle ? genId(idleTL(), false) : genId())) { toast('Le véhicule 4 joue une autre sélection : mets d\'abord les 4 véhicules à jour'); return; }
   const v = M.v, w = R.st.w;
   try {
     manMsg('Connexion au véhicule ' + v + '…');
