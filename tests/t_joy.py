@@ -19,7 +19,7 @@ async def main():
         await pg.mouse.move(cx - 70, cy, steps=3); await pg.wait_for_timeout(1500); await pg.mouse.up()
         print('cmd after down 2s then left (blocked by V3 at x=10?):', await pg.evaluate('M.cmd'))
         await pg.screenshot(path='j1.png', full_page=True)
-        await pg.click('#manGo'); await pg.wait_for_timeout(6000)
+        await pg.click('#fBack'); await pg.wait_for_timeout(6000)
         print('after return:', await pg.evaluate('[M.active, M.cmd]'))
         st = await pg.evaluate('window.__stdin'); hubs = sorted(set(n for n, t in st)); print('hubs receiving stdin:', hubs)
         gs = [tuple(map(int, re.findall(r'-?\d+', t))) for n, t in st if t.startswith('G')]

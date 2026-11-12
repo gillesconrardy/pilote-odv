@@ -181,6 +181,12 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
    reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30) ;
    « Rendre la main » : retour du V4 par le plus court chemin qui contourne les 3 autres (A* + lissage).
+   **Mode focus de conduite** (v1.79, design « B · Cockpit » choisi par Gilles) : dès que le V4 est en conduite manuelle au joystick,
+   `body.focus` (posé par `manUI`) cache la barre d'onglets, l'en-tête, l'état/boutons du spectacle et tout sauf la 1ʳᵉ carte de Pilotage ;
+   la jauge `#dsBar` se pose en transparence sur le bas du plateau (`.cvw`) ; `#joyBox` devient une console (bande orange) :
+   bouton rond `#fRc` à gauche (icône SVG de télécommande LEGO, cyan si connectée, « respire » pendant la recherche → `rcGo`),
+   joystick, bouton rond orange `#fBack` « Rendre » à droite (→ `manGo`). `#fMsg` reprend `manMsg`. Le bouton « Connecter la
+   télécommande » et son état sous Conduite manuelle sont masqués (`hidden`). Tests : `t_joy.py`/`t_push.py` cliquent `#fBack`.
    **Joystick carré** (v1.66, design « A · Pavé » choisi par Gilles) : `.joy` carré à coins ambre (`.jc`), manette carrée 64 px ;
    `joyAt` borne chaque axe séparément (−1..1, coins atteignables).
    **Atelier** (« Créer une chorégraphie ») : étapes = poses des 4 véhicules (glisser sur le plateau,

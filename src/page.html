@@ -464,6 +464,19 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .joy .jc{position:absolute;width:14px;height:14px;pointer-events:none}
 .joy .jc.a{left:-1px;top:-1px;border-left:2px solid var(--accent);border-top:2px solid var(--accent)}
 .joy .jc.b{right:-1px;bottom:-1px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent)}
+/* conduite du V4 : mode focus « B · Cockpit » (v1.79) — plateau, jauge posée sur le plateau, console joystick */
+.cvw{position:relative}
+#joyBox{background:#1a1c1e;border-top:2px solid var(--accent);border-radius:0 0 10px 10px;margin-top:8px;padding:10px 8px;align-items:center;justify-content:space-between;gap:8px}
+#joyBox:not([style*="none"]){display:flex}
+#joyBox .joy{margin:0}
+.fb{width:64px;height:64px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:transparent;border:1px solid #3a3530;color:#edeae4;padding:0;cursor:pointer}
+.fb.back{background:var(--accent);border-color:var(--accent);color:#121314}.fb.back span{font:600 10px 'Space Grotesk',sans-serif}
+.fb.on{border-color:#22d3ee;color:#22d3ee}.fb.busy{animation:suPulse 1.2s ease-in-out infinite}
+.fb:disabled{opacity:.4}
+#fMsg{text-align:center;margin-top:6px}#fMsg:empty{display:none}
+body.focus nav.tabbar,body.focus header,body.focus #tele .state,body.focus #tele .prog,body.focus #stTime,body.focus #tele .remote,body.focus #tele>:not(:first-child){display:none!important}
+body.focus #dsBar{position:absolute;left:8px;right:8px;bottom:8px;margin:0;background:rgba(18,19,20,.88);padding:5px 8px 3px}
+body.focus #dsBar .dsh b{font-size:17px}
 </style>
 </head>
 <body>
@@ -556,9 +569,10 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
         <button class="rb home" id="bHome" disabled title="Stop et retour au départ"><span class="ic">⟲</span>Stop et retour</button>
         <button class="rb stop" id="bStop" disabled title="Arrêt d'urgence"><span class="ic">⛔</span>Urgence</button>
       </div>
-      <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
-      <div id="dsBar" hidden><div class="dsh"><span>DISTANCE · CAPTEUR V4</span><b id="dsBV">—</b></div><div class="dst"><i></i><span id="dsBK"></span></div><div class="dsax"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 cm</span></div></div>
-      <div id="joyBox" style="display:none"><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div></div>
+      <div class="cvw"><canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
+      <div id="dsBar" hidden><div class="dsh"><span>DISTANCE · CAPTEUR V4</span><b id="dsBV">—</b></div><div class="dst"><i></i><span id="dsBK"></span></div><div class="dsax"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 cm</span></div></div></div>
+      <div id="joyBox" style="display:none"><button type="button" class="fb" id="fRc" title="Connecter la télécommande LEGO" aria-label="Connecter la télécommande LEGO"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="3"/><rect x="7.6" y="5.5" width="3.2" height="8" rx="1.6"/><rect x="13.2" y="5.5" width="3.2" height="8" rx="1.6"/><path d="M9.2 7.4v1.4M8.5 8.1h1.4M8.5 11.6h1.4M14.8 7.4v1.4M14.1 8.1h1.4M14.1 11.6h1.4" stroke-width="1.1"/><circle cx="12" cy="17.6" r="1.5" fill="#22c55e" stroke="none"/></svg></button><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div><button type="button" class="fb back" id="fBack" title="Rendre la main" aria-label="Rendre la main"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 14l7-8 7 8z"/><path d="M5 19h14"/></svg><span>Rendre</span></button></div>
+      <div class="sub" id="fMsg"></div>
     </div>
     <div class="card" id="watchCard" hidden>
       <h2>Montre · télécommande <button type="button" class="tip" data-tip="Les commandes de musique de ta montre (Garmin ou autre) pilotent le spectacle : Lecture/Pause = lecture ou pause, Suivant = chorégraphie suivante, Précédent = stop et retour au départ. L'appli se présente au téléphone comme un lecteur de musique (son silencieux). Laisse F4 Square ouvert dans Chrome ; la montre affiche l'état du spectacle comme titre du morceau.">i</button></h2>
@@ -580,7 +594,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
-      <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
+      <button class="btn" id="rcGo" hidden disabled style="width:100%;margin-top:8px">Connecter la télécommande</button><div class="sub" id="rcSt" hidden style="margin-top:6px">Télécommande : non connectée</div>
       <button class="btn" id="handGo" hidden disabled style="width:100%;margin-top:8px">✋ Suivre la main</button><button class="btn" id="axGo" hidden disabled style="width:100%;margin-top:8px">👋 Pousser avec la main</button><div class="sub" id="handSt" style="margin-top:6px"></div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
@@ -1415,11 +1429,13 @@ function manUI() {
   b.textContent = M.returning ? 'Retour à sa place…' : M.active ? 'Rendre la main' : 'Prendre la main';
   b.disabled = M.returning || GM.on; b.className = 'btn ' + (M.active ? '' : 'primary');
   $('joyBox').style.display = M.active && !M.returning && (!M.hand || M.hmode === 2) && M.mode === 'joy' ? '' : 'none';
+  const foc = M.active && M.v === 4 && M.mode === 'joy';
+  if (foc !== document.body.classList.contains('focus')) { document.body.classList.toggle('focus', foc); if (foc) window.scrollTo(0, 0); }
   tiltUI(); rcUI(); handUI();
   $('cv').classList.toggle('drive', M.active && !M.returning && M.mode === 'drag');
   updateRemote();
 }
-const manMsg = t => $('manMsg').innerHTML = t;
+const manMsg = t => { $('manMsg').innerHTML = t; if ($('fMsg')) $('fMsg').innerHTML = M.active ? t : ''; };
 // suivre la main : capteur de distance du véhicule 4 (port B, côté droit, regarde vers -X par-dessus la clôture)
 function handUI() {
   const b = $('handGo'), a = $('axGo'); if (!b) return;
@@ -1599,10 +1615,14 @@ function planReturn(from, to, obs) {
   return out;
 }
 function rcUI() {
+  const f = $('fRc'); f.disabled = !M.active || M.returning || !!M.rcBusy; f.classList.toggle('on', !!M.rc); f.classList.toggle('busy', !!M.rcBusy);
+  f.title = M.rcBusy ? 'Recherche… allume la télécommande (bouton vert)' : M.rc ? 'Télécommande connectée (toucher pour reconnecter)' : 'Connecter la télécommande LEGO';
   $('rcGo').disabled = !M.active || M.returning || !!M.rcBusy;
   $('rcGo').textContent = M.rc ? '🎮 Reconnecter la télécommande' : '🎮 Connecter la télécommande';
   $('rcSt').innerHTML = M.rcBusy ? 'Recherche… allume la télécommande (bouton vert)' : M.rc ? '<span class="ok">Télécommande : connectée</span>' : 'Télécommande : non connectée';
 }
+$('fRc').onclick = () => $('rcGo').onclick();
+$('fBack').onclick = () => { if (M.active && !M.returning) $('manGo').onclick(); };
 $('rcGo').onclick = async () => {
   if (!M.active || !M.hub) return;
   M.rcBusy = true; rcUI();
