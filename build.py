@@ -23,7 +23,7 @@ C = 'choregraphies/'
 CHORS = [  # (nom, fichier, coche par defaut dans Pilote ODV)
     ('Carrousel', '1_carrousel.py', 1), ('Kaléidoscope', '2_kaleidoscope.py', 1),
     ('Tourbillons', '3_tourbillons.py', 1), ('Petit train', '4_petit_train.py', 1),
-    ('Formation', '5_formation.py', 1), ('Vague + Spirale + Pulsation', '6_vague_spirale_pulsation.py', 0),
+    ('Formation', '5_formation.py', 1),
     ("Chorégraphie d'origine (8, boucles, cercles…)", '7_origine_corrigee.py', 0)]
 core = rd('src/core.js')
 
@@ -31,14 +31,15 @@ core = rd('src/core.js')
 pre = [{'name': n, 'src': rd(C + f), 'def': d} for n, f, d in CHORS]
 page = rd('src/page.html').replace('/*CORE*/', core).replace('/*GEN*/', rd('src/odvgen.js')) \
     .replace('/*RUNTIME*/', js(rd('src/runtime.py'))).replace('/*PRESETS*/', js(pre)) \
-    .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT).replace('/*ICON*/', ICON)
+    .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT).replace('/*ICON*/', ICON) \
+    .replace('/*ROUTINE*/', js(rd(C + 'routine_spirale_pulsation.py')))   # routine spéciale, toujours chargée (montre)
 open('index.html', 'w', encoding='utf-8').write(page)
 
 # --- Simulateur (simulateur/index.html)
 five = '\n'.join(rd(C + f) for _, f, _ in CHORS[:5])
 sim = [{'name': '%d · %s' % (i + 1, n), 'src': rd(C + f)} for i, (n, f, _) in enumerate(CHORS[:5])]
-sim += [{'name': 'Les 5 à la suite', 'src': five}, {'name': CHORS[5][0], 'src': rd(C + CHORS[5][1])},
-        {'name': CHORS[6][0], 'src': rd(C + CHORS[6][1])}]
+sim += [{'name': 'Les 5 à la suite', 'src': five}, {'name': 'Routine Spirale + Pulsation', 'src': rd(C + 'routine_spirale_pulsation.py')},
+        {'name': CHORS[5][0], 'src': rd(C + CHORS[5][1])}]
 s = rd('simulateur/template.html').replace('/*CORE*/', core).replace('/*PRESETS*/', js(sim)) \
     .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT)
 open('simulateur/index.html', 'w', encoding='utf-8').write(s)

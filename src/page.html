@@ -894,9 +894,12 @@ function genId(tl = TL, loop = $('optLoop').checked) {
 }
 // programme « mise en place » : calibrage puis attente au départ, sans chorégraphie (une simple pause)
 let IDLE = null;
-const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Mise en place', src: '    mvc.wait_sync_ms(500)\n' }]));
+// programme « sans chorégraphie » (mise en place, Piloter seulement le V4) : il contient la routine spéciale
+// Spirale + Pulsation, à l'arrêt au départ ; la montre (Lecture) la lance quand les 4 véhicules sont en place
+const ROUTINE = /*ROUTINE*/;
+const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Spirale + Pulsation', src: ROUTINE }]));
 function programText(vid, homing = false, idle = false) {
-  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Mise en place'] });
+  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Spirale + Pulsation'] });
   return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name), smode: SONAR });
 }
 async function compileFor(vid, homing = false, idle = false) {
@@ -1337,7 +1340,7 @@ if (suRestored && suRestored < 4) setTimeout(() => toast(`Mise en place reprise 
 // ====================================================================== 3. remote
 let R = { hub: null, st: null, at: 0, last: null, lastCmd: null, lock: 0 };
 function attachRemote(h, idle = false) {
-  R.hub = h; R.idle = idle; R.tl = idle ? idleTL() : TL; R.names = idle ? ['Mise en place'] : PLAY.map(i => i.name);
+  R.hub = h; R.idle = idle; R.tl = idle ? idleTL() : TL; R.names = idle ? ['Spirale + Pulsation'] : PLAY.map(i => i.name);
   h.onLine = line => {
     const p = line.split(/\s+/);
     if (p[0] === 'ST') { R.st = { s: p[1], w: +p[2], k: +p[3], pend: p[4] === '1', mv: +p[5], gen: +p[6] }; R.at = performance.now(); updateRemote();
@@ -1786,7 +1789,10 @@ function watchAct(what) {
     if (what === 'toggle' && !M.returning && !M.tidying) { toast('⌚ Rendre la main'); $('manGo').onclick(); }
     return;
   }
-  if (R.idle) { toast('⌚ Montre : pas de chorégraphie envoyée aux véhicules'); return; }
+  if (R.idle) {   // pas de chorégraphie : la montre lance la routine Spirale + Pulsation (déjà dans les 4 programmes)
+    if (![1, 2, 3, 4].every(v => SU.done[v])) { toast('⌚ Montre : calibre d\'abord les 4 véhicules (onglet Setup)'); return; }
+    if (what === 'next') return;
+  }
   const s = R.st && R.st.s;
   if (what === 'toggle') { const c = s === 'F' && R.lastCmd !== 'h' ? 'z' : 'p'; send(c); toast(c === 'p' ? '⌚ Lecture' : '⌚ Pause'); }
   else if (what === 'next') { send('n'); toast('⌚ Chorégraphie suivante'); }

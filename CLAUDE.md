@@ -193,7 +193,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    (Garmin…) pilotent le spectacle via la **Media Session** de Chrome : l'appli joue un WAV silencieux en boucle (`silentWav`),
    handlers `play`/`pause` → lecture/pause (`p`/`z` selon l'état), `nexttrack` → `n`, `previoustrack`/`stop` → `h` (`watchAct`) ;
    titre du « morceau » = état du spectacle (`watchMeta`, chaque seconde). **En conduite manuelle du V4, Lecture/Pause = « Rendre
-   la main »** (`manGo`, v1.75) ; Suivant/Précédent ignorés. Refusé en mise en place sans chorégraphie (`R.idle`) hors conduite.
+   la main »** (`manGo`, v1.75) ; Suivant/Précédent ignorés. **Routine spéciale Spirale + Pulsation** (v1.76, demande de Gilles) :
+   `choregraphies/routine_spirale_pulsation.py` (la « Vague » est retirée ; 19 s, 0 collision ; « Vague + Spirale + Pulsation » n'est
+   plus dans `CHORS`) est injectée par `build.py` (`/*ROUTINE*/`) et forme **le programme sans chorégraphie** (`idleTL()`) : tous les
+   programmes de Mise en place la contiennent, à l'arrêt au départ. Sans chorégraphie (`R.idle`), Lecture de la montre la lance (`p`)
+   si les 4 véhicules sont calibrés (`SU.done` 1..4), sinon un message ; Précédent = stop et retour ; Suivant ignoré. Test : `t_watch2.py`.
    Test : `t_watch.py` (`WATCH.h`). À vérifier sur le vrai téléphone + montre de Gilles. Étape suivante possible : appli
    Connect IQ + relais Internet (ntfy) pour plus de commandes.
 
