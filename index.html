@@ -467,7 +467,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.74</b><br>publiée le 12/11/2026 18:59</div>
+    <div class="ver" title="Version de l'application"><b>v1.75</b><br>publiée le 12/11/2026 19:10</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -1174,7 +1174,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.74';
+const MY_VER = '1.75';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1838,6 +1838,8 @@ $('manGo').onclick = async () => {
     await manualEnd(); return;
   }
   if (M.active) {
+    // le capteur (pousser / attaquer) pilotait peut-être le V4 : on le coupe, sinon le retour ne part pas
+    if (M.hand) { M.hand = false; try { await M.hub.stdin('H0'); } catch (e) {} handUI(); }
     M.returning = true; M.finger = null; M.joy = [0, 0];
     // chemin le plus court qui contourne les véhicules immobiles ; sinon on refait le chemin parcouru
     const home = M.path[0], plan = planReturn(M.cmd, home, M.others);
@@ -2142,7 +2144,11 @@ function silentWav(sec) {
 }
 function watchAct(what) {
   if (!R.hub || !R.hub.connected) { toast('⌚ Montre : connecte d\'abord le véhicule 4'); return; }
-  if (M.active || R.idle) { toast('⌚ Montre : pas pendant la conduite manuelle ou la mise en place'); return; }
+  if (M.active) {   // en conduite du V4 : Lecture/Pause de la montre = « Rendre la main »
+    if (what === 'toggle' && !M.returning && !M.tidying) { toast('⌚ Rendre la main'); $('manGo').onclick(); }
+    return;
+  }
+  if (R.idle) { toast('⌚ Montre : pas de chorégraphie envoyée aux véhicules'); return; }
   const s = R.st && R.st.s;
   if (what === 'toggle') { const c = s === 'F' && R.lastCmd !== 'h' ? 'z' : 'p'; send(c); toast(c === 'p' ? '⌚ Lecture' : '⌚ Pause'); }
   else if (what === 'next') { send('n'); toast('⌚ Chorégraphie suivante'); }

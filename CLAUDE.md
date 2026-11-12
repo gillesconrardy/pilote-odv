@@ -85,6 +85,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      rouges, « Attaque ! » sous Conduite manuelle.
      **Depuis v1.73** : la poussée part dans une direction **au hasard** (`urandom.randint`) parmi les 7 directions (tout sauf −X pur,
      réservé à l'attaque) qui ont au moins 4 pas de place, sinon la plus dégagée ; l'attaque = `h_gx == -1` (exactement −X).
+     **v1.75** : « Rendre la main » coupe d'abord le capteur (`H0`, `M.hand = false`), sinon le V4 n'acceptait pas le retour (bug Gilles).
      **Sur le plateau de Pilotage** (`drawSensor`, état `SNS`, alimenté par `DS`/`HD` et `PU <gx×100> <gy×100>`) : faisceau ambre
      vers l'avant du V4 (40 cm ≈ 32,6 pas), écho + point qui pulse là où il voit quelque chose (rouge < 5 cm) ; à la poussée,
      ondes de choc à l'endroit de la main, traînée derrière le V4 et flèche dans le sens de la glissade (1 s).
@@ -191,7 +192,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    au premier toucher de l'écran une fois le V4 connecté, `watchStart()` lance le son — Chrome exige un geste) : les commandes Musique d'une montre
    (Garmin…) pilotent le spectacle via la **Media Session** de Chrome : l'appli joue un WAV silencieux en boucle (`silentWav`),
    handlers `play`/`pause` → lecture/pause (`p`/`z` selon l'état), `nexttrack` → `n`, `previoustrack`/`stop` → `h` (`watchAct`) ;
-   titre du « morceau » = état du spectacle (`watchMeta`, chaque seconde). Refusé en conduite manuelle et en mise en place.
+   titre du « morceau » = état du spectacle (`watchMeta`, chaque seconde). **En conduite manuelle du V4, Lecture/Pause = « Rendre
+   la main »** (`manGo`, v1.75) ; Suivant/Précédent ignorés. Refusé en mise en place sans chorégraphie (`R.idle`) hors conduite.
    Test : `t_watch.py` (`WATCH.h`). À vérifier sur le vrai téléphone + montre de Gilles. Étape suivante possible : appli
    Connect IQ + relais Internet (ntfy) pour plus de commandes.
 

@@ -1476,6 +1476,8 @@ $('manGo').onclick = async () => {
     await manualEnd(); return;
   }
   if (M.active) {
+    // le capteur (pousser / attaquer) pilotait peut-être le V4 : on le coupe, sinon le retour ne part pas
+    if (M.hand) { M.hand = false; try { await M.hub.stdin('H0'); } catch (e) {} handUI(); }
     M.returning = true; M.finger = null; M.joy = [0, 0];
     // chemin le plus court qui contourne les véhicules immobiles ; sinon on refait le chemin parcouru
     const home = M.path[0], plan = planReturn(M.cmd, home, M.others);
@@ -1780,7 +1782,11 @@ function silentWav(sec) {
 }
 function watchAct(what) {
   if (!R.hub || !R.hub.connected) { toast('⌚ Montre : connecte d\'abord le véhicule 4'); return; }
-  if (M.active || R.idle) { toast('⌚ Montre : pas pendant la conduite manuelle ou la mise en place'); return; }
+  if (M.active) {   // en conduite du V4 : Lecture/Pause de la montre = « Rendre la main »
+    if (what === 'toggle' && !M.returning && !M.tidying) { toast('⌚ Rendre la main'); $('manGo').onclick(); }
+    return;
+  }
+  if (R.idle) { toast('⌚ Montre : pas de chorégraphie envoyée aux véhicules'); return; }
   const s = R.st && R.st.s;
   if (what === 'toggle') { const c = s === 'F' && R.lastCmd !== 'h' ? 'z' : 'p'; send(c); toast(c === 'p' ? '⌚ Lecture' : '⌚ Pause'); }
   else if (what === 'next') { send('n'); toast('⌚ Chorégraphie suivante'); }

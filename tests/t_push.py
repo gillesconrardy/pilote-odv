@@ -24,5 +24,10 @@ async def main():
         await pg.locator('#manCard').screenshot(path='/tmp/push.png')
         await pg.evaluate("$('axGo').click()"); await pg.wait_for_timeout(300)
         print('arrêt', await pg.evaluate('M.hand'), [t for n, t in await pg.evaluate('window.__stdin') if t[0] == 'H'])
+        await pg.evaluate("M.hand = true; M.hmode = 2; R.hub.onLine('POS 1500 1500 1')"); await pg.wait_for_timeout(300)
+        n0 = len(await pg.evaluate('window.__stdin'))
+        await pg.click('#manGo'); await pg.wait_for_timeout(2500)
+        st = [t for n, t in (await pg.evaluate('window.__stdin'))[n0:]]
+        print('retour main :', st[:3], '… G envoyés', sum(1 for t in st if t.startswith('G')), '| dernier', [t for t in st if t.startswith('G')][-1:])
         print('errors', errs); await b.close()
 asyncio.run(main())
