@@ -1,0 +1,21 @@
+import asyncio, os
+from playwright.async_api import async_playwright
+exec(open('t_manual.py').read().split('async def main')[0])
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox', '--autoplay-policy=no-user-gesture-required'])
+        pg = await b.new_page(viewport={'width': 412, 'height': 900})
+        errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
+        await pg.add_init_script(MOCK)
+        await pg.goto('file://' + os.path.abspath('../index.html')); await pg.wait_for_timeout(500)
+        await pg.click('nav button[data-tab=envoi]')
+        for v in (1, 2, 3, 4): await pg.click('#send%d' % v); await pg.wait_for_timeout(1200)
+        await pg.click('nav button[data-tab=tele]'); await pg.wait_for_timeout(800)
+        await pg.click('#stTime'); await pg.wait_for_timeout(500)   # un simple toucher suffit (V4 connecté)
+        print('actif', await pg.evaluate('WATCH.on'), '| titre', await pg.evaluate('navigator.mediaSession.metadata && navigator.mediaSession.metadata.title'))
+        await pg.evaluate('WATCH.h.play()'); await pg.wait_for_timeout(1300)
+        await pg.evaluate('WATCH.h.nexttrack()'); await pg.wait_for_timeout(1300)
+        await pg.evaluate('WATCH.h.previoustrack()'); await pg.wait_for_timeout(300)
+        print('envoyé', [t for n, t in await pg.evaluate('window.__stdin') if t in ('p', 'z', 'n', 'h')])
+        print('errors', errs); await b.close()
+asyncio.run(main())

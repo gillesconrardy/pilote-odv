@@ -467,7 +467,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.73</b><br>publiée le 12/11/2026 17:57</div>
+    <div class="ver" title="Version de l'application"><b>v1.74</b><br>publiée le 12/11/2026 18:59</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -549,6 +549,11 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       </div>
       <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
       <div id="joyBox" style="display:none"><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div></div>
+    </div>
+    <div class="card" id="watchCard" hidden>
+      <h2>Montre · télécommande <button type="button" class="tip" data-tip="Les commandes de musique de ta montre (Garmin ou autre) pilotent le spectacle : Lecture/Pause = lecture ou pause, Suivant = chorégraphie suivante, Précédent = stop et retour au départ. L'appli se présente au téléphone comme un lecteur de musique (son silencieux). Laisse F4 Square ouvert dans Chrome ; la montre affiche l'état du spectacle comme titre du morceau.">i</button></h2>
+      <button class="btn" id="watchGo" style="width:100%">⌚ Activer la montre</button>
+      <div class="sub" id="watchSt" style="margin-top:6px">Utilise les boutons Musique de ta montre pour piloter le spectacle.</div>
     </div>
     <div class="card" id="odoCard">
       <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs <button type="button" class="tip" data-tip="Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas = 12,25 mm).">i</button></h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
@@ -1169,7 +1174,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.73';
+const MY_VER = '1.74';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -2124,8 +2129,60 @@ function stateLabel() {
   if (s.s === 'E') return ['Arrêté', 'Programmes arrêtés'];
   return ['…', ''];
 }
+// ---------------------------------------------------------------- montre : les commandes « musique » pilotent le spectacle
+// L'appli joue un son silencieux en boucle pour être vue comme un lecteur de musique (Media Session) ;
+// Lecture/Pause, Suivant et Précédent de la montre arrivent ici.
+const WATCH = { on: false, audio: null, title: '' };
+function silentWav(sec) {
+  const rate = 8000, n = rate * sec, b = new ArrayBuffer(44 + n), v = new DataView(b), w = (o, t) => [...t].forEach((c, k) => v.setUint8(o + k, c.charCodeAt(0)));
+  w(0, 'RIFF'); v.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, 'data'); v.setUint32(40, n, true);
+  new Uint8Array(b, 44).fill(128);   // 8 bits non signés : 128 = silence
+  return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+}
+function watchAct(what) {
+  if (!R.hub || !R.hub.connected) { toast('⌚ Montre : connecte d\'abord le véhicule 4'); return; }
+  if (M.active || R.idle) { toast('⌚ Montre : pas pendant la conduite manuelle ou la mise en place'); return; }
+  const s = R.st && R.st.s;
+  if (what === 'toggle') { const c = s === 'F' && R.lastCmd !== 'h' ? 'z' : 'p'; send(c); toast(c === 'p' ? '⌚ Lecture' : '⌚ Pause'); }
+  else if (what === 'next') { send('n'); toast('⌚ Chorégraphie suivante'); }
+  else if (what === 'home') { send('h'); toast('⌚ Stop et retour'); }
+}
+function watchMeta() {
+  if (!WATCH.on || !('mediaSession' in navigator)) return;
+  const [a, b] = R.hub && R.hub.connected ? stateLabel() : ['V4 non connecté', ''];
+  const t = a + (b ? ' · ' + b : '');
+  if (t === WATCH.title) return; WATCH.title = t;
+  try { navigator.mediaSession.metadata = new MediaMetadata({ title: t, artist: 'F4 Square', album: 'Spectacle' }); } catch (e) {}
+}
+async function watchStart() {
+  if (WATCH.on || WATCH.busy || !('mediaSession' in navigator)) return;
+  WATCH.busy = true;
+  try { await $('watchGo').onclick(); } finally { WATCH.busy = false; }
+}
+// toujours actif : la montre marche dès que le véhicule 4 est connecté (Chrome exige un toucher de l'écran pour lancer le son)
+addEventListener('pointerdown', () => { if (R.hub && R.hub.connected) watchStart(); }, true);
+$('watchGo').onclick = async () => {
+  if (!('mediaSession' in navigator)) { $('watchSt').innerHTML = '<span class="bad">Ce navigateur ne gère pas les commandes de musique.</span>'; return; }
+  if (WATCH.on) {
+    WATCH.on = false; WATCH.audio.pause();
+    ['play', 'pause', 'nexttrack', 'previoustrack', 'stop'].forEach(k => { try { navigator.mediaSession.setActionHandler(k, null); } catch (e) {} });
+    navigator.mediaSession.metadata = null; $('watchGo').textContent = '⌚ Activer la montre'; $('watchGo').classList.remove('primary');
+    $('watchSt').textContent = 'Utilise les boutons Musique de ta montre pour piloter le spectacle.'; return;
+  }
+  if (!WATCH.audio) { WATCH.audio = new Audio(silentWav(10)); WATCH.audio.loop = true; }
+  try { await WATCH.audio.play(); } catch (e) { $('watchSt').innerHTML = '<span class="bad">Lecture du son impossible : ' + esc(e.message) + '</span>'; return; }
+  const H = { play: () => watchAct('toggle'), pause: () => watchAct('toggle'), nexttrack: () => watchAct('next'), previoustrack: () => watchAct('home'), stop: () => watchAct('home') };
+  for (const k in H) try { navigator.mediaSession.setActionHandler(k, () => { H[k](); WATCH.audio.play().catch(() => {}); navigator.mediaSession.playbackState = 'playing'; }); } catch (e) {}
+  navigator.mediaSession.playbackState = 'playing'; WATCH.h = H;
+  WATCH.on = true; WATCH.title = ''; watchMeta();
+  $('watchGo').textContent = '■ Désactiver la montre'; $('watchGo').classList.add('primary');
+  $('watchSt').innerHTML = 'Montre active : <b>Lecture/Pause</b> = lecture ou pause · <b>Suivant</b> = chorégraphie suivante · <b>Précédent</b> = stop et retour. Laisse F4 Square ouvert.';
+};
+setInterval(watchMeta, 1000);
 function updateRemote() {
   const on = R.hub && R.hub.connected;
+  watchMeta();
   ['bPlay', 'bPause', 'bHome'].forEach(id => $(id).disabled = !on || M.active || R.idle);
   $('bStop').disabled = !on;
   $('connect4').style.display = on ? 'none' : '';

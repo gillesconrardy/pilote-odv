@@ -187,6 +187,14 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
 5. **`simulateur/template.html`** : simulateur visuel (plateau sombre à points, véhicules en blocs sombres
    « 01…04 » d'après la photo du montage), lecture, détection des chevauchements, édition du code.
 
+   **Montre · télécommande** (v1.74, **toujours actif, sans réglage** (demande de Gilles) : la carte `#watchCard` est masquée ;
+   au premier toucher de l'écran une fois le V4 connecté, `watchStart()` lance le son — Chrome exige un geste) : les commandes Musique d'une montre
+   (Garmin…) pilotent le spectacle via la **Media Session** de Chrome : l'appli joue un WAV silencieux en boucle (`silentWav`),
+   handlers `play`/`pause` → lecture/pause (`p`/`z` selon l'état), `nexttrack` → `n`, `previoustrack`/`stop` → `h` (`watchAct`) ;
+   titre du « morceau » = état du spectacle (`watchMeta`, chaque seconde). Refusé en conduite manuelle et en mise en place.
+   Test : `t_watch.py` (`WATCH.h`). À vérifier sur le vrai téléphone + montre de Gilles. Étape suivante possible : appli
+   Connect IQ + relais Internet (ntfy) pour plus de commandes.
+
 ## Construire, tester, publier
 - `python build.py` → régénère `index.html` et `simulateur/index.html` (les chorégraphies sont lues
   dans `choregraphies/`). Les pages générées sont autonomes (un seul fichier).
