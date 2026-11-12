@@ -277,6 +277,10 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .sendb:disabled{opacity:.4;cursor:default}.sendb:disabled .sa{animation:none}
 @keyframes sendPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.5)}50%{box-shadow:0 0 0 6px rgba(255,154,60,0)}}
 @media (prefers-reduced-motion:reduce){.sendb .sa{animation:none}}
+/* éditeur de plateau en blocs (v1.89, style 1 « quadrillage à toucher » choisi par Gilles) */
+#bdCv{width:100%;height:auto;display:block;margin-top:10px;touch-action:none;border-radius:4px}
+#bdMode button[data-m=d].on{color:#22d3ee}
+.bdfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
 /* ===== véhicule (design 1 hachuré, police Tomorrow) : étiquettes HTML ===== */
 .vbk{position:relative;border:0!important;border-radius:0!important;box-shadow:none;color:#edeae4!important;font-family:"Tomorrow",var(--mono)!important;font-weight:700!important;padding-bottom:3px;
   background:linear-gradient(#ff9a3c,#ff9a3c) 50% calc(100% - 3px)/64% 3px no-repeat,repeating-linear-gradient(45deg,color-mix(in srgb,var(--c) 32%,transparent) 0 1.5px,transparent 1.5px 5px),#1f2124!important}
@@ -552,6 +556,12 @@ body.focus #dsBar .dsh b{font-size:17px}
       <div class="solop">PLAYER <span>04</span></div>
       <button type="button" id="suSolo" class="solob">▶ PRESS START</button>
       <div class="sub solos">Pose le 04 dans le coin en haut à droite : il se calibre et le cockpit s'ouvre</div>
+    </div>
+    <div class="card" id="boardCard">
+      <h2>Plateau <button type="button" class="tip" data-tip="Dessine la forme de ton plateau, sans limite de taille (la grille s'agrandit quand tu ajoutes des blocs au bord) : chaque case = un bloc de 10 pas (12,25 cm), la taille d'un véhicule. Mode Blocs : touche une case vide pour poser un bloc, un bloc pour l'enlever (glisse le doigt pour en poser plusieurs). Le bloc du coin en haut à droite (clôture et picot rouge, où se fait le calibrage) reste toujours ; les 2 cases rouges juste derrière ses clôtures restent vides. Pince avec 2 doigts pour zoomer / dézoomer et les glisser pour déplacer la grille ; ⤢ revient à tout le plateau. Mode Décharge : touche le bloc où les véhicules iront décharger leurs billes. Pour l'instant le plateau est seulement dessiné et mémorisé dans le téléphone : les véhicules restent sur le carré 4×4.">i</button></h2>
+      <div class="seg" id="bdMode"><button type="button" data-m="blk" class="on">▦ Blocs</button><button type="button" data-m="d">⬇ Décharge</button></div>
+      <canvas id="bdCv" width="640" height="640" aria-label="Plan du plateau en blocs"></canvas>
+      <div class="bdfoot"><span class="sub" id="bdInfo"></span><span style="display:flex;gap:6px"><button type="button" class="btn" id="bdFit" hidden title="Revoir tout le plateau">⤢</button><button type="button" class="btn" id="bdReset">4×4</button></span></div>
     </div>
   </section>
 
@@ -1695,6 +1705,142 @@ $('rcGo').onclick = async () => {
   try { await M.hub.stdin('C'); } catch { M.rcBusy = false; rcUI(); }
   setTimeout(() => { if (M.rcBusy) { M.rcBusy = false; rcUI(); } }, 9000);
 };
+// ====================================================================== éditeur de plateau (v1.89)
+// grille de N×N cases (1 case = 1 bloc de 10 pas) ; case (bx, by) : bx vers la gauche (+X), by vers le bas (+Y), (0,0) = coin du calibrage
+let bdV = null;                // vue figée pendant qu'on dessine (sinon la grille bouge sous le doigt)
+let bdZ = null;                // vue choisie au zoom à 2 doigts / molette : {x1, y0, n} (nombres à virgule), null = ajustée aux blocs
+function bdView() {
+  // grille sans limite : on montre les blocs + 2 cases libres tout autour (au moins 8×8), centrée, en carré
+  if (bdZ) return bdZ;
+  if (bdV) return bdV;
+  const xs = BD.cells.map(c => +c.split(',')[0]), ys = BD.cells.map(c => +c.split(',')[1]);
+  let x0 = Math.min(...xs) - 2, x1 = Math.max(...xs) + 2, y0 = Math.min(...ys) - 2, y1 = Math.max(...ys) + 2;
+  const n = Math.max(8, x1 - x0 + 1, y1 - y0 + 1), ex = n - (x1 - x0 + 1), ey = n - (y1 - y0 + 1);
+  x1 += Math.ceil(ex / 2); y0 -= Math.floor(ey / 2);
+  return { x1, y0, n };
+}
+const BD = (() => { const d = store.get('board', null); return d && Array.isArray(d.cells) ? { cells: d.cells, d: d.d || null } : { cells: bdSquare(), d: null }; })();
+let bdMode = 'blk', bdPaint = null;
+function bdSquare() { const c = []; for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) c.push(x + ',' + y); return c; }
+// les 2 cases de l'autre côté des clôtures du coin (au-dessus et à droite) : zone rouge, pas de bloc possible
+const BD_RED = [[0, -1], [-1, 0]];
+function bdRed(x, y) { return BD_RED.some(r => r[0] === x && r[1] === y); }
+BD.cells = BD.cells.filter(c => { const [x, y] = c.split(',').map(Number); return !bdRed(x, y); });
+function bdHas(x, y) { return BD.cells.includes(x + ',' + y); }
+function bdSave() { store.set('board', BD); }
+function bdDraw() {
+  const cv = $('bdCv'), cx = cv.getContext('2d'), W = cv.width, M = 18, V = bdView(), C = (W - 2 * M) / V.n;
+  const X = bx => M + (V.x1 - bx) * C, Y = by => M + (by - V.y0) * C;
+  cx.fillStyle = '#121314'; cx.fillRect(0, 0, W, W);
+  cx.strokeStyle = '#2a2c2f'; cx.setLineDash([3, 5]); cx.lineWidth = 1;
+  cx.save(); cx.beginPath(); cx.rect(M, M, W - 2 * M, W - 2 * M); cx.clip();
+  for (let b = Math.floor(V.x1 - V.n) - 1; b <= Math.ceil(V.x1) + 1; b++) { cx.beginPath(); cx.moveTo(X(b), M); cx.lineTo(X(b), W - M); cx.stroke(); }
+  for (let b = Math.floor(V.y0) - 1; b <= Math.ceil(V.y0 + V.n) + 1; b++) { cx.beginPath(); cx.moveTo(M, Y(b)); cx.lineTo(W - M, Y(b)); cx.stroke(); }
+  cx.setLineDash([]);
+  for (const c of BD.cells) {
+    const [bx, by] = c.split(',').map(Number), L = X(bx), T = Y(by);
+    cx.fillStyle = '#26292c'; cx.fillRect(L + 1.5, T + 1.5, C - 3, C - 3);
+    cx.fillStyle = 'rgba(255,255,255,.05)'; for (let i = 1; i < 4; i++) for (let j = 1; j < 4; j++) cx.fillRect(L + i * C / 4 - 1.5, T + j * C / 4 - 1.5, 3, 3);   // picots
+    cx.strokeStyle = '#3a3d40'; cx.lineWidth = 1.5; cx.strokeRect(L + 1.5, T + 1.5, C - 3, C - 3);
+  }
+  // zone rouge de l'autre côté des clôtures
+  for (const [rx, ry] of BD_RED) {
+    const L = X(rx), T = Y(ry);
+    cx.fillStyle = 'rgba(232,57,42,.22)'; cx.fillRect(L + 1.5, T + 1.5, C - 3, C - 3);
+    cx.save(); cx.beginPath(); cx.rect(L + 1.5, T + 1.5, C - 3, C - 3); cx.clip();
+    cx.strokeStyle = 'rgba(232,57,42,.55)'; cx.lineWidth = 3;
+    for (let k = -C; k < C; k += 14) { cx.beginPath(); cx.moveTo(L + k, T + C); cx.lineTo(L + k + C, T); cx.stroke(); }
+    cx.restore(); cx.strokeStyle = '#e8392a'; cx.lineWidth = 2; cx.strokeRect(L + 1.5, T + 1.5, C - 3, C - 3);
+  }
+  // coin du calibrage : clôtures en haut et à droite (une largeur de bloc) et picot rouge
+  cx.strokeStyle = '#8a7d6c'; cx.lineWidth = 6; cx.beginPath(); cx.moveTo(X(0), Y(0) - 3); cx.lineTo(X(0) + C + 3, Y(0) - 3); cx.lineTo(X(0) + C + 3, Y(0) + C); cx.stroke();
+  cx.fillStyle = '#ff4d43'; cx.beginPath(); cx.arc(X(0) + C + 3, Y(0) - 3, 6, 0, 7); cx.fill();
+  if (BD.d) {
+    // point de décharge : bac cyan avec une flèche vers le bas
+    const L = X(BD.d[0]), T = Y(BD.d[1]), m = C * .16;
+    cx.fillStyle = 'rgba(34,211,238,.16)'; cx.fillRect(L + 3, T + 3, C - 6, C - 6);
+    cx.strokeStyle = '#22d3ee'; cx.lineWidth = 3; cx.setLineDash([8, 6]); cx.strokeRect(L + m, T + m, C - 2 * m, C - 2 * m); cx.setLineDash([]);
+    cx.lineWidth = 5; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(L + C / 2, T + C * .3); cx.lineTo(L + C / 2, T + C * .66);
+    cx.moveTo(L + C * .36, T + C * .53); cx.lineTo(L + C / 2, T + C * .67); cx.lineTo(L + C * .64, T + C * .53); cx.stroke(); cx.lineCap = 'butt';
+  }
+  cx.restore();
+  const xs = BD.cells.map(c => +c.split(',')[0]), ys = BD.cells.map(c => +c.split(',')[1]);
+  const w = Math.max(...xs) - Math.min(...xs) + 1, h = Math.max(...ys) - Math.min(...ys) + 1;
+  let txt = `${BD.cells.length} blocs · ${(w * 12.25).toFixed(0)} × ${(h * 12.25).toFixed(0)} cm`;
+  txt += BD.d ? ' · décharge placée' : ' · <span class="bad">pas de point de décharge</span>';
+  $('bdInfo').innerHTML = txt;
+}
+function bdCell(e) {
+  const cv = $('bdCv'), r = cv.getBoundingClientRect(), W = cv.width, M = 18, V = bdView(), C = (W - 2 * M) / V.n;
+  const px = (e.clientX - r.left) * W / r.width, py = (e.clientY - r.top) * W / r.height;
+  if (px < M || py < M || px >= W - M || py >= W - M) return null;
+  return [Math.ceil(V.x1 - (px - M) / C - 1e-9), Math.floor(V.y0 + (py - M) / C)];
+}
+function bdSet(q, on) {
+  const k = q[0] + ',' + q[1];
+  if (!on && q[0] === 0 && q[1] === 0) return;           // le coin du calibrage reste
+  if (on && bdRed(q[0], q[1])) return;              // derrière une clôture : interdit
+  if (on && !bdHas(q[0], q[1])) BD.cells.push(k);
+  if (!on && bdHas(q[0], q[1])) {
+    BD.cells = BD.cells.filter(c => c !== k);
+    if (BD.d && BD.d[0] === q[0] && BD.d[1] === q[1]) BD.d = null;
+  }
+}
+// un doigt : poser / enlever des blocs (ou placer la décharge) ; deux doigts : zoomer et déplacer la grille
+const bdPt = new Map();
+let bdPinch = null, bdUndo = null;
+function bdXY(e) { const cv = $('bdCv'), r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.width / r.height]; }
+function bdZoomAt(V0, fx, fy, n, tx, ty) {
+  // garde le point de la grille qui était sous (fx, fy) sous (tx, ty), avec n cases de large
+  const W = $('bdCv').width, M = 18, C0 = (W - 2 * M) / V0.n, C = (W - 2 * M) / n;
+  const gx = V0.x1 - (fx - M) / C0, gy = V0.y0 + (fy - M) / C0;
+  bdZ = { x1: gx + (tx - M) / C, y0: gy - (ty - M) / C, n };
+  $('bdFit').hidden = false;
+}
+$('bdCv').addEventListener('pointerdown', e => {
+  bdPt.set(e.pointerId, bdXY(e)); try { $('bdCv').setPointerCapture(e.pointerId); } catch {}
+  if (bdPt.size === 2) {
+    // deuxième doigt : on annule ce que le premier venait de faire et on passe au zoom
+    if (bdUndo) { BD.cells = bdUndo.cells; BD.d = bdUndo.d; bdSave(); }
+    bdPaint = null; bdV = null; bdUndo = null;
+    const [a, b] = [...bdPt.values()];
+    bdPinch = { V: bdView(), d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] };
+    bdDraw(); return;
+  }
+  if (bdPt.size > 2) return;
+  const q = bdCell(e); if (!q) return;
+  bdUndo = { cells: BD.cells.slice(), d: BD.d };
+  if (bdMode === 'blk') { bdV = bdView(); bdPaint = !bdHas(q[0], q[1]); bdSet(q, bdPaint); }
+  else if (bdHas(q[0], q[1])) BD.d = q;
+  else { toast('Le point de décharge doit être sur un bloc'); return; }
+  bdSave(); bdDraw();
+});
+$('bdCv').addEventListener('pointermove', e => {
+  if (!bdPt.has(e.pointerId)) return;
+  bdPt.set(e.pointerId, bdXY(e));
+  if (bdPinch && bdPt.size >= 2) {
+    const [a, b] = [...bdPt.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]) || 1;
+    const n = Math.min(60, Math.max(3, bdPinch.V.n * bdPinch.d / d));
+    bdZoomAt(bdPinch.V, bdPinch.m[0], bdPinch.m[1], n, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); bdDraw(); return;
+  }
+  if (bdPaint === null) return;
+  const q = bdCell(e); if (q) { bdSet(q, bdPaint); bdSave(); bdDraw(); }
+});
+for (const ev of ['pointerup', 'pointercancel']) $('bdCv').addEventListener(ev, e => {
+  bdPt.delete(e.pointerId);
+  if (bdPt.size < 2) bdPinch = null;
+  if (!bdPt.size) { bdUndo = null; if (bdPaint !== null) { bdPaint = null; bdV = null; bdDraw(); } }
+});
+$('bdCv').addEventListener('wheel', e => {
+  // molette (ordinateur) : zoom autour du pointeur
+  e.preventDefault();
+  const V = bdView(), [x, y] = bdXY(e), n = Math.min(60, Math.max(3, V.n * (e.deltaY > 0 ? 1.15 : 1 / 1.15)));
+  bdZoomAt(V, x, y, n, x, y); bdDraw();
+}, { passive: false });
+$('bdFit').onclick = () => { bdZ = null; $('bdFit').hidden = true; bdDraw(); };
+$('bdMode').querySelectorAll('button').forEach(b => b.onclick = () => { bdMode = b.dataset.m; $('bdMode').querySelectorAll('button').forEach(o => o.classList.toggle('on', o === b)); });
+$('bdReset').onclick = () => { BD.cells = bdSquare(); BD.d = BD.d && BD.d[0] < 4 && BD.d[1] < 4 ? BD.d : null; bdSave(); bdDraw(); };
+bdDraw();
 // main devant le capteur pendant le spectacle (v1.84) : le V4 met en pause, demande où sont les autres, pousse / attaque, puis reprend
 const SP = { on: false, pos: null };
 async function spLine(p) {
