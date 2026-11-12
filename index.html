@@ -489,6 +489,16 @@ body.focus #dsBar .dsh b{font-size:17px}
 #soloCard .solos{margin-top:10px}
 @keyframes soloPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.55)}50%{box-shadow:0 0 0 9px rgba(255,154,60,0)}}
 @media (prefers-reduced-motion:reduce){.solob{animation:none}}
+/* plan vivant de la mise en place (v1.83, design E) */
+.suplan{margin:4px 0 10px}
+#suPlan{width:100%;height:auto;display:block}
+.suplan .sunext{margin:8px 0 0;font-size:14px}
+#suPlan .pz{animation:suBlink 1.2s ease-in-out infinite}
+@keyframes suBlink{0%,100%{opacity:1}50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){#suPlan .pz{animation:none}}
+/* Bluetooth indisponible : une ligne discrète (v1.83, design 5) */
+#nobt.bt1{display:flex!important;align-items:center;gap:8px;background:#121314;border:1px dashed #6b6760;border-radius:5px;color:#a8a49c;padding:7px 10px;font:12px 'Space Mono',monospace}
+#nobt.bt1 .tip{margin-left:auto}
 </style>
 </head>
 <body>
@@ -501,7 +511,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.82</b><br>publiée le 12/11/2026 20:39</div>
+    <div class="ver" title="Version de l'application"><b>v1.83</b><br>publiée le 12/11/2026 20:51</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -517,7 +527,7 @@ body.focus #dsBar .dsh b{font-size:17px}
   <section id="setup">
     <div class="card">
       <h2>Mise en place <button type="button" class="tip" data-tip="Pose les 4 véhicules en colonne contre la clôture de droite : le 1 dans le coin du haut, puis 2, 3 et 4 en dessous. Chaque véhicule se cale contre la clôture puis rejoint sa place le long du haut et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Le suivant devient disponible dès que le précédent a quitté la colonne de droite ; un bouton reste grisé tant qu'il y a un risque de collision. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
-      <div class="sunext" id="suNext"></div>
+      <div class="suplan"><svg id="suPlan" viewBox="0 0 320 96" aria-label="Plan de la mise en place"></svg><div class="sunext" id="suNext"></div></div>
       <div id="suList"></div>
       <button class="btn primary" id="suGo" style="width:100%;padding:14px;margin-top:10px" hidden>Choisir les chorégraphies →</button>
       <button class="btn" id="suReset" style="width:100%;margin-top:8px">↺ Recommencer la mise en place</button>
@@ -1116,8 +1126,9 @@ function setUpdMode(on) {
 }
 
 if (!navigator.bluetooth) {
-  const b = $('nobt'); b.style.display = 'block';
-  b.innerHTML = '<b>Bluetooth web indisponible ici.</b> Ouvre cette page dans <b>Chrome sur Android</b> (ou Chrome / Edge sur PC), à une adresse en <b>https</b>. Tu peux quand même préparer le programme.';
+  const b = $('nobt'); b.classList.add('bt1');
+  b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6760" stroke-width="2" aria-hidden="true"><path d="M7 7l10 10-5 5V2l5 5L7 17"/></svg>Hors ligne · préparation seulement'
+    + '<button type="button" class="tip" data-tip="Le Bluetooth web n\'est pas disponible dans ce navigateur. Ouvre cette page dans Chrome sur Android (ou Chrome / Edge sur PC), à une adresse en https, pour piloter les véhicules. Ici, tu peux quand même préparer le programme et créer des chorégraphies.">?</button>';
 }
 
 // ====================================================================== 1. choreographies
@@ -1212,7 +1223,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.82';
+const MY_VER = '1.83';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1675,6 +1686,32 @@ try {
 function suSave() {
   try { localStorage.setItem('odv.su', JSON.stringify({ t: Date.now(), ok: [1, 2, 3, 4].filter(v => SU.done[v] || SU.clr[v]) })); } catch (e) {}
 }
+// plan vivant (v1.83) : colonne de départ à droite, véhicules faits à leur place le long du haut, le prochain clignote
+function suPlan(next, run) {
+  // frise de 4 petits plateaux : le plateau n montre où sont les véhicules une fois le 0n calibré (étape en cours en orange)
+  const g = $('suPlan'); if (!g) return;
+  const C = ['#3b8bff', '#f39a3c', '#2fb36b', '#9b6ef0'], K = 1.75, S = 16, cur = run || next || 0;
+  let h = '';
+  for (let k = 1; k <= 4; k++) {
+    const bx = 4 + (k - 1) * 80, by = 6, doneK = SU.done[k] || SU.clr[k], isCur = k === cur;
+    const P = (x, y) => [bx + 70 - K * (x + 10) + .75, by + K * y + .75];
+    let b = `<rect x="${bx}" y="${by}" width="70" height="70" fill="#17181a"${isCur ? ' stroke="#ff9a3c" stroke-width="1.5"' : ''}/>` +
+      `<path d="M${bx + 53} ${by - 2}h19M${bx + 72} ${by - 2}v19" stroke="#6b6155" stroke-width="2.5" fill="none"/><circle cx="${bx + 72}" cy="${by - 2}" r="1.8" fill="#ff4d43"/>`;
+    for (let v = 1; v <= 4; v++) {
+      const c = C[v - 1], home = ODVGEN.HOME[v - 1];
+      const veh = ([x, y], cls, dash) => `<g${cls ? ` class="${cls}"` : ''}><rect x="${x}" y="${y}" width="${S}" height="${S}" fill="#1f2124" stroke="${c}" stroke-width="${v === k ? 1.8 : 1.2}"${dash ? ' stroke-dasharray="3 2" fill-opacity=".3"' : ''}/>` +
+        (dash ? '' : `<text x="${x + S / 2}" y="${y + 11}" text-anchor="middle" fill="#edeae4" style="font:700 8px Tomorrow,'Space Mono',monospace">0${v}</text>`) + '</g>';
+      if (v < k) b += veh(P(home[0], 0));
+      else if (v > k) b += veh(P(0, (v - 1) * 10));
+      else if (doneK) b += veh(P(home[0], 0));
+      else { b += veh(P(home[0], 0), '', true); b += veh(P(0, (v - 1) * 10), isCur ? 'pz' : ''); }
+    }
+    h += `<g opacity="${doneK || isCur ? 1 : .4}">${b}</g>` +
+      `<text x="${bx + 35}" y="${by + 85}" text-anchor="middle" fill="${doneK ? C[k - 1] : isCur ? '#ff9a3c' : '#6b6760'}" style="font:${isCur ? 700 : 400} 10px 'Space Mono',monospace">${'①②③④'[k - 1]} ${doneK ? 'en place' : k === run ? 'calibrage…' : isCur ? 'à calibrer' : '0' + k}</text>`;
+    if (k < 4) h += `<path d="M${bx + 73} 41h6" stroke="#3a3631" stroke-width="1.5"/>`;
+  }
+  g.innerHTML = h;
+}
 function suRender() {
   suSave();
   const box = $('suList');
@@ -1701,10 +1738,11 @@ function suRender() {
   for (const v of [1, 2, 3, 4].filter(v => !SU.done[v]).concat([1, 2, 3, 4].filter(v => SU.done[v]))) box.appendChild($('surow' + v));
   const run = [1, 2, 3, 4].find(v => V[v].busy);
   $('suNext').innerHTML = next ? (run && run === next ? `Le <b>véhicule ${run}</b> se calibre…` + (run < 4 ? (SU.hy[run] ? ` Tu peux lancer le ${run + 1} : il démarrera dès que le ${run} aura quitté la colonne.` : ` Le ${run + 1} sera disponible dès qu'il touchera la clôture du haut.`) : '')
-      : next === 1 ? `Pose les 4 véhicules <b>en colonne contre la clôture de droite</b> : le 1 dans le coin du haut, puis 2, 3 et 4 en dessous (laisse 2 cm entre le 1 et le 2). Touche « Calibrer » pour le 1.`
+      : next === 1 ? `Pose les 4 <b>en colonne</b> contre la clôture de droite, le <b>01</b> dans le coin. Celui qui <b>clignote</b> est le prochain à calibrer.`
       : `Touche « Calibrer » pour le <b>véhicule ${next}</b>.`)
     : '<span class="ok">✓ Les 4 véhicules sont en place.</span> Choisis maintenant les chorégraphies.';
   $('suGo').hidden = !!next;
+  suPlan(next, run);
 }
 async function suGo(v) {
   $('sust' + v).innerHTML = '';

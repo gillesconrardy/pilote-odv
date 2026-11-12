@@ -160,6 +160,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    de v actif dès que les précédents ont touché la clôture du haut (`HY`, imprimé après le calage en Y) et qu'aucun suivant
    n'est parti (`can(v)` dans `suRender`) ; son programme est envoyé tout de suite mais `sendVehicle(…, gate)` n'envoie la
    commande de démarrage qu'après le `CLR` du précédent (« Prêt : il démarrera dès que… »).
+   **Plan en frise** (v1.83, design E puis « B · Frise » de Gilles, en largeur) : `#suPlan` (SVG 320×96 dessiné par `suPlan(next, run)` depuis `suRender`) = 4 petits plateaux côte à côte ; le plateau n montre la situation une fois le 0n calibré (précédents à leur place le long du haut, suivants dans la colonne de droite, le 0n en pointillés à son arrivée tant qu'il n'est pas fait et clignotant dans la colonne si c'est l'étape en cours) ; étape en cours encadrée en orange, étapes faites « en place », suivantes atténuées ; clôtures courtes (une largeur de véhicule) avec picot rouge ; texte de `#suNext` raccourci.
+   **Bluetooth indisponible** (v1.83, design 5) : `#nobt.bt1` = une ligne en pointillés « Hors ligne · préparation seulement » + bulle « ? ».
    Le bouton disponible et pas encore fait (`go`) est orange et « respire » (`suPulse`, coupé si réduire les animations ; tests : `click(force=True)`).
    **Piloter seulement le V4** (v1.65, carte `#soloCard` sous la Mise en place, bouton `#suSolo` ; depuis v1.82 façon arcade (design C
    de Gilles) : « MODE SOLO », « PLAYER 04 », bouton « ▶ PRESS START » qui pulse (`.solob`, `soloPu`), bulle d'aide en coin) : V1..V3 déjà garés le long du haut,
