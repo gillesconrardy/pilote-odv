@@ -566,7 +566,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
       <button class="btn" id="rcGo" disabled style="width:100%;margin-top:8px">🎮 Connecter la télécommande</button><div class="sub" id="rcSt" style="margin-top:6px">Télécommande : non connectée</div>
-      <button class="btn" id="handGo" disabled style="width:100%;margin-top:8px">✋ Suivre la main</button><button class="btn" id="axGo" disabled style="width:100%;margin-top:8px">👋 Pousser avec la main</button><div class="sub" id="handSt" style="margin-top:6px"></div>
+      <button class="btn" id="handGo" hidden disabled style="width:100%;margin-top:8px">✋ Suivre la main</button><button class="btn" id="axGo" hidden disabled style="width:100%;margin-top:8px">👋 Pousser avec la main</button><div class="sub" id="handSt" style="margin-top:6px"></div>
       <div class="sub" id="manMsg" style="margin-top:8px"></div>
     </div>
     <div class="card" id="gameCard" hidden>
@@ -1416,10 +1416,10 @@ function handShow(mm, st) {
   if (!M.hand) return;
   if (st === 7) { if (!SNS.hold) SNS.hold = performance.now(); } else SNS.hold = 0;
   if (st >= 5) {   // pousser avec la main : 5 = il glisse, 6 = il attend, 7 = main tenue (2 s avant la poussée)
-    $('handSt').innerHTML = st === 5 ? '<b>Poussé !</b> Il s\'éloigne de ta main…'
+    $('handSt').innerHTML = st === 5 ? (SNS.push && SNS.push.gx < 0 ? '<b style="color:#ff4d43">Attaque !</b> Il fonce vers ta main…' : '<b>Poussé !</b> Il s\'éloigne de ta main…')
       : st === 7 ? `Garde ta main… <b>${Math.max(0, 1 - (performance.now() - SNS.hold) / 1000).toFixed(1).replace('.', ',')} s</b>`
       : mm < 100 ? 'Main tout près, mais <b>pas de place</b> pour s\'éloigner (clôture ou véhicule)'
-      : 'Garde ta main <b>à moins de 10 cm</b> du capteur pendant <b>1 s</b> : il s\'éloigne comme si tu l\'avais poussé.' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
+      : 'Capteur : main <b>à moins de 10 cm pendant 1 s</b> = il est poussé… ou il attaque !' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
     return;
   }
   $('handSt').innerHTML = st === 1 ? 'Main sortie du faisceau : <b>il la cherche vers le haut et le bas…</b>'
@@ -1453,7 +1453,7 @@ async function handStart(mode, quiet = false) {
   if (await r !== 'HON') { if (!quiet) $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
   M.hand = true; M.hmode = mode; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
   $('handSt').innerHTML = mode === 1 ? 'Mets ta main devant le capteur, à environ 15 cm.'
-    : 'Garde ta main <b>à moins de 10 cm</b> du capteur pendant <b>1 s</b> : il s\'éloigne d\'une glissade (environ 12 cm), vers la gauche ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
+    : 'Capteur actif (côté droit du véhicule) : main <b>à moins de 10 cm pendant 1 s</b> = au hasard, il est poussé (il glisse vers la gauche ou en biais) ou il attaque (il fonce vers ta main, LED rouge). Le joystick et la télécommande restent prioritaires.';
 }
 $('handGo').onclick = () => handStart(1);
 $('axGo').onclick = () => handStart(2);
@@ -2577,11 +2577,11 @@ function drawSensor(c, p) {
   }
   const pu = SNS.push, age = pu ? now - pu.t : 1e9;
   if (age < 1000) {
-    const k = age / 1000, hx = sx + handL(pu.mm < 400 ? pu.mm : 30), hy = sy;
+    const k = age / 1000, hx = sx + handL(pu.mm < 400 ? pu.mm : 30), hy = sy, atk = pu.gx < 0, rgb = atk ? '255,77,67' : '255,154,60';
     cx.globalAlpha = 1;
     for (let r = 0; r < 3; r++) {   // ondes de choc à l'endroit de la main
       const kk = k * 1.4 - r * .18; if (kk <= 0 || kk >= 1) continue;
-      cx.strokeStyle = `rgba(255,154,60,${(1 - kk) * .9})`; cx.lineWidth = u * .4 * (1 - kk) + u * .1;
+      cx.strokeStyle = `rgba(${rgb},${(1 - kk) * .9})`; cx.lineWidth = u * .4 * (1 - kk) + u * .1;
       cx.beginPath(); cx.arc(hx, hy, u * (1 + kk * 7), 0, 7); cx.stroke();
     }
     const dx = -pu.gx, dy = pu.gy, n = Math.hypot(dx, dy) || 1, ux = dx / n, uy = dy / n, vx = -uy, vy = ux;
@@ -2592,7 +2592,7 @@ function drawSensor(c, p) {
       cx.beginPath(); cx.moveTo(bx, by); cx.lineTo(bx - ux * len, by - uy * len); cx.stroke();
     }
     const ax = cxp + ux * u * (6.5 + 3 * k), ay = cyp + uy * u * (6.5 + 3 * k), h = u * 2;   // flèche dans le sens de la glissade
-    cx.fillStyle = `rgba(255,154,60,${a})`; cx.beginPath();
+    cx.fillStyle = `rgba(${rgb},${a})`; cx.beginPath();
     cx.moveTo(ax + ux * h, ay + uy * h); cx.lineTo(ax - ux * h * .4 + vx * h, ay - uy * h * .4 + vy * h); cx.lineTo(ax - ux * h * .4 - vx * h, ay - uy * h * .4 - vy * h); cx.closePath(); cx.fill();
   } else if (pu && age > 1000) SNS.push = null;
   cx.restore();

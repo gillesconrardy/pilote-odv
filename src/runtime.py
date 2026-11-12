@@ -762,6 +762,8 @@ def hand_tick(dt, local):
                 h_v *= 1 - dt / 600
             else:
                 h_v = 0
+            if h_v <= 0.0005 and h_gx < 0:
+                hub.light.on(VCOL)          # fin de l'attaque : couleur du vehicule
         elif d < 100 and not veh and not any(o is not None and abs(o[1] - my) < 10 and 0 <= mx - o[0] - 10 < 10 for o in OBS):
             # la main doit rester 1 s a moins de 10 cm avant la poussee
             if not h_lost:
@@ -779,6 +781,12 @@ def hand_tick(dt, local):
                     best = k + (0.5 if gx else 0)
                     h_gx = gx
                     h_gy = gy
+            # une fois sur deux (au hasard) il fonce vers la main au lieu de s'ecarter, s'il a la place (LED rouge)
+            if local % 2 and mx >= 1.5 and free_at(tx - 1, ty):
+                h_gx = -1
+                h_gy = 0
+                best = 1
+                hub.light.on(Color.RED)
             if best >= 1:
                 h_v = vmax
                 print('PU', int(h_gx * 100), int(h_gy * 100))
@@ -786,7 +794,7 @@ def hand_tick(dt, local):
         if local >= h_print:
             h_print = local + 250
             print('HD', int(d), h_state)
-            sonar_eyes(100 if d < 100 or h_v > 0.0005 else 15)
+            sonar_eyes((100 if (local // 250) % 2 else 0) if h_v > 0.0005 and h_gx < 0 else 100 if d < 100 or h_v > 0.0005 else 15)
         return
     elif d <= 300:
         if h_state == 1 and abs(ty - h_cx) > 0.5:

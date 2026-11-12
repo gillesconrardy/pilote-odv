@@ -78,6 +78,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      si pas de capteur) ; la main doit rester **2 s** à < 5 cm (`h_lost` = début de l'appui, `HD … 7` pendant l'attente : compte à
      rebours sous le bouton, anneau rouge qui se remplit sur le plateau, `SNS.hold`). Quitter « Suivre la main » revient à « Pousser ».
      **Depuis v1.71** : seuil **10 cm pendant 1 s** (au lieu de 5 cm / 2 s) ; un véhicule à < 10 pas juste à droite n'est pas une main.
+     **Depuis v1.72 (demande de Gilles) : plus de boutons** (`#handGo`, `#axGo` masqués) ; le mode `H2` est activé seul à la prise
+     en main. Pas de suivi de la main (Gilles : « entre 10 et 30 cm, il ne faut rien faire »). Main < 10 cm pendant 1 s → **au hasard**
+     (`local % 2`) : poussée (s'écarte) ou **attaque** : il fonce vers la main (−X, `PU -100 0`) s'il a la place (x ≥ 1,5), LED du hub
+     rouge pendant la glissade puis `VCOL`, yeux du capteur qui clignotent (le capteur n'a que des LED blanches). Appli : flèche et ondes
+     rouges, « Attaque ! » sous Conduite manuelle.
      **Sur le plateau de Pilotage** (`drawSensor`, état `SNS`, alimenté par `DS`/`HD` et `PU <gx×100> <gy×100>`) : faisceau ambre
      vers l'avant du V4 (40 cm ≈ 32,6 pas), écho + point qui pulse là où il voit quelque chose (rouge < 5 cm) ; à la poussée,
      ondes de choc à l'endroit de la main, traînée derrière le V4 et flèche dans le sens de la glissade (1 s).

@@ -22,7 +22,7 @@ async def main():
         await pg.evaluate("R.hub.onLine('HD 30 7')"); await pg.wait_for_timeout(700); await pg.evaluate("R.hub.onLine('HD 30 7')"); print('4:', await pg.inner_text('#handSt'))
         await pg.locator('#cv').screenshot(path='/tmp/hold.png')
         await pg.locator('#manCard').screenshot(path='/tmp/push.png')
-        await pg.click('#axGo'); await pg.wait_for_timeout(300)
+        await pg.evaluate("$('axGo').click()"); await pg.wait_for_timeout(300)
         print('arrêt', await pg.evaluate('M.hand'), [t for n, t in await pg.evaluate('window.__stdin') if t[0] == 'H'])
         print('errors', errs); await b.close()
 asyncio.run(main())
