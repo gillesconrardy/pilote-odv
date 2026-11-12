@@ -441,6 +441,15 @@ canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-r
 a{color:var(--accent)}
 input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .toast{background:#24262a;color:var(--ink);border:1px solid var(--edge);border-bottom:3px solid var(--accent);border-radius:6px}
+/* distance du capteur du V4, sous le plateau (v1.78, design « B · Jauge ») */
+#dsBar{background:#121314;border:1px solid #2c2f33;border-radius:5px;padding:7px 10px 5px;margin-top:8px}
+#dsBar .dsh{display:flex;justify-content:space-between;align-items:baseline;font-family:'Space Mono',monospace}
+#dsBar .dsh span{font-size:11px;color:#a8a49c;letter-spacing:.06em}
+#dsBar .dsh b{font-size:20px;color:var(--accent);font-weight:400}
+#dsBar .dst{position:relative;height:9px;background:#26292c;border-radius:3px;margin-top:5px;overflow:hidden}
+#dsBar .dst i{position:absolute;left:0;top:0;bottom:0;width:25%;background:rgba(255,77,67,.45)}
+#dsBar .dst span{position:absolute;top:-1px;bottom:-1px;width:4px;margin-left:-2px;background:#edeae4;border-radius:2px;transition:left .2s}
+#dsBar.near .dsh b{color:#ff4d43}#dsBar.far .dsh b{color:#6b6760}
 /* distance du capteur du V4 (onglet Pilotage) */
 .dsrow{display:flex;align-items:baseline;gap:10px;margin:6px 0 8px}
 #dsVal{font-family:'Space Mono',monospace;font-size:30px;color:var(--acc,#ff9a3c);min-width:120px}
@@ -467,7 +476,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.77</b><br>publiée le 12/11/2026 19:48</div>
+    <div class="ver" title="Version de l'application"><b>v1.78</b><br>publiée le 12/11/2026 20:00</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -548,6 +557,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
         <button class="rb stop" id="bStop" disabled title="Arrêt d'urgence"><span class="ic">⛔</span>Urgence</button>
       </div>
       <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
+      <div id="dsBar" hidden><div class="dsh"><span>DISTANCE · CAPTEUR V4</span><b id="dsBV">—</b></div><div class="dst"><i></i><span id="dsBK"></span></div><div class="dsax"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 cm</span></div></div>
       <div id="joyBox" style="display:none"><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div></div>
     </div>
     <div class="card" id="watchCard" hidden>
@@ -1174,7 +1184,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.77';
+const MY_VER = '1.78';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1800,6 +1810,13 @@ function handShow(mm, st) {
 const SNS = { mm: 2000, at: 0, push: null, hold: 0 };   // dernière mesure du capteur du V4 (pour le plateau) et dernière poussée
 function dsShow(mm) {
   SNS.mm = mm; SNS.at = performance.now();
+  const bar = $('dsBar');
+  if (bar) {
+    bar.hidden = mm < 0;
+    const far = mm >= 400; bar.classList.toggle('far', far); bar.classList.toggle('near', !far && mm < 100);
+    $('dsBV').textContent = far ? 'rien devant' : (mm / 10).toFixed(1).replace('.', ',') + ' cm';
+    $('dsBK').style.display = far ? 'none' : ''; $('dsBK').style.left = (Math.min(400, mm) / 4) + '%';
+  }
   const v = $('dsVal'), t = $('dsTxt'), k = $('dsMk'); if (!v) return;
   if (mm < 0) { v.textContent = '—'; t.innerHTML = '<span class="bad">Pas de capteur sur le port B du véhicule 4</span>'; k.hidden = true; return; }
   if (mm >= 400) { v.textContent = '> 40 cm'; t.textContent = 'rien devant le capteur'; k.hidden = true; return; }
@@ -1809,7 +1826,7 @@ function dsShow(mm) {
 R.uOn = false;
 setInterval(() => {
   const on = !!(R.hub && R.hub.connected) && !updating && !document.hidden && document.querySelector('section.on')?.id === 'tele';
-  if (!(R.hub && R.hub.connected)) { if (R.uOn) { R.uOn = false; } $('dsVal').textContent = '—'; $('dsTxt').textContent = 'Connecte le véhicule 4'; $('dsMk').hidden = true; return; }
+  if (!(R.hub && R.hub.connected)) { if (R.uOn) { R.uOn = false; } $('dsBar').hidden = true; $('dsVal').textContent = '—'; $('dsTxt').textContent = 'Connecte le véhicule 4'; $('dsMk').hidden = true; return; }
   if (on !== R.uOn) { R.uOn = on; R.hub.stdin(on ? 'U1' : 'U0').catch(() => { R.uOn = false; }); if (on) $('dsTxt').textContent = 'Mesure…'; }
 }, 1000);
 async function handStart(mode, quiet = false) {
@@ -2992,12 +3009,6 @@ function drawSensor(c, p) {
       cx.strokeStyle = near ? '#ff4d43' : '#ff9a3c'; cx.lineWidth = u * .35; cx.globalAlpha = .55 + .45 * pulse;
       cx.beginPath(); cx.arc(0, L - u * 2.2, u * 2.2 + L * wd, Math.PI * .3, Math.PI * .7); cx.stroke();
       cx.fillStyle = cx.strokeStyle; cx.beginPath(); cx.arc(0, L, u * (.8 + .5 * pulse), 0, 7); cx.fill();
-      cx.restore(); cx.save();   // distance en petit, au-dessus du faisceau (discret, à côté du véhicule)
-      const lx = Math.max(sx + u * 3.6, Math.min(sx + L / 2 + u * 1.5, c.width - u * 3.2));
-      cx.globalAlpha = .85; cx.fillStyle = near ? '#ff4d43' : '#ff9a3c'; cx.font = `${1.25 * u}px "Space Mono",ui-monospace,monospace`;
-      cx.textAlign = 'center'; cx.textBaseline = 'bottom';
-      cx.fillText((SNS.mm / 10).toFixed(SNS.mm < 100 ? 1 : 0).replace('.', ',') + ' cm', lx, sy - u * (2.6 + L * wd / u));
-      cx.restore(); cx.save(); cx.translate(sx, sy); cx.rotate(-Math.PI / 2);
       if (SNS.hold) {   // main tenue : l'anneau se remplit en 1 s, puis poussée
         const f = Math.min(1, (now - SNS.hold) / 1000);
         cx.globalAlpha = 1; cx.strokeStyle = '#ff4d43'; cx.lineWidth = u * .5;
