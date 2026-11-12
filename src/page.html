@@ -277,6 +277,15 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .sendb:disabled{opacity:.4;cursor:default}.sendb:disabled .sa{animation:none}
 @keyframes sendPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.5)}50%{box-shadow:0 0 0 6px rgba(255,154,60,0)}}
 @media (prefers-reduced-motion:reduce){.sendb .sa{animation:none}}
+/* éditeur de plateau (v1.90 : en haut de Setup, replié, à valider) */
+#boardCard summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
+#boardCard summary::-webkit-details-marker{display:none}
+#boardCard summary h2{margin:0}
+#boardCard summary::after{content:"▾";color:var(--accent);font-size:16px;transition:transform .2s}
+#boardCard[open] summary::after{transform:rotate(180deg)}
+#boardCard[open] summary{margin-bottom:10px}
+#bdSum{margin-left:auto;font-size:12px}
+.bdval{display:flex;gap:8px;margin-top:10px}.bdval .btn{flex:1}.bdval .btn:first-child{flex:0 0 auto}
 /* éditeur de plateau en blocs (v1.89, style 1 « quadrillage à toucher » choisi par Gilles) */
 #bdCv{width:100%;height:auto;display:block;margin-top:10px;touch-action:none;border-radius:4px}
 #bdMode button[data-m=d].on{color:#22d3ee}
@@ -543,6 +552,13 @@ body.focus #dsBar .dsh b{font-size:17px}
 
   <!-- ======================= 0. MISE EN PLACE (toujours avec calibrage) ======================= -->
   <section id="setup">
+    <details class="card" id="boardCard">
+      <summary><h2>Plateau <button type="button" class="tip" data-tip="Dessine la forme de ton plateau, sans limite de taille (la grille s'agrandit quand tu ajoutes des blocs au bord) : chaque case = un bloc de 10 pas (12,25 cm), la taille d'un véhicule. Mode Blocs : touche une case vide pour poser un bloc, un bloc pour l'enlever (glisse le doigt pour en poser plusieurs). Le bloc du coin en haut à droite (clôture et picot rouge, où se fait le calibrage) reste toujours ; les 2 cases rouges juste derrière ses clôtures restent vides. Pince avec 2 doigts pour zoomer / dézoomer et les glisser pour déplacer la grille ; ⤢ revient à tout le plateau. Mode Décharge : touche le bloc où les véhicules iront décharger leurs billes. Quand il correspond à ton vrai plateau, touche « Valider le plateau » : l'appli l'utilise alors partout (Pilotage, chorégraphies qui sortent du plateau bloquées, Atelier) et les véhicules le reçoivent au prochain calibrage ou envoi (le V4 ne sort jamais des blocs, au joystick comme à la télécommande).">i</button></h2><span class="sub" id="bdSum"></span></summary>
+      <div class="seg" id="bdMode"><button type="button" data-m="blk" class="on">▦ Blocs</button><button type="button" data-m="d">⬇ Décharge</button></div>
+      <canvas id="bdCv" width="640" height="640" aria-label="Plan du plateau en blocs"></canvas>
+      <div class="bdfoot"><span class="sub" id="bdInfo"></span><span style="display:flex;gap:6px"><button type="button" class="btn" id="bdFit" hidden title="Revoir tout le plateau">⤢</button><button type="button" class="btn" id="bdReset">4×4</button></span></div>
+      <div class="bdval"><button type="button" class="btn" id="bdUndoAll">Annuler</button><button type="button" class="btn primary" id="bdOk">✓ Valider le plateau</button></div>
+    </details>
     <div class="card">
       <h2>Mise en place <button type="button" class="tip" data-tip="Pose les 4 véhicules en colonne contre la clôture de droite : le 1 dans le coin du haut, puis 2, 3 et 4 en dessous. Chaque véhicule se cale contre la clôture puis rejoint sa place le long du haut et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Le suivant devient disponible dès que le précédent a quitté la colonne de droite ; un bouton reste grisé tant qu'il y a un risque de collision. Le véhicule 4 reste connecté au téléphone pour le pilotage.">i</button></h2>
       <div class="suplan"><svg id="suPlan" viewBox="0 0 320 96" aria-label="Plan de la mise en place"></svg><div class="sunext" id="suNext"></div></div>
@@ -556,12 +572,6 @@ body.focus #dsBar .dsh b{font-size:17px}
       <div class="solop">PLAYER <span>04</span></div>
       <button type="button" id="suSolo" class="solob">▶ PRESS START</button>
       <div class="sub solos">Pose le 04 dans le coin en haut à droite : il se calibre et le cockpit s'ouvre</div>
-    </div>
-    <div class="card" id="boardCard">
-      <h2>Plateau <button type="button" class="tip" data-tip="Dessine la forme de ton plateau, sans limite de taille (la grille s'agrandit quand tu ajoutes des blocs au bord) : chaque case = un bloc de 10 pas (12,25 cm), la taille d'un véhicule. Mode Blocs : touche une case vide pour poser un bloc, un bloc pour l'enlever (glisse le doigt pour en poser plusieurs). Le bloc du coin en haut à droite (clôture et picot rouge, où se fait le calibrage) reste toujours ; les 2 cases rouges juste derrière ses clôtures restent vides. Pince avec 2 doigts pour zoomer / dézoomer et les glisser pour déplacer la grille ; ⤢ revient à tout le plateau. Mode Décharge : touche le bloc où les véhicules iront décharger leurs billes. Pour l'instant le plateau est seulement dessiné et mémorisé dans le téléphone : les véhicules restent sur le carré 4×4.">i</button></h2>
-      <div class="seg" id="bdMode"><button type="button" data-m="blk" class="on">▦ Blocs</button><button type="button" data-m="d">⬇ Décharge</button></div>
-      <canvas id="bdCv" width="640" height="640" aria-label="Plan du plateau en blocs"></canvas>
-      <div class="bdfoot"><span class="sub" id="bdInfo"></span><span style="display:flex;gap:6px"><button type="button" class="btn" id="bdFit" hidden title="Revoir tout le plateau">⤢</button><button type="button" class="btn" id="bdReset">4×4</button></span></div>
     </div>
   </section>
 
@@ -763,6 +773,33 @@ function toast(m, ms = 2200) { const t = $('toast'); t.textContent = m; t.classL
 function log(m) { const l = $('log'); l.textContent += new Date().toLocaleTimeString() + '  ' + m + '\n'; l.scrollTop = l.scrollHeight; }
 const store = { get(k, d) { try { const v = localStorage.getItem('odv.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
                 set(k, v) { try { localStorage.setItem('odv.' + k, JSON.stringify(v)); } catch {} } };
+// ---------------------------------------------------------------- plateau dessiné (v1.89 / v1.90)
+// blocs de 10 pas ; bloc (bx, by) = centre d'un véhicule en (10·bx, 10·by) ; bx vers la gauche (+X), by vers le bas (+Y)
+const BD = (() => { const d = store.get('board', null); return d && Array.isArray(d.cells) ? { cells: d.cells, d: d.d || null } : { cells: bdSquare(), d: null }; })();
+function bdSquare() { const c = []; for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) c.push(x + ',' + y); return c; }
+// les 2 cases de l'autre côté des clôtures du coin (au-dessus et à droite) : zone rouge, pas de bloc possible
+const BD_RED = [[0, -1], [-1, 0]];
+function bdRed(x, y) { return BD_RED.some(r => r[0] === x && r[1] === y); }
+BD.cells = BD.cells.filter(c => { const [x, y] = c.split(',').map(Number); return !bdRed(x, y); });
+function bdHas(x, y) { return BD.cells.includes(x + ',' + y); }
+function bdPairs() { return BD.cells.map(c => c.split(',').map(Number)); }
+function bdFits(p, e = 1) {
+  // le véhicule (10×10 pas) posé en p est-il entièrement sur des blocs ? (tolérance e en pas : 1 pas ≈ 12 mm, la chorégraphie d'origine dépasse de 0,7)
+  e = e / 10;
+  const xs = [Math.floor(p[0] / 10 + e), Math.ceil(p[0] / 10 - e)], ys = [Math.floor(p[1] / 10 + e), Math.ceil(p[1] / 10 - e)];
+  return xs.every(x => ys.every(y => bdHas(x, y)));
+}
+function bdBox() {
+  // centres extrêmes possibles d'un véhicule (en pas)
+  const xs = BD.cells.map(c => +c.split(',')[0]), ys = BD.cells.map(c => +c.split(',')[1]);
+  return { x0: 10 * Math.min(...xs), x1: 10 * Math.max(...xs), y0: 10 * Math.min(...ys), y1: 10 * Math.max(...ys) };
+}
+function plateGeo(W) {
+  // repère des plateaux de l'appli : le plateau dessiné, centré, avec 2 pas de marge (4×4 : comme avant, u = W/44)
+  const b = bdBox(), xL = b.x1 + 5, xR = b.x0 - 5, yT = b.y0 - 5, yB = b.y1 + 5, S = Math.max(xL - xR, yB - yT), u = W / (S + 4);
+  const ox = 2 + (S - (xL - xR)) / 2, oy = 2 + (S - (yB - yT)) / 2;
+  return { u, xL, xR, yT, yB, X: x => (xL + ox - x) * u, Y: y => (y - yT + oy) * u, ix: px => xL + ox - px / u, iy: py => py / u + yT - oy };
+}
 
 document.addEventListener('pointerdown', e => {
   const b = e.target.closest('.btn.primary, .rb.play, .btn.close, .xclose'); if (!b || b.disabled) return;
@@ -801,12 +838,23 @@ function analyse(it) {
     const { prog } = ODV.parse(ODVGEN.prepare(it.src), 4);
     const sim = ODV.simulate(prog, ODVGEN.HOME);
     const cols = ODV.collisions(sim, 10);
-    it.dur = tl.total; it.col = cols.filter(c => c.pen > 1).length; it.gr = cols.length - it.col;
+    it.dur = tl.total; it.col = cols.filter(c => c.pen > 1).length; it.gr = cols.length - it.col; it.tl = tl; it.fit = tlFits(tl);
     const back = tl.warnings.find(w => /position de départ/.test(w.msg));
     it.ok = !back && prog.length > 0;
     it.msg = !prog.length ? 'aucune commande reconnue' : back ? back.msg : '';
   } catch (e) { it.ok = false; it.msg = e.message; it.dur = 0; }
   return it;
+}
+function tlFits(tl) {
+  // la chorégraphie reste-t-elle sur le plateau dessiné ? (tous les véhicules, toutes les 100 ms)
+  for (let i = 0; i < 4; i++) for (let t = 0; t <= tl.total; t += 100) { const q = ODVGEN.posAt(tl, i, t); if (!bdFits(q)) return false; }
+  return true;
+}
+function bdChanged() {
+  // plateau modifié : on revérifie les chorégraphies et on redessine
+  if (typeof items === 'undefined' || !items) return;
+  items.forEach(it => { if (it.tl) it.fit = tlFits(it.tl); });
+  renderList(); refresh();
 }
 function loadItems() {
   const all = PRESETS.map((p, i) => ({ id: 'p' + i, name: p.name, src: p.src, def: p.def }))
@@ -824,10 +872,11 @@ function renderList() {
   items.forEach((it, idx) => {
     const d = document.createElement('div'); d.className = 'ch';
     const badge = !it.ok ? `<span class="badge bad">⚠ ${it.msg}</span>`
+      : it.fit === false ? `<span class="badge bad">⛔ sort du plateau</span>`
       : it.col ? `<span class="badge bad">${it.col} chevauchement</span>`
       : it.gr ? `<span class="badge warn">${it.gr} frôlement${it.gr > 1 ? 's' : ''}</span>` : `<span class="badge ok">✓ sans collision</span>`;
     d.dataset.id = it.id;
-    d.innerHTML = `<div class="grip" title="Glisser pour changer l'ordre">⠿</div><input type="checkbox" ${it.on ? 'checked' : ''} ${it.ok ? '' : 'disabled'}>
+    d.innerHTML = `<div class="grip" title="Glisser pour changer l'ordre">⠿</div><input type="checkbox" ${it.on && it.fit !== false ? 'checked' : ''} ${it.ok && it.fit !== false ? '' : 'disabled'}>
       <div class="nm"><b>${esc(it.name)}</b><span>${fmt(it.dur)}</span>${badge}</div>
       <div class="ord">${it.ed ? '<button title="Modifier" class="edb">✏️</button>' : ''}<button title="Aperçu" class="pv"><svg viewBox="0 0 24 24" fill="none" stroke="#ff9a3c" stroke-width="1.8" stroke-linecap="square"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5" stroke-opacity=".5"/><path d="M12 12 L19 6"/><rect x="15" y="14" width="3" height="3" fill="#ff9a3c" stroke="none"/></svg></button>${it.custom ? '<button title="Supprimer">✕</button>' : ''}</div>`;
     const [cb] = d.getElementsByTagName('input');
@@ -908,7 +957,7 @@ function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<':
 let TL = null, PLAY = [];
 function refresh() {
   renderList();
-  PLAY = items.filter(i => i.on && i.ok);
+  PLAY = items.filter(i => i.on && i.ok && i.fit !== false);
   TL = PLAY.length ? ODVGEN.buildTimeline(PLAY.map(i => ({ name: i.name, src: i.src }))) : null;
   progCache = {};
   $('sumTxt').innerHTML = PLAY.length ? `<b>${PLAY.length}</b> chorégraphie${PLAY.length > 1 ? 's' : ''} · <b>${fmt(TL.total)}</b>` : 'Coche au moins une chorégraphie';
@@ -959,7 +1008,7 @@ async function loadCompiler() {
 }
 function genId(tl = TL, loop = $('optLoop').checked) {
   // même numéro pour les 4 véhicules d'une même sélection, différent dès que la sélection change
-  const str = JSON.stringify([tl.bounds, tl.segs, loop]);
+  const str = JSON.stringify([tl.bounds, tl.segs, loop, BD.cells.slice().sort()]);   // plateau validé compris
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return 1 + ((h >>> 0) % 999);
@@ -971,8 +1020,8 @@ let IDLE = null;
 const ROUTINE = /*ROUTINE*/;
 const idleTL = () => IDLE || (IDLE = ODVGEN.buildTimeline([{ name: 'Spirale + Pulsation', src: ROUTINE }]));
 function programText(vid, homing = false, idle = false) {
-  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Spirale + Pulsation'], smode: SONAR });
-  return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name), smode: SONAR });
+  if (idle) return ODVGEN.buildProgram(RUNTIME, idleTL(), vid, { loop: false, homing, gen: genId(idleTL(), false), names: ['Spirale + Pulsation'], smode: SONAR, board: bdPairs() });
+  return ODVGEN.buildProgram(RUNTIME, TL, vid, { loop: $('optLoop').checked, homing, gen: genId(), names: PLAY.map(i => i.name), smode: SONAR, board: bdPairs() });
 }
 async function compileFor(vid, homing = false, idle = false) {
   const key = vid + (homing ? 'h' : 'n') + (idle ? 'i' : '');
@@ -1334,7 +1383,7 @@ $('updAll').onclick = () => {
   toast('Remets les 4 véhicules dans leur colonne de départ, puis calibre-les');
 };
 $('updAll2').onclick = updateAll;
-function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + SONAR; }
+function keyNow() { return PLAY.map(i => i.id).join(',') + $('optLoop').checked + SONAR + BD.cells.join(';'); }
 
 // ====================================================================== 0. mise en place (calibrage, un véhicule à la fois)
 const SU = { done: {}, hy: {}, clr: {} };
@@ -1455,6 +1504,7 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'DS') dsShow(+p[1]);
     else if (p[0] === 'PU') SNS.push = { t: performance.now(), gx: +p[1] / 100 || 0, gy: p[2] == null ? -1 : +p[2] / 100, mm: SNS.mm };
     else if (p[0] === 'SP') spLine(p);
+    else if (p[0] === 'DG') dumpGo();
     else if (p[0] === 'GST') toast({ 1: '✋ Geste : lecture / pause', 2: '✋✋ Geste : chorégraphie suivante', H: '✋ Main tenue : stop et retour', S: '🗿 Statue : le spectacle se fige', R: '🗿 Le spectacle repart' }[p[1]] || 'Geste');
   };
   h.autoReconnect = true;
@@ -1497,7 +1547,7 @@ document.querySelectorAll('#manMode button').forEach(b => b.onclick = () => {
   if (M.active && !M.returning) manMsg(M.mode === 'drag' ? 'Touche ou fais glisser ton doigt sur le plateau : le véhicule <b>0' + M.v + '</b> se dirige vers ton doigt.' : 'Pousse le joystick (sous le plateau) pour déplacer le véhicule <b>0' + M.v + '</b>.');
 });
 function freeAt(p) {
-  if (p[0] < 0 || p[0] > 30 || p[1] < 0 || p[1] > 30) return false;
+  if (!bdFits(p, 0.01)) return false;   // reste sur le plateau dessiné (sans déborder)
   return M.others.every(o => Math.max(Math.abs(p[0] - o[0]), Math.abs(p[1] - o[1])) >= 10 - 1e-6);
 }
 function manUI() {
@@ -1575,6 +1625,7 @@ async function handStart(mode, quiet = false) {
 $('handGo').onclick = () => handStart(1);
 $('axGo').onclick = () => handStart(2);
 $('manGo').onclick = async () => {
+  if (M.active && (M.auto || M.arm)) { M.auto = null; if (M.arm) { M.arm = false; M.hub && M.hub.stdin('A0').catch(() => {}); } }   // décharge annulée
   if (M.active && M.evade) {
     // les 3 autres se sont écartés : l'appli les range un par un (puis le véhicule 4), par des chemins dégagés
     M.returning = true; M.tidying = true; M.finger = null; M.joy = [0, 0]; M.hand = false; manUI();
@@ -1713,21 +1764,23 @@ function bdView() {
   // grille sans limite : on montre les blocs + 2 cases libres tout autour (au moins 8×8), centrée, en carré
   if (bdZ) return bdZ;
   if (bdV) return bdV;
-  const xs = BD.cells.map(c => +c.split(',')[0]), ys = BD.cells.map(c => +c.split(',')[1]);
+  const xs = BDE.cells.map(c => +c.split(',')[0]), ys = BDE.cells.map(c => +c.split(',')[1]);
   let x0 = Math.min(...xs) - 2, x1 = Math.max(...xs) + 2, y0 = Math.min(...ys) - 2, y1 = Math.max(...ys) + 2;
   const n = Math.max(8, x1 - x0 + 1, y1 - y0 + 1), ex = n - (x1 - x0 + 1), ey = n - (y1 - y0 + 1);
   x1 += Math.ceil(ex / 2); y0 -= Math.floor(ey / 2);
   return { x1, y0, n };
 }
-const BD = (() => { const d = store.get('board', null); return d && Array.isArray(d.cells) ? { cells: d.cells, d: d.d || null } : { cells: bdSquare(), d: null }; })();
+const BDE = (() => { const d = store.get('boardDraft', null); return d && Array.isArray(d.cells) ? { cells: d.cells.filter(c => { const [x, y] = c.split(',').map(Number); return !bdRed(x, y); }), d: d.d || null } : { cells: BD.cells.slice(), d: BD.d }; })();
 let bdMode = 'blk', bdPaint = null;
-function bdSquare() { const c = []; for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) c.push(x + ',' + y); return c; }
-// les 2 cases de l'autre côté des clôtures du coin (au-dessus et à droite) : zone rouge, pas de bloc possible
-const BD_RED = [[0, -1], [-1, 0]];
-function bdRed(x, y) { return BD_RED.some(r => r[0] === x && r[1] === y); }
-BD.cells = BD.cells.filter(c => { const [x, y] = c.split(',').map(Number); return !bdRed(x, y); });
-function bdHas(x, y) { return BD.cells.includes(x + ',' + y); }
-function bdSave() { store.set('board', BD); }
+function bdSave() { store.set('boardDraft', BDE); bdStatus(); }
+function bdKey(B) { return JSON.stringify([B.cells.slice().sort(), B.d]); }
+function bdeHas(x, y) { return BDE.cells.includes(x + ',' + y); }
+function bdStatus() {
+  // brouillon (éditeur) ≠ plateau validé (utilisé partout et envoyé aux véhicules) ?
+  const same = bdKey(BDE) === bdKey(BD);
+  $('bdOk').disabled = same; $('bdOk').textContent = same ? '✓ Plateau validé' : '✓ Valider le plateau';
+  $('bdSum').innerHTML = same ? `<span class="ok">✓ validé</span> · ${BD.cells.length} blocs${BD.d ? ' · décharge' : ''}` : '<span class="bad">● modifié, à valider</span>';
+}
 function bdDraw() {
   const cv = $('bdCv'), cx = cv.getContext('2d'), W = cv.width, M = 18, V = bdView(), C = (W - 2 * M) / V.n;
   const X = bx => M + (V.x1 - bx) * C, Y = by => M + (by - V.y0) * C;
@@ -1737,7 +1790,7 @@ function bdDraw() {
   for (let b = Math.floor(V.x1 - V.n) - 1; b <= Math.ceil(V.x1) + 1; b++) { cx.beginPath(); cx.moveTo(X(b), M); cx.lineTo(X(b), W - M); cx.stroke(); }
   for (let b = Math.floor(V.y0) - 1; b <= Math.ceil(V.y0 + V.n) + 1; b++) { cx.beginPath(); cx.moveTo(M, Y(b)); cx.lineTo(W - M, Y(b)); cx.stroke(); }
   cx.setLineDash([]);
-  for (const c of BD.cells) {
+  for (const c of BDE.cells) {
     const [bx, by] = c.split(',').map(Number), L = X(bx), T = Y(by);
     cx.fillStyle = '#26292c'; cx.fillRect(L + 1.5, T + 1.5, C - 3, C - 3);
     cx.fillStyle = 'rgba(255,255,255,.05)'; for (let i = 1; i < 4; i++) for (let j = 1; j < 4; j++) cx.fillRect(L + i * C / 4 - 1.5, T + j * C / 4 - 1.5, 3, 3);   // picots
@@ -1755,19 +1808,19 @@ function bdDraw() {
   // coin du calibrage : clôtures en haut et à droite (une largeur de bloc) et picot rouge
   cx.strokeStyle = '#8a7d6c'; cx.lineWidth = 6; cx.beginPath(); cx.moveTo(X(0), Y(0) - 3); cx.lineTo(X(0) + C + 3, Y(0) - 3); cx.lineTo(X(0) + C + 3, Y(0) + C); cx.stroke();
   cx.fillStyle = '#ff4d43'; cx.beginPath(); cx.arc(X(0) + C + 3, Y(0) - 3, 6, 0, 7); cx.fill();
-  if (BD.d) {
+  if (BDE.d) {
     // point de décharge : bac cyan avec une flèche vers le bas
-    const L = X(BD.d[0]), T = Y(BD.d[1]), m = C * .16;
+    const L = X(BDE.d[0]), T = Y(BDE.d[1]), m = C * .16;
     cx.fillStyle = 'rgba(34,211,238,.16)'; cx.fillRect(L + 3, T + 3, C - 6, C - 6);
     cx.strokeStyle = '#22d3ee'; cx.lineWidth = 3; cx.setLineDash([8, 6]); cx.strokeRect(L + m, T + m, C - 2 * m, C - 2 * m); cx.setLineDash([]);
     cx.lineWidth = 5; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(L + C / 2, T + C * .3); cx.lineTo(L + C / 2, T + C * .66);
     cx.moveTo(L + C * .36, T + C * .53); cx.lineTo(L + C / 2, T + C * .67); cx.lineTo(L + C * .64, T + C * .53); cx.stroke(); cx.lineCap = 'butt';
   }
   cx.restore();
-  const xs = BD.cells.map(c => +c.split(',')[0]), ys = BD.cells.map(c => +c.split(',')[1]);
+  const xs = BDE.cells.map(c => +c.split(',')[0]), ys = BDE.cells.map(c => +c.split(',')[1]);
   const w = Math.max(...xs) - Math.min(...xs) + 1, h = Math.max(...ys) - Math.min(...ys) + 1;
-  let txt = `${BD.cells.length} blocs · ${(w * 12.25).toFixed(0)} × ${(h * 12.25).toFixed(0)} cm`;
-  txt += BD.d ? ' · décharge placée' : ' · <span class="bad">pas de point de décharge</span>';
+  let txt = `${BDE.cells.length} blocs · ${(w * 12.25).toFixed(0)} × ${(h * 12.25).toFixed(0)} cm`;
+  txt += BDE.d ? ' · décharge placée' : ' · <span class="bad">pas de point de décharge</span>';
   $('bdInfo').innerHTML = txt;
 }
 function bdCell(e) {
@@ -1780,10 +1833,10 @@ function bdSet(q, on) {
   const k = q[0] + ',' + q[1];
   if (!on && q[0] === 0 && q[1] === 0) return;           // le coin du calibrage reste
   if (on && bdRed(q[0], q[1])) return;              // derrière une clôture : interdit
-  if (on && !bdHas(q[0], q[1])) BD.cells.push(k);
-  if (!on && bdHas(q[0], q[1])) {
-    BD.cells = BD.cells.filter(c => c !== k);
-    if (BD.d && BD.d[0] === q[0] && BD.d[1] === q[1]) BD.d = null;
+  if (on && !bdeHas(q[0], q[1])) BDE.cells.push(k);
+  if (!on && bdeHas(q[0], q[1])) {
+    BDE.cells = BDE.cells.filter(c => c !== k);
+    if (BDE.d && BDE.d[0] === q[0] && BDE.d[1] === q[1]) BDE.d = null;
   }
 }
 // un doigt : poser / enlever des blocs (ou placer la décharge) ; deux doigts : zoomer et déplacer la grille
@@ -1801,7 +1854,7 @@ $('bdCv').addEventListener('pointerdown', e => {
   bdPt.set(e.pointerId, bdXY(e)); try { $('bdCv').setPointerCapture(e.pointerId); } catch {}
   if (bdPt.size === 2) {
     // deuxième doigt : on annule ce que le premier venait de faire et on passe au zoom
-    if (bdUndo) { BD.cells = bdUndo.cells; BD.d = bdUndo.d; bdSave(); }
+    if (bdUndo) { BDE.cells = bdUndo.cells; BDE.d = bdUndo.d; bdSave(); }
     bdPaint = null; bdV = null; bdUndo = null;
     const [a, b] = [...bdPt.values()];
     bdPinch = { V: bdView(), d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2] };
@@ -1809,9 +1862,9 @@ $('bdCv').addEventListener('pointerdown', e => {
   }
   if (bdPt.size > 2) return;
   const q = bdCell(e); if (!q) return;
-  bdUndo = { cells: BD.cells.slice(), d: BD.d };
-  if (bdMode === 'blk') { bdV = bdView(); bdPaint = !bdHas(q[0], q[1]); bdSet(q, bdPaint); }
-  else if (bdHas(q[0], q[1])) BD.d = q;
+  bdUndo = { cells: BDE.cells.slice(), d: BDE.d };
+  if (bdMode === 'blk') { bdV = bdView(); bdPaint = !bdeHas(q[0], q[1]); bdSet(q, bdPaint); }
+  else if (bdeHas(q[0], q[1])) BDE.d = q;
   else { toast('Le point de décharge doit être sur un bloc'); return; }
   bdSave(); bdDraw();
 });
@@ -1839,8 +1892,15 @@ $('bdCv').addEventListener('wheel', e => {
 }, { passive: false });
 $('bdFit').onclick = () => { bdZ = null; $('bdFit').hidden = true; bdDraw(); };
 $('bdMode').querySelectorAll('button').forEach(b => b.onclick = () => { bdMode = b.dataset.m; $('bdMode').querySelectorAll('button').forEach(o => o.classList.toggle('on', o === b)); });
-$('bdReset').onclick = () => { BD.cells = bdSquare(); BD.d = BD.d && BD.d[0] < 4 && BD.d[1] < 4 ? BD.d : null; bdSave(); bdDraw(); };
-bdDraw();
+$('bdReset').onclick = () => { BDE.cells = bdSquare(); BDE.d = BDE.d && BDE.d[0] < 4 && BDE.d[1] < 4 ? BDE.d : null; bdSave(); bdDraw(); };
+$('bdOk').onclick = () => {
+  // valider : le brouillon devient le plateau utilisé par l'appli (Pilotage, Programme, Atelier) et envoyé aux véhicules
+  BD.cells = BDE.cells.slice(); BD.d = BDE.d ? BDE.d.slice() : null; store.set('board', BD);
+  progCache = {}; bdChanged(); bdStatus(); renderVehicles && renderVehicles();
+  toast('Plateau validé : les véhicules le recevront au prochain calibrage ou envoi');
+};
+$('bdUndoAll').onclick = () => { BDE.cells = BD.cells.slice(); BDE.d = BD.d ? BD.d.slice() : null; bdSave(); bdDraw(); };
+bdDraw(); bdStatus();
 // main devant le capteur pendant le spectacle (v1.84) : le V4 met en pause, demande où sont les autres, pousse / attaque, puis reprend
 const SP = { on: false, pos: null };
 async function spLine(p) {
@@ -1854,7 +1914,7 @@ async function spLine(p) {
 function onPos(x, y, rcMoving) {
   if (SP.on && !M.active) { SP.pos = [x, y]; return; }
   // position renvoyée par le véhicule 4 : on la suit quand le joystick de l'écran n'est pas utilisé
-  if (!M.active || M.returning || M.v !== 4) return;
+  if (!M.active || M.returning || M.v !== 4 || M.auto) return;
   if (M.joy[0] || M.joy[1]) return;
   M.cmd = [x, y]; M.sent = [x, y];
   const lp = M.path[M.path.length - 1];
@@ -1863,7 +1923,7 @@ function onPos(x, y, rcMoving) {
 async function manualEnd() {
   try { await M.hub.stdin('G' + Math.round(M.cmd[0] * 100) + ',' + Math.round(M.cmd[1] * 100)); await sleep(250); await M.hub.stdin('Q'); } catch {}
   if (M.v !== 4) { await sleep(400); M.hub.onLine = null; await M.hub.close(); }
-  M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; M.hub = null; M.path = [];
+  M.active = false; M.returning = false; M.evade = false; M.tidying = false; M.hand = false; M.hub = null; M.path = []; M.auto = null; M.arm = false;
   manMsg('Le véhicule est revenu à sa place. Tu peux relancer la Lecture ou reprendre la main.'); manUI();
 }
 function manualTick(ts) {
@@ -1871,10 +1931,12 @@ function manualTick(ts) {
   const now = performance.now(), dt = Math.min(0.1, (now - M.last) / 1000); M.last = now;
   if (GM.on && GM.kind === 'bille') { if (GM.phase === 1) billesTick(now); return; }
   if (M.tidying) return;   // rangement des véhicules en cours (commandes W)
+  const autoGoal = M.auto ? dumpTick(now) : null;
   // c'est la main qui conduit (en « Pousser », le joystick reste utilisable quand on y touche)
-  if (M.hand && !(M.hmode === 2 && (M.joy[0] || M.joy[1]))) { if (GM.p4) { M.cmd = GM.p4.slice(); M.sent = M.cmd.slice(); } return; }
+  if (!M.auto && M.hand && !(M.hmode === 2 && (M.joy[0] || M.joy[1]))) { if (GM.p4) { M.cmd = GM.p4.slice(); M.sent = M.cmd.slice(); } return; }
   let goal = null;
-  if (M.returning) {
+  if (M.auto) goal = autoGoal;
+  else if (M.returning) {
     while (M.path.length && Math.hypot(M.path[M.path.length - 1][0] - M.cmd[0], M.path[M.path.length - 1][1] - M.cmd[1]) < 0.02) {
       M.cmd = M.path[M.path.length - 1].slice();   // on se cale exactement sur le point de passage
       if (M.path.length === 1) break; M.path.pop();
@@ -1885,13 +1947,13 @@ function manualTick(ts) {
   else if (M.mode === 'joy' && (M.joy[0] || M.joy[1])) goal = [M.cmd[0] - M.joy[0] * 50, M.cmd[1] + M.joy[1] * 50];
   if (goal) {
     let dx = goal[0] - M.cmd[0], dy = goal[1] - M.cmd[1]; const d = Math.hypot(dx, dy);
-    let sp = VPAGE * dt; if (M.mode === 'joy' && !M.returning) sp *= Math.min(1, Math.hypot(M.joy[0], M.joy[1]));
+    let sp = VPAGE * dt; if (M.mode === 'joy' && !M.returning && !M.auto) sp *= Math.min(1, Math.hypot(M.joy[0], M.joy[1]));
     if (d > 1e-6) {
       const k = Math.min(1, sp / d); dx *= k; dy *= k;
-      const tries = M.returning ? [[dx, dy]] : [[dx, dy], [dx, 0], [0, dy]];
+      const tries = M.returning || M.auto ? [[dx, dy]] : [[dx, dy], [dx, 0], [0, dy]];
       for (const [ax, ay] of tries) {
         const c = [M.cmd[0] + ax, M.cmd[1] + ay];
-        if (M.returning || freeAt(c)) { M.cmd = c; break; }
+        if (M.returning || M.auto || freeAt(c)) { M.cmd = c; break; }
       }
       if (!M.returning) { const lp = M.path[M.path.length - 1]; if (Math.hypot(M.cmd[0] - lp[0], M.cmd[1] - lp[1]) >= 0.3) M.path.push(M.cmd.slice()); }
     }
@@ -1904,8 +1966,76 @@ function manualTick(ts) {
       .then(() => { M.sent = tgt; }, () => {}).finally(() => { M.inflight = false; });
   }
 }
+// ---------------------------------------------------------------- aller à la décharge (v1.90)
+// en conduite manuelle du V4 : toucher le V4 sur le plateau = armer ; puis main devant le capteur (1 s) → le hub imprime DG ;
+// l'appli calcule un chemin sur les blocs jusqu'à la décharge, l'y conduit, attend 3 s, puis le ramène d'où il est parti.
+function bdPlan(from, to, obs) {
+  // A* (pas de 1, 8 directions) : le véhicule reste sur les blocs et à 10 pas (Chebyshev) des autres
+  const b = bdBox(), ok = q => bdFits(q, 0.01) && obs.every(o => Math.max(Math.abs(q[0] - o[0]), Math.abs(q[1] - o[1])) >= 10 - 1e-6);
+  const nx = b.x1 - b.x0 + 1, ny = b.y1 - b.y0 + 1, id = (x, y) => (x - b.x0) * ny + (y - b.y0);
+  const st = [Math.round(from[0]), Math.round(from[1])], gl = [Math.round(to[0]), Math.round(to[1])];
+  if (!ok(gl) || !ok(st)) return null;
+  const g = new Map([[id(...st), 0]]), prev = new Map(), open = [[0, st]], done = new Set();
+  while (open.length) {
+    let bi = 0; for (let k = 1; k < open.length; k++) if (open[k][0] < open[bi][0]) bi = k;
+    const [, q] = open.splice(bi, 1)[0], k = id(...q);
+    if (done.has(k)) continue; done.add(k);
+    if (q[0] === gl[0] && q[1] === gl[1]) {
+      const pts = [q]; for (let c = k; prev.has(c); c = prev.get(c)[0]) pts.unshift(prev.get(c)[1]);
+      // on ne garde que les coins (changements de direction)
+      const out = [];
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], c = pts[i], n = pts[i + 1];
+        if (!n || Math.sign(c[0] - a[0]) !== Math.sign(n[0] - c[0]) || Math.sign(c[1] - a[1]) !== Math.sign(n[1] - c[1])) out.push(c);
+      }
+      return [from.slice()].concat(out.length ? out : [gl]);
+    }
+    for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (!dx && !dy) continue;
+      const n = [q[0] + dx, q[1] + dy];
+      if (n[0] < b.x0 || n[0] > b.x1 || n[1] < b.y0 || n[1] > b.y1 || !ok(n)) continue;
+      if (dx && dy && (!ok([q[0] + dx, q[1]]) || !ok([q[0], q[1] + dy]))) continue;   // pas de coin coupé
+      const nk = id(...n), c = g.get(k) + (dx && dy ? 1.4142 : 1);
+      if (!done.has(nk) && c < (g.get(nk) ?? Infinity)) { g.set(nk, c); prev.set(nk, [k, q]); open.push([c + Math.hypot(n[0] - gl[0], n[1] - gl[1]), n]); }
+    }
+  }
+  return null;
+}
+function dumpArm(on) {
+  M.arm = on; if (M.hub) M.hub.stdin(on ? 'A1' : 'A0').catch(() => {});
+  manMsg(on ? '⬇ Approche ta main du capteur : le véhicule <b>04</b> part à la décharge.' : 'Décharge annulée.');
+}
+function dumpGo() {
+  M.arm = false;
+  if (!M.active || M.v !== 4 || M.returning || M.auto) return;
+  if (!BD.d) { toast('Place d\'abord un point de décharge dans l\'éditeur de plateau (Setup)'); return; }
+  const to = [10 * BD.d[0], 10 * BD.d[1]], go = bdPlan(M.cmd, to, M.others);
+  if (!go) { toast('Pas de chemin libre jusqu\'à la décharge'); return; }
+  M.auto = { pts: go.slice(1), back: go.slice(0, -1).reverse(), phase: 'go', t: 0 };
+  M.joy = [0, 0]; M.finger = null;
+  if (M.hand) { M.hand = false; M.hub.stdin('H0').catch(() => {}); }   // pas de poussée pendant le trajet
+  manMsg('⬇ En route vers la décharge…'); manUI();
+}
+function dumpTick(now) {
+  // renvoie la cible du moment pendant le trajet automatique
+  const A = M.auto;
+  if (A.phase === 'wait') {
+    if (now < A.t) return null;
+    A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…');
+  }
+  while (A.pts.length && Math.hypot(A.pts[0][0] - M.cmd[0], A.pts[0][1] - M.cmd[1]) < 0.02) { M.cmd = A.pts[0].slice(); A.pts.shift(); }
+  if (A.pts.length) return A.pts[0];
+  if (A.phase === 'go') { A.phase = 'wait'; A.t = now + 3000; manMsg('⬇ À la décharge : décharge les billes (3 s)…'); return null; }
+  M.auto = null; manMsg('Revenu. Touche le <b>04</b> sur le plateau pour repartir à la décharge.'); handStart(2, true); manUI();
+  return null;
+}
 // glisser sur le plateau
-function boardPt(e) { const c = $('cv'), r = c.getBoundingClientRect(), u = c.width / 44, px = (e.clientX - r.left) * c.width / r.width, py = (e.clientY - r.top) * c.height / r.height; return [Math.min(30, Math.max(0, 37 - px / u)), Math.min(30, Math.max(0, py / u - 7))]; }
+function boardPt(e) { const c = $('cv'), r = c.getBoundingClientRect(), G = plateGeo(c.width), b = bdBox(), px = (e.clientX - r.left) * c.width / r.width, py = (e.clientY - r.top) * c.height / r.height; return [Math.min(b.x1, Math.max(b.x0, G.ix(px))), Math.min(b.y1, Math.max(b.y0, G.iy(py)))]; }
+$('cv').addEventListener('pointerdown', e => {
+  if (!M.active || M.returning || M.v !== 4 || M.auto) return;
+  const q = boardPt(e); if (Math.max(Math.abs(q[0] - M.cmd[0]), Math.abs(q[1] - M.cmd[1])) > 5.5) return;
+  e.stopImmediatePropagation(); e.preventDefault(); dumpArm(!M.arm);   // toucher le V4 = armer / désarmer la décharge
+});
 $('cv').addEventListener('pointerdown', e => { if (!M.active || M.returning || M.mode !== 'drag') return; $('cv').setPointerCapture(e.pointerId); M.finger = boardPt(e); e.preventDefault(); });
 $('cv').addEventListener('pointermove', e => { if (M.finger) M.finger = boardPt(e); });
 const fingerUp = () => { if (M.finger) M.finger = null; };
@@ -2270,7 +2400,7 @@ function edDraw(w) {
   const fake = { segs: s.pos.map(p => [{ k: 0, x0: p[0], y0: p[1], dur: 1 }]), start: s.pos };
   drawPlate(c, fake, 0, null, false);
   if (prev) {
-    const cx = c.getContext('2d'), u = c.width / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
+    const cx = c.getContext('2d'), { u, X, Y } = plateGeo(c.width);
     cx.save(); cx.setLineDash([u * .8, u * .6]); cx.lineWidth = u * .3;
     prev.pos.forEach((p, i) => {
       cx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--v' + (i + 1)).trim();
@@ -2281,7 +2411,7 @@ function edDraw(w) {
   }
 }
 // déplacer un véhicule au doigt
-function edPt(e) { const c = $('edCv'), r = c.getBoundingClientRect(), u = c.width / 44; return [37 - (e.clientX - r.left) * c.width / r.width / u, (e.clientY - r.top) * c.height / r.height / u - 7]; }
+function edPt(e) { const c = $('edCv'), r = c.getBoundingClientRect(), G = plateGeo(c.width); return [G.ix((e.clientX - r.left) * c.width / r.width), G.iy((e.clientY - r.top) * c.height / r.height)]; }
 $('edCv').addEventListener('pointerdown', e => {
   if (ED.sel === 0 || ED.play) return;
   const q = edPt(e), s = ED.steps[ED.sel];
@@ -2294,8 +2424,8 @@ $('edCv').addEventListener('pointerdown', e => {
 $('edCv').addEventListener('pointermove', e => {
   if (!ED.drag) return;
   const q = edPt(e), s = ED.steps[ED.sel], st = 1;
-  const snap = v => Math.min(30, Math.max(0, Math.round(v / st) * st));
-  s.pos[ED.drag.i] = [snap(q[0] + ED.drag.off[0]), snap(q[1] + ED.drag.off[1])];
+  const b = bdBox(), snap = (v, a, z) => Math.min(z, Math.max(a, Math.round(v / st) * st));
+  s.pos[ED.drag.i] = [snap(q[0] + ED.drag.off[0], b.x0, b.x1), snap(q[1] + ED.drag.off[1], b.y0, b.y1)];
   edDraw();
 });
 const edUp = () => { if (ED.drag) { ED.drag = null; edRefresh(); } };
@@ -2813,15 +2943,27 @@ function vehDraw(cx, L, T, S, u, col, label) {
 }
 if (document.fonts && document.fonts.load) document.fonts.load('700 20px Tomorrow').then(() => { try { if ($('edWrap').classList.contains('on')) edDraw(); } catch (e) {} });
 function drawPlate(c, tl, w, man, trails, ovr) {
-  const cx = c.getContext('2d'), W = c.width, u = W / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
+  const cx = c.getContext('2d'), W = c.width, G = plateGeo(W), { u, X, Y } = G;
   cx.fillStyle = '#121314'; cx.fillRect(0, 0, W, W);
-  cx.fillStyle = '#17181a'; cx.fillRect(X(35), Y(-5), 40 * u, 40 * u);
-  cx.fillStyle = '#3a3631';
-  for (let gx = -4; gx <= 34; gx += 2) for (let gy = -4; gy <= 34; gy += 2) { cx.beginPath(); cx.arc(X(gx), Y(gy), u * .16, 0, 7); cx.fill(); }
-  cx.fillStyle = '#4a443d'; cx.fillRect(X(35), Y(-5.5), 40.5 * u, u * .3); cx.fillRect(X(-5.5), Y(-5.5), u * .3, 40.5 * u);
+  // le plateau dessiné dans l'éditeur (Setup) : blocs, picots, clôtures du haut et de droite, point de décharge
+  for (const cel of BD.cells) {
+    const [bx, by] = cel.split(',').map(Number), cxx = 10 * bx, cyy = 10 * by;
+    cx.fillStyle = '#17181a'; cx.fillRect(X(cxx + 5), Y(cyy - 5), 10 * u + .5, 10 * u + .5);
+    cx.fillStyle = '#3a3631';
+    for (let gx = -4; gx <= 4; gx += 2) for (let gy = -4; gy <= 4; gy += 2) { cx.beginPath(); cx.arc(X(cxx + gx), Y(cyy + gy), u * .16, 0, 7); cx.fill(); }
+    cx.fillStyle = '#4a443d';
+    if (by === 0 && !bdHas(bx, -1)) cx.fillRect(X(cxx + 5), Y(-5.5), 10 * u + .5, u * .3);
+    if (bx === 0 && !bdHas(-1, by)) cx.fillRect(X(-5.5), Y(cyy - 5), u * .3, 10 * u + .5);
+  }
   cx.fillStyle = '#ff9a3c'; cx.beginPath(); cx.arc(X(-5.35), Y(-5.35), u * .55, 0, 7); cx.fill();
+  if (BD.d) {
+    const dx = 10 * BD.d[0], dy = 10 * BD.d[1];
+    cx.fillStyle = 'rgba(34,211,238,.12)'; cx.fillRect(X(dx + 5), Y(dy - 5), 10 * u, 10 * u);
+    cx.save(); cx.strokeStyle = '#22d3ee'; cx.lineWidth = u * .3; cx.setLineDash([u, u * .7]); cx.strokeRect(X(dx + 3.5), Y(dy - 3.5), 7 * u, 7 * u); cx.setLineDash([]);
+    cx.lineWidth = u * .45; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(X(dx), Y(dy - 2)); cx.lineTo(X(dx), Y(dy + 1.6)); cx.moveTo(X(dx + 1.4), Y(dy + .4)); cx.lineTo(X(dx), Y(dy + 1.8)); cx.lineTo(X(dx - 1.4), Y(dy + .4)); cx.stroke(); cx.restore();
+  }
   cx.fillStyle = '#a8a49c'; cx.font = `${1.3 * u}px "Space Mono",ui-monospace,monospace`; cx.textBaseline = 'top';
-  for (let k = 0; k <= 40; k += 10) { cx.textAlign = k === 0 ? 'right' : k === 40 ? 'left' : 'center'; cx.fillText(String(k), X(k - 5), u * .25); }
+  for (let e = G.xR; e <= G.xL + 1e-6; e += 10) { cx.textAlign = e === G.xR ? 'right' : e >= G.xL - 1e-6 ? 'left' : 'center'; cx.fillText(String(Math.round(e + 5)), X(e), Y(G.yT) - u * 1.75); }
   const cols = ['--v1', '--v2', '--v3', '--v4'].map(k => getComputedStyle(document.documentElement).getPropertyValue(k).trim());
   if (trails && tl) {
     for (let i = 0; i < 4; i++) {
@@ -2839,13 +2981,20 @@ function drawPlate(c, tl, w, man, trails, ovr) {
     cx.strokeStyle = cols[man.v - 1]; cx.lineWidth = u * .35; cx.globalAlpha = .45; cx.beginPath();
     man.path.forEach((q, k) => k ? cx.lineTo(X(q[0]), Y(q[1])) : cx.moveTo(X(q[0]), Y(q[1]))); cx.lineTo(X(man.cmd[0]), Y(man.cmd[1])); cx.stroke(); cx.globalAlpha = 1;
   }
+  if (man && man.auto && man.auto.pts.length) {
+    // trajet automatique vers la décharge (ou retour) : pointillés cyan
+    cx.save(); cx.strokeStyle = '#22d3ee'; cx.lineWidth = u * .35; cx.setLineDash([u * .8, u * .6]); cx.beginPath(); cx.moveTo(X(man.cmd[0]), Y(man.cmd[1]));
+    man.auto.pts.forEach(q => cx.lineTo(X(q[0]), Y(q[1]))); cx.stroke(); cx.restore();
+  }
   const P = [];
   for (let i = 0; i < 4; i++) P.push(man && man.v === i + 1 ? man.cmd : ovr && ovr[i] ? ovr[i] : tl ? ODVGEN.posAt(tl, i, w) : ODVGEN.HOME[i]);
   for (let i = 0; i < 4; i++) {
     const p = P[i], L = X(p[0] + 4.7), T = Y(p[1] - 4.7), S = 9.4 * u;
     let hit = false;
     for (let j = 0; j < 4; j++) if (j !== i && Math.max(Math.abs(p[0] - P[j][0]), Math.abs(p[1] - P[j][1])) < 9) hit = true;
+    if (!bdFits(p)) hit = true;     // hors du plateau dessiné
     vehDraw(cx, L, T, S, u, cols[i], '0' + (i + 1));
+    if (man && man.v === i + 1 && (man.arm || man.auto)) { cx.save(); cx.strokeStyle = '#22d3ee'; cx.lineWidth = u * .45; cx.setLineDash([u * .9, u * .6]); cx.lineDashOffset = -performance.now() / 60; cx.strokeRect(L - u * 1.1, T - u * 1.1, S + u * 2.2, S + u * 2.2); cx.restore(); }
     if (man && man.v === i + 1) { cx.strokeStyle = '#ff9a3c'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
     if (hit) { cx.strokeStyle = '#e5483a'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
     // poursuite : pastille du rôle (méchant rouge, gentil bleu, fixe gris, toi = ambre)
@@ -2877,7 +3026,7 @@ function drawSensor(c, p) {
   // le capteur est sur le côté droit du V4, au-dessus de la clôture : il regarde vers -X (vers la droite de l'écran)
   const now = performance.now(), fresh = now - SNS.at < 1500;
   if (!fresh && !SNS.push) return;
-  const cx = c.getContext('2d'), u = c.width / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
+  const cx = c.getContext('2d'), { u, X, Y } = plateGeo(c.width);
   const sx = X(p[0] - 4.7), sy = Y(p[1]), maxL = Math.max(0, Math.min(32.6 * u, c.width - sx - u * .6));   // 40 cm ≈ 32,6 pas
   const handL = mm => Math.min(maxL, Math.max(u, mm / 12.25 * u));
   cx.save();

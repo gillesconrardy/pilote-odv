@@ -142,6 +142,7 @@ const ODVGEN = (() => {
       .replace('%NSEG%', String(tl.segs[i].length))
       .replace('%BOUNDS%', '(' + tl.bounds.join(', ') + (tl.bounds.length === 1 ? ',' : '') + ')')
       .replace('%SMODE%', String(vid === 4 ? (opts.smode || 0) : 0))
+      .replace('%BOARD%', '(' + (opts.board || [[0,0],[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[0,2],[1,2],[2,2],[3,2],[0,3],[1,3],[2,3],[3,3]]).map(q => '(' + q[0] + ', ' + q[1] + ')').join(', ') + ',)')
       .replace('%MASK%', '(' + (vid === 4 && opts.smode ? sonarMask(tl) : []).join(', ') + ')')
       .replace('%DATA%', pyBytes(data));
   }

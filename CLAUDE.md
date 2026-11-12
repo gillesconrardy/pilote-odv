@@ -175,14 +175,28 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    **Plan en frise** (v1.83, design E puis « B · Frise » de Gilles, en largeur) : `#suPlan` (SVG 320×96 dessiné par `suPlan(next, run)` depuis `suRender`) = 4 petits plateaux côte à côte ; le plateau n montre la situation une fois le 0n calibré (précédents à leur place le long du haut, suivants dans la colonne de droite, le 0n en pointillés à son arrivée tant qu'il n'est pas fait et clignotant dans la colonne si c'est l'étape en cours) ; étape en cours encadrée en orange, étapes faites « en place », suivantes atténuées ; clôtures courtes (une largeur de véhicule) avec picot rouge ; texte de `#suNext` raccourci.
    **Bluetooth indisponible** (v1.83, design 5) : `#nobt.bt1` = une ligne en pointillés « Hors ligne · préparation seulement » + bulle « ? ».
    Le bouton disponible et pas encore fait (`go`) est orange et « respire » (`suPulse`, coupé si réduire les animations ; tests : `click(force=True)`).
-   **Éditeur de plateau** (v1.89, carte `#boardCard` sous la carte Solo de Setup, style 1 « quadrillage à toucher » choisi par Gilles) :
-   dessiner le plateau tel qu'il est réellement. Grille **sans limite** (`bdView` : blocs + 2 cases libres autour, au moins 8×8, carrée et centrée ; figée pendant qu'on dessine, `bdV`), coordonnées négatives permises, blocs de 10 pas (12,25 cm), case (bx, by) avec bx vers la
-   gauche (+X) et by vers le bas, (0,0) = coin du calibrage (clôtures + picot rouge, ne peut pas être enlevé) ; **zone rouge** hachurée sur les 2 cases derrière ses clôtures, (0,−1) et (−1,0) (`BD_RED`, `bdRed` : pas de bloc possible, retirées au chargement) ; modes `#bdMode`
-   Blocs (toucher = poser/enlever, glisser = peindre) / **Décharge** (un seul bloc, bac cyan avec flèche : là où les véhicules iront
-   décharger leurs billes) ; infos `#bdInfo` ; bouton « 4×4 » remet le carré. **Zoom à 2 doigts** (pincer = zoom, glisser = déplacer, `bdPinch`, `bdZoomAt`, vue libre `bdZ = {x1, y0, n}` à virgule, n entre 3 et 60 cases ; le 2ᵉ doigt annule ce que le 1ᵉʳ venait de dessiner, `bdUndo`), molette sur ordinateur, bouton ⤢ `#bdFit` = revenir à la vue ajustée. Tests `t_board.py`, `t_board_zoom.py`. Pas de A/B ni de chemin (Gilles : « je veux même pas
-   montrer A et B »). Mémorisé dans localStorage `odv.board` (`BD = {cells:['x,y'…], d:[bx,by]|null}`).
-   **Seulement dessiné** : les hubs restent bornés à 0..30 et la Mise en place est inchangée. Suite envisagée : bornes des hubs selon
-   le plateau, puis transport des billes jusqu'au point de décharge. Test : `t_board.py`.
+   **Éditeur de plateau** (v1.89 ; depuis v1.90 **en haut de Setup, replié par défaut** : `<details id="boardCard">`, résumé `#bdSum`
+   « ✓ validé · n blocs » ou « ● modifié, à valider ») : dessiner le plateau tel qu'il est réellement. L'éditeur modifie un **brouillon**
+   `BDE` (localStorage `odv.boardDraft`) ; **« ✓ Valider le plateau »** (`#bdOk`) le copie dans le **plateau validé** `BD` (`odv.board`,
+   défini juste après `store`) utilisé partout ; « Annuler » (`#bdUndoAll`) revient au validé. Grille **sans limite** (`bdView` : blocs
+   + 2 cases libres autour, au moins 8×8 ; figée pendant qu'on dessine, `bdV`), coordonnées négatives permises, blocs de 10 pas (12,25 cm),
+   bloc (bx, by) = véhicule centré en (10·bx, 10·by), bx vers la gauche (+X), by vers le bas ; (0,0) = coin du calibrage (ne peut pas
+   être enlevé) ; **zone rouge** sur les 2 cases derrière ses clôtures (`BD_RED`) ; modes Blocs / **Décharge** (un bloc, bac cyan) ;
+   **zoom à 2 doigts** (`bdPinch`, `bdZoomAt`, `bdZ`), molette, ⤢ `#bdFit` ; bouton « 4×4 ».
+   **Utilisation du plateau validé** (v1.90, demande de Gilles) : `bdFits(p, e)` (véhicule entièrement sur des blocs, tolérance e pas,
+   1 par défaut car la chorégraphie d'origine déborde de 0,7), `bdBox`, `plateGeo(W)` = repère commun de tous les plateaux canvas
+   (`drawPlate`, `drawSensor`, `boardPt`, `edPt`, Atelier ; 4×4 = l'ancien u = W/44) : **Pilotage et Atelier dessinent le plateau validé**
+   (blocs, clôtures en haut/à droite du coin, décharge) ; véhicule hors plateau encadré en rouge ; **chorégraphies qui sortent du
+   plateau bloquées** dans Programme (`tlFits`, `it.fit`, badge « ⛔ sort du plateau », case désactivée, exclues de `PLAY`) ;
+   joystick limité aux blocs (`freeAt` → `bdFits(p, 0.01)`). Les programmes reçoivent le plateau (`opts.board` = `bdPairs()`,
+   marqueur `%BOARD%` → `BOARD = ((bx, by), …)`, défaut 4×4) ; `genId` et `keyNow` en tiennent compte (renvoi nécessaire après
+   validation). Hub : `on_board` dans `free_at` (télécommande et poussée restent sur les blocs) ; `G` borné à ±200 (c'est l'appli qui
+   garde le V4 sur les blocs). Harness : `BOARD='[[bx,by],…]' node mkprogs.js …`.
+   **Aller à la décharge** (v1.90) : en conduite manuelle du V4, toucher le V4 sur le plateau de Pilotage = armer (`dumpArm`, `A1`/`A0`
+   → `ARM`, cadre cyan qui tourne autour du V4) ; main devant le capteur 1 s → le hub imprime `DG` au lieu de pousser ; l'appli
+   (`dumpGo`) coupe le capteur (`H0`), calcule un chemin sur les blocs qui évite les 3 autres (`bdPlan`, A* au pas de 1, 8 directions,
+   sans couper de coin), le suit (`M.auto`, `dumpTick`, pointillés cyan), attend 3 s à la décharge, revient par le même chemin puis
+   remet le capteur (`handStart(2, true)`). « Rendre la main » annule. Test : `t_dump.py` ; aussi `t_board.py`, `t_board_zoom.py`, `t_board_fit.py`.
    **Piloter seulement le V4** (v1.65, carte `#soloCard` sous la Mise en place, bouton `#suSolo` ; depuis v1.82 façon arcade (design C
    de Gilles) : « MODE SOLO », « PLAYER 04 », bouton « ▶ PRESS START » qui pulse (`.solob`, `soloPu`), bulle d'aide en coin) : V1..V3 déjà garés le long du haut,
    V4 posé dans le coin en haut à droite ; calibre le V4 seul (programme idle), ouvre Pilotage et prend la main (`manGo`) ; joystick,

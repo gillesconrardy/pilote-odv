@@ -44,6 +44,7 @@ TOTAL = %TOTAL%               # ms : duree totale de la suite
 NSEG = %NSEG%
 BOUNDS = %BOUNDS%             # ms : debut de chaque choregraphie, puis TOTAL
 SMODE = %SMODE%               # capteur de distance du V4 pendant le spectacle : 0 rien, 1 gestes, 2 statue
+BOARD = %BOARD%               # plateau valide dans l'appli : blocs (bx, by) de 10 pas, vehicule centre sur (10 bx, 10 by)
 MASK = %MASK%                 # ms : intervalles (debut, fin, ...) ou un autre vehicule passe devant le capteur
 D = %DATA%
 # Enregistrement de 14 octets par segment :
@@ -309,6 +310,7 @@ def clamp(v, a, b):
 
 # Telecommande LEGO (vehicule 4) : connectee a la demande (commande C), active seulement en manuel.
 remote = None
+a_arm = [False]
 OBS = [None, None, None]      # positions des 3 autres vehicules (envoyees par l'appli : O1x,y O2x,y O3x,y)
 MSPD = 0.006                  # vitesse a la telecommande (pas/ms), reglee par l'appli (commande V)
 last_g = -10000               # derniere cible recue de l'appli (joystick ou retour) : prioritaire
@@ -316,8 +318,19 @@ rc_until = 0
 next_pos = 0
 
 
+def on_board(x, y):
+    # le vehicule (10x10 pas) pose en (x, y) est-il entierement sur des blocs du plateau ?
+    a = x / 10
+    b = y / 10
+    for i in (int((a + 0.001) // 1), -int((0.001 - a) // 1)):
+        for j in (int((b + 0.001) // 1), -int((0.001 - b) // 1)):
+            if (i, j) not in BOARD:
+                return False
+    return True
+
+
 def free_at(x, y):
-    if x < 0 or x > 30 or y < 0 or y > 30:
+    if not on_board(x, y):
         return False
     for o in OBS:
         if o is not None and abs(x - o[0]) < 10 - 1e-6 and abs(y - o[1]) < 10 - 1e-6:
@@ -515,6 +528,10 @@ def manual_line(s):
     elif len(s) == 2 and s[0] == 'S' and s[1] in '012':
         SMODE = int(s[1])
         print('SMODE', SMODE)
+    elif s == 'A1' or s == 'A0':
+        # decharge (v1.90) : la prochaine main devant le capteur envoie le vehicule a la decharge (DG) au lieu de le pousser
+        a_arm[0] = s == 'A1'
+        print('ARM', int(a_arm[0]))
     elif s == 'U1' or s == 'U0':
         # affichage de la distance du capteur dans l'appli (onglet Pilotage)
         u_on = s == 'U1' and sonar is not None
@@ -544,8 +561,8 @@ def manual_line(s):
                 ny = int(s[k + 1:]) / 100
             except ValueError:
                 return
-            nx = clamp(nx, -1, 31)
-            ny = clamp(ny, -1, 31)
+            nx = clamp(nx, -200, 200)      # plateau dessine dans l'appli : c'est elle qui garde le vehicule sur les blocs
+            ny = clamp(ny, -200, 200)
             if game:
                 # pendant le jeu, la cible du joueur ne doit pas entrer dans un chasseur
                 if not free_at(nx, ny):
@@ -849,8 +866,8 @@ def hand_tick(dt, local):
         # la plus degagee qui l'ecarte de la main (jamais vers elle) ; un vehicule tout proche devant n'est pas une main
         if h_v > 0.0005:
             h_lost = 0
-            nx = clamp(tx + h_gx * h_v * dt, 0, 30)
-            ny = clamp(ty + h_gy * h_v * dt, 0, 30)
+            nx = tx + h_gx * h_v * dt
+            ny = ty + h_gy * h_v * dt
             if (nx != tx or ny != ty) and free_at(nx, ny):
                 tx = nx
                 ty = ny
@@ -865,6 +882,11 @@ def hand_tick(dt, local):
                 h_lost = local
         else:
             h_lost = 0
+        if h_lost and local - h_lost >= 1000 and a_arm[0]:
+            h_lost = 0
+            a_arm[0] = False
+            print('DG')
+            sonar_eyes(100)
         if h_lost and local - h_lost >= 1000:
             h_lost = 0
             best = 0
@@ -872,7 +894,7 @@ def hand_tick(dt, local):
             ok = []
             for gx, gy in ((1, 0), (0.71, -0.71), (0.71, 0.71), (0, -1), (0, 1), (-0.71, -0.71), (-0.71, 0.71)):
                 k = 0
-                while k < 10 and 0 <= tx + gx * (k + 1) <= 30 and 0 <= ty + gy * (k + 1) <= 30 and free_at(tx + gx * (k + 1), ty + gy * (k + 1)):
+                while k < 10 and free_at(tx + gx * (k + 1), ty + gy * (k + 1)):
                     k += 1
                 if k >= 4:
                     ok.append((gx, gy))
@@ -1617,8 +1639,8 @@ while True:
             step = MSPD * (local - last_loop)
             if vx and vy:
                 step *= 0.7071
-            nx = clamp(tx + vx * step, 0, 30)
-            ny = clamp(ty + vy * step, 0, 30)
+            nx = tx + vx * step
+            ny = ty + vy * step
             if free_at(nx, ny):
                 tx = nx
                 ty = ny
