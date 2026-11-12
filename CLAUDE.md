@@ -161,7 +161,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    n'est parti (`can(v)` dans `suRender`) ; son programme est envoyé tout de suite mais `sendVehicle(…, gate)` n'envoie la
    commande de démarrage qu'après le `CLR` du précédent (« Prêt : il démarrera dès que… »).
    Le bouton disponible et pas encore fait (`go`) est orange et « respire » (`suPulse`, coupé si réduire les animations ; tests : `click(force=True)`).
-   **Piloter seulement le V4** (v1.65, carte `#soloCard` sous la Mise en place, bouton `#suSolo`) : V1..V3 déjà garés le long du haut,
+   **Piloter seulement le V4** (v1.65, carte `#soloCard` sous la Mise en place, bouton `#suSolo` ; depuis v1.82 façon arcade (design C
+   de Gilles) : « MODE SOLO », « PLAYER 04 », bouton « ▶ PRESS START » qui pulse (`.solob`, `soloPu`), bulle d'aide en coin) : V1..V3 déjà garés le long du haut,
    V4 posé dans le coin en haut à droite ; calibre le V4 seul (programme idle), ouvre Pilotage et prend la main (`manGo`) ; joystick,
    télécommande, « Suivre la main ». `manGo` accepte le programme idle (`genId(idleTL(), false)` si `R.idle`). Test : `t_solo.py`.
    Test : `t_setup_order.py` ; Lecture/Pause/Retour désactivés tant que `R.idle`), **Programme** (`#choix` : choix/ordre + « Envoyer aux 4 véhicules » = `updateAll`,

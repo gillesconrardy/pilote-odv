@@ -477,6 +477,18 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 body.focus nav.tabbar,body.focus header,body.focus #tele .state,body.focus #tele .prog,body.focus #stTime,body.focus #tele .remote,body.focus #tele>:not(:first-child){display:none!important}
 body.focus #dsBar{position:absolute;left:8px;right:8px;bottom:8px;margin:0;background:rgba(18,19,20,.88);padding:5px 8px 3px}
 body.focus #dsBar .dsh b{font-size:17px}
+/* carte « Piloter seulement le V4 » façon arcade (v1.82, design C choisi par Gilles) */
+#soloCard{text-align:center;padding-top:18px;padding-bottom:16px}
+#soloCard .solotip{position:absolute;right:12px;top:12px}
+#soloCard .solok{font:12px 'Space Mono',monospace;color:#a8a49c;letter-spacing:.25em}
+#soloCard .solop{font:700 28px 'Space Mono',monospace;color:#edeae4;margin:4px 0 14px;letter-spacing:.04em}
+#soloCard .solop span{color:var(--accent)}
+.solob{display:inline-block;padding:11px 26px;border:2px solid var(--accent);border-radius:5px;background:transparent;color:var(--accent);font:700 15px 'Space Mono',monospace;letter-spacing:.06em;cursor:pointer;animation:soloPu 1.6s ease-in-out infinite}
+.solob:active{background:var(--accent);color:#121314}
+.solob:disabled{animation:none;opacity:.45}
+#soloCard .solos{margin-top:10px}
+@keyframes soloPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.55)}50%{box-shadow:0 0 0 9px rgba(255,154,60,0)}}
+@media (prefers-reduced-motion:reduce){.solob{animation:none}}
 </style>
 </head>
 <body>
@@ -511,9 +523,11 @@ body.focus #dsBar .dsh b{font-size:17px}
       <button class="btn" id="suReset" style="width:100%;margin-top:8px">↺ Recommencer la mise en place</button>
     </div>
     <div class="card" id="soloCard">
-      <h2>Piloter seulement le V4 <button type="button" class="tip" data-tip="Les véhicules 1, 2 et 3 sont déjà à leur place le long du haut (30, 20 et 10). Pose le véhicule 4 dans le coin en haut à droite, contre les deux clôtures. Il se calibre seul, sans chorégraphie, puis l'appli ouvre Pilotage et te donne la main : joystick, télécommande LEGO ou « Suivre la main » avec le capteur. Les 3 autres ne bougent pas et le véhicule 4 ne peut pas les toucher.">i</button></h2>
-      <div class="sub">Les véhicules 1, 2 et 3 sont déjà en ligne en haut ; le 4 est posé dans le coin en haut à droite, contre les clôtures.</div>
-      <button class="btn" id="suSolo" style="width:100%;margin-top:10px">🕹 Calibrer seulement le véhicule 4 et piloter</button>
+      <button type="button" class="tip solotip" data-tip="Les véhicules 1, 2 et 3 sont déjà à leur place le long du haut (30, 20 et 10). Pose le véhicule 4 dans le coin en haut à droite, contre les deux clôtures. Il se calibre seul, sans chorégraphie, puis l'appli ouvre Pilotage et te donne la main : joystick, télécommande LEGO ou « Suivre la main » avec le capteur. Les 3 autres ne bougent pas et le véhicule 4 ne peut pas les toucher.">i</button>
+      <div class="solok">MODE SOLO</div>
+      <div class="solop">PLAYER <span>04</span></div>
+      <button type="button" id="suSolo" class="solob">▶ PRESS START</button>
+      <div class="sub solos">Pose le 04 dans le coin en haut à droite : il se calibre et le cockpit s'ouvre</div>
     </div>
   </section>
 
