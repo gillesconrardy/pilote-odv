@@ -153,7 +153,7 @@ const ODVGEN = (() => {
     for (let v = 0; v <= tl.total + step; v += step) {
       const t = Math.min(v, tl.total), p4 = posAt(tl, 3, t);
       let m = false;
-      for (let k = 0; k < 3; k++) { const q = posAt(tl, k, t); if (Math.abs(q[0] - p4[0]) < 12 && q[1] > p4[1] + 0.5 && (q[1] - p4[1] - 10) * 12.25 < 350) m = true; }
+      for (let k = 0; k < 3; k++) { const q = posAt(tl, k, t); if (Math.abs(q[1] - p4[1]) < 12 && q[0] < p4[0] - 0.5 && (p4[0] - q[0] - 10) * 12.25 < 350) m = true;   /* capteur tourné vers la droite (-X) */ }
       if (m && on < 0) on = t;
       if ((!m || v > tl.total) && on >= 0) { const a = Math.max(0, on - pad), b = Math.min(tl.total, t + pad);
         if (out.length && a <= out[out.length - 1]) out[out.length - 1] = b; else out.push(a, b); on = -1; }

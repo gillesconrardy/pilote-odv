@@ -52,6 +52,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      suiveur en rattrapant leur retard (`rx_ok`, cibles `RXO`). `Q` refusé (BUSY) en jeu 5 : « Rendre la main » envoie `K`
      (→ `JRET`), range par `tidyPlan` + `W…`/`Z` (V4 compris), puis `G` + `Q`. Appli : `M.evade`, `M.home3`, `M.tidying`.
      Test : `t_evade.py` ; harness : physiquement jamais < 10 pas.
+   - **ORIENTATION DU CAPTEUR (v1.70, précisé par Gilles)** : le capteur est sur le **côté droit du V4, au-dessus de la clôture**
+     (il ne la voit pas) et regarde vers **−X** (la main se présente à l'extérieur du plateau, à droite). Tout ce qui suit a été
+     adapté : suivre = avance/recule sur X (loin → −X), recherche latérale sur Y ; pousser = vers +X ou en biais/haut/bas (jamais −X) ;
+     filtre « véhicule devant » = même ligne (|Δy| < 10) et x plus petit ; `sonarMask` idem ; `drawSensor` dessine le faisceau vers
+     la droite de l'écran (rotation −90°). Les descriptions « +Y / avant du plateau » plus bas datent d'avant.
    - **Suivre la main** (v1.56, capteur de distance LEGO `UltrasonicSensor` sur le **port B du V4**, tourné vers l'avant du
      plateau = +Y) : bouton « ✋ Suivre la main » (Pilotage, en conduite manuelle avec évitement) → `H1` (→ `HON`, ou `HNO` si pas de
      capteur) / `H0`. `hand_tick` : médiane des 4 dernières mesures (toutes les 40 ms) ; < 6 cm recule à 16 pas/s, 6–13 cm recule

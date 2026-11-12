@@ -505,7 +505,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <div class="card">
       <label class="tog" for="optLoop"><div>Jouer en boucle <button type="button" class="tip" data-tip="La suite recommence au début quand elle est finie.">i</button></div>
         <span class="sw"><input type="checkbox" id="optLoop"><span></span></span></label>
-      <div class="edrow" style="margin-top:8px"><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, tourné vers l'avant du plateau. Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
+      <div class="edrow" style="margin-top:8px"><label style="white-space:nowrap">Capteur V4 <button type="button" class="tip" data-tip="Capteur de distance sur le port B du véhicule 4, sur son côté droit, au-dessus de la clôture (la main se présente à l'extérieur du plateau, à droite). Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».">i</button></label>
         <div class="seg" id="optSonar" style="flex:1"><button type="button" data-m="0">Arrêt</button><button type="button" data-m="1">Gestes</button><button type="button" data-m="2">Statue</button></div></div>
       <span id="sumTxt" hidden>–</span>
       <div id="updBox">
@@ -555,13 +555,13 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
       <div id="odo" style="margin-top:8px"></div>
     </div>
     <div class="card" style="margin-top:12px" id="dsCard">
-      <h2>Capteur de distance · V4 <button type="button" class="tip" data-tip="Distance mesurée par le capteur du véhicule 4 (port B, tourné vers l'avant du plateau) : approche ta main pour la voir changer. Mesure jusqu'à 40 cm environ ; au-delà, « rien devant ». Affichée tant que cet onglet est ouvert et que le véhicule 4 est connecté.">i</button></h2>
+      <h2>Capteur de distance · V4 <button type="button" class="tip" data-tip="Distance mesurée par le capteur du véhicule 4 (port B, sur son côté droit, au-dessus de la clôture) : approche ta main pour la voir changer. Mesure jusqu'à 40 cm environ ; au-delà, « rien devant ». Affichée tant que cet onglet est ouvert et que le véhicule 4 est connecté.">i</button></h2>
       <div class="dsrow"><b id="dsVal">—</b><span class="sub" id="dsTxt">Connecte le véhicule 4</span></div>
       <div class="dsbar"><i class="z1"></i><i class="z2"></i><i class="z3"></i><span id="dsMk" hidden></span></div>
       <div class="dsax"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 cm</span></div>
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
-      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Avec « Suivre la main », le véhicule 4 garde ta main à 15 cm devant son capteur (port B) ; déplace ta main sur le côté : il sort du faisceau, le véhicule la cherche à gauche puis à droite et la suit. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
+      <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Avec « Suivre la main », le véhicule 4 garde ta main à 15 cm de son capteur (port B, sur son côté droit, au-dessus de la clôture) ; monte ou descends ta main : elle sort du faisceau, le véhicule la cherche vers le haut puis vers le bas et la suit. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
       <div class="edrow" style="margin-top:6px"><label>Vitesse</label><input type="range" id="manSpeed" min="1" max="16" step="1"><b id="manSpeedV" style="min-width:70px;text-align:right"></b></div>
       <div class="row" style="margin-top:6px"><button class="btn primary" id="manGo" style="flex:1">Prendre la main</button></div>
       <button class="btn primary" id="tiltGo" hidden style="width:100%;margin-top:8px">📱 Billes : les 4 roulent quand tu penches</button>
@@ -1402,7 +1402,7 @@ function manUI() {
   updateRemote();
 }
 const manMsg = t => $('manMsg').innerHTML = t;
-// suivre la main : capteur de distance du véhicule 4 (port B, regarde vers l'avant du plateau)
+// suivre la main : capteur de distance du véhicule 4 (port B, côté droit, regarde vers -X par-dessus la clôture)
 function handUI() {
   const b = $('handGo'), a = $('axGo'); if (!b) return;
   const ok = M.active && M.v === 4 && !M.returning;
@@ -1410,7 +1410,7 @@ function handUI() {
   b.textContent = M.hand && M.hmode === 1 ? '■ Arrêter de suivre la main' : '✋ Suivre la main';
   a.textContent = M.hand && M.hmode === 2 ? '■ Arrêter de pousser avec la main' : '👋 Pousser avec la main';
   b.className = 'btn' + (M.hand && M.hmode === 1 ? ' primary' : ''); a.className = 'btn' + (M.hand && M.hmode === 2 ? ' primary' : '');
-  if (!M.hand) $('handSt').textContent = M.active && M.v === 4 ? 'Capteur de distance sur le port B, tourné vers l\'avant du plateau.' : '';
+  if (!M.hand) $('handSt').textContent = M.active && M.v === 4 ? 'Capteur de distance sur le port B, côté droit du véhicule, au-dessus de la clôture.' : '';
 }
 function handShow(mm, st) {
   if (!M.hand) return;
@@ -1422,7 +1422,7 @@ function handShow(mm, st) {
       : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne comme si tu l\'avais poussé.' + (mm <= 400 ? ` (main à ${(mm / 10).toFixed(1).replace('.', ',')} cm)` : '');
     return;
   }
-  $('handSt').innerHTML = st === 1 ? 'Main sortie du faisceau : <b>il la cherche sur le côté…</b>'
+  $('handSt').innerHTML = st === 1 ? 'Main sortie du faisceau : <b>il la cherche vers le haut et le bas…</b>'
     : mm > 300 ? 'Main : <b>pas vue</b> (mets-la devant le capteur, à 15 cm)'
     : `Main à <b>${(mm / 10).toFixed(1).replace('.', ',')} cm</b> · ${mm < 130 ? 'il recule' : mm <= 170 ? 'il attend' : 'il avance'}`;
 }
@@ -1453,7 +1453,7 @@ async function handStart(mode, quiet = false) {
   if (await r !== 'HON') { if (!quiet) $('handSt').innerHTML = '<span class="bad">Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).</span>'; return; }
   M.hand = true; M.hmode = mode; M.joy = [0, 0]; M.finger = null; handUI(); manUI();
   $('handSt').innerHTML = mode === 1 ? 'Mets ta main devant le capteur, à environ 15 cm.'
-    : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne d\'une glissade (environ 12 cm), vers l\'arrière ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
+    : 'Garde ta main <b>à moins de 5 cm</b> du capteur pendant <b>2 s</b> : il s\'éloigne d\'une glissade (environ 12 cm), vers la gauche ou en biais, là où il y a de la place. Il ne va jamais vers ta main.';
 }
 $('handGo').onclick = () => handStart(1);
 $('axGo').onclick = () => handStart(2);
@@ -2541,33 +2541,37 @@ function drawBoard() {
     $('stTime').textContent = `${fmt(w - b0)} / ${fmt(b1 - b0)}  ·  chorégraphie ${k + 1} sur ${tl.bounds.length - 1}`;
   }
 }
-// capteur du V4 sur le plateau : faisceau vers l'avant (+Y), écho ambre là où il voit quelque chose,
+// capteur du V4 sur le plateau : faisceau vers la droite (-X), écho ambre là où il voit quelque chose,
 // et quand il est poussé : ondes de choc à l'endroit de la main + traînée et flèche dans le sens de la glissade
 function drawSensor(c, p) {
+  // le capteur est sur le côté droit du V4, au-dessus de la clôture : il regarde vers -X (vers la droite de l'écran)
   const now = performance.now(), fresh = now - SNS.at < 1500;
   if (!fresh && !SNS.push) return;
   const cx = c.getContext('2d'), u = c.width / 44, X = x => (37 - x) * u, Y = y => (y + 7) * u;
-  const sx = X(p[0]), sy = Y(p[1] + 4.7), maxL = Math.min(32.6, 35 - (p[1] + 4.7)) * u;   // 40 cm ≈ 32,6 pas
+  const sx = X(p[0] - 4.7), sy = Y(p[1]), maxL = Math.max(0, Math.min(32.6 * u, c.width - sx - u * .6));   // 40 cm ≈ 32,6 pas
+  const handL = mm => Math.min(maxL, Math.max(u, mm / 12.25 * u));
   cx.save();
   if (fresh && maxL > 0) {
-    const seen = SNS.mm < 400, L = seen ? Math.min(maxL, SNS.mm / 12.25 * u) : maxL, wd = 0.22;
-    const g = cx.createLinearGradient(sx, sy, sx, sy + maxL); g.addColorStop(0, 'rgba(255,154,60,.28)'); g.addColorStop(1, 'rgba(255,154,60,0)');
-    cx.fillStyle = g; cx.beginPath(); cx.moveTo(sx - u, sy); cx.lineTo(sx - u - L * wd, sy + L); cx.lineTo(sx + u + L * wd, sy + L); cx.lineTo(sx + u, sy); cx.closePath(); cx.fill();
+    const seen = SNS.mm < 400, L = seen ? handL(SNS.mm) : maxL, wd = 0.22;
+    cx.save(); cx.translate(sx, sy); cx.rotate(-Math.PI / 2);   // on dessine « vers le bas » puis on tourne vers la droite
+    const g = cx.createLinearGradient(0, 0, 0, maxL); g.addColorStop(0, 'rgba(255,154,60,.28)'); g.addColorStop(1, 'rgba(255,154,60,0)');
+    cx.fillStyle = g; cx.beginPath(); cx.moveTo(-u, 0); cx.lineTo(-u - L * wd, L); cx.lineTo(u + L * wd, L); cx.lineTo(u, 0); cx.closePath(); cx.fill();
     if (seen) {
       const near = SNS.mm < 50, pulse = 0.5 + 0.5 * Math.sin(now / (near ? 70 : 160));
       cx.strokeStyle = near ? '#ff4d43' : '#ff9a3c'; cx.lineWidth = u * .35; cx.globalAlpha = .55 + .45 * pulse;
-      cx.beginPath(); cx.arc(sx, sy + L - u * 2.2, u * 2.2 + L * wd, Math.PI * .3, Math.PI * .7); cx.stroke();
-      cx.fillStyle = cx.strokeStyle; cx.beginPath(); cx.arc(sx, sy + L, u * (.8 + .5 * pulse), 0, 7); cx.fill();
+      cx.beginPath(); cx.arc(0, L - u * 2.2, u * 2.2 + L * wd, Math.PI * .3, Math.PI * .7); cx.stroke();
+      cx.fillStyle = cx.strokeStyle; cx.beginPath(); cx.arc(0, L, u * (.8 + .5 * pulse), 0, 7); cx.fill();
       if (SNS.hold) {   // main tenue : l'anneau se remplit en 2 s, puis poussée
         const f = Math.min(1, (now - SNS.hold) / 2000);
         cx.globalAlpha = 1; cx.strokeStyle = '#ff4d43'; cx.lineWidth = u * .5;
-        cx.beginPath(); cx.arc(sx, sy + L, u * 2.6, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); cx.stroke();
+        cx.beginPath(); cx.arc(0, L, u * 2.6, -Math.PI / 2, -Math.PI / 2 + f * Math.PI * 2); cx.stroke();
       }
     }
+    cx.restore();
   }
   const pu = SNS.push, age = pu ? now - pu.t : 1e9;
   if (age < 1000) {
-    const k = age / 1000, hx = sx, hy = sy + Math.min(maxL, Math.max(u, (pu.mm < 400 ? pu.mm : 30) / 12.25 * u));
+    const k = age / 1000, hx = sx + handL(pu.mm < 400 ? pu.mm : 30), hy = sy;
     cx.globalAlpha = 1;
     for (let r = 0; r < 3; r++) {   // ondes de choc à l'endroit de la main
       const kk = k * 1.4 - r * .18; if (kk <= 0 || kk >= 1) continue;

@@ -746,7 +746,7 @@ def hand_tick(dt, local):
     veh = False
     # ce qu'on voit est-il un vehicule devant nous (meme colonne) ? alors ce n'est pas une main
     for o in OBS:
-        if o is not None and abs(o[0] - mx) < 10 and o[1] > my and abs((o[1] - my - 10) * 12.25 - d) < 25:
+        if o is not None and abs(o[1] - my) < 10 and o[0] < mx and abs((mx - o[0] - 10) * 12.25 - d) < 25:
             d = 2000
             veh = True
     if h_mode == 2:
@@ -762,7 +762,7 @@ def hand_tick(dt, local):
                 h_v *= 1 - dt / 600
             else:
                 h_v = 0
-        elif d < 50 and not veh and not any(o is not None and abs(o[0] - mx) < 10 and 0 <= o[1] - my - 10 < 6 for o in OBS):
+        elif d < 50 and not veh and not any(o is not None and abs(o[1] - my) < 10 and 0 <= mx - o[0] - 10 < 6 for o in OBS):
             # la main doit rester 2 s devant le capteur avant la poussee
             if not h_lost:
                 h_lost = local
@@ -771,12 +771,12 @@ def hand_tick(dt, local):
         if h_lost and local - h_lost >= 2000:
             h_lost = 0
             best = 0
-            for gx, gy in ((0, -1), (0.71, -0.71), (-0.71, -0.71), (1, 0), (-1, 0)):
+            for gx, gy in ((1, 0), (0.71, -0.71), (0.71, 0.71), (0, -1), (0, 1)):
                 k = 0
                 while k < 10 and 0 <= tx + gx * (k + 1) <= 30 and 0 <= ty + gy * (k + 1) <= 30 and free_at(tx + gx * (k + 1), ty + gy * (k + 1)):
                     k += 1
-                if k + (0.5 if gy else 0) > best:
-                    best = k + (0.5 if gy else 0)
+                if k + (0.5 if gx else 0) > best:
+                    best = k + (0.5 if gx else 0)
                     h_gx = gx
                     h_gy = gy
             if best >= 1:
@@ -789,11 +789,11 @@ def hand_tick(dt, local):
             sonar_eyes(100 if d < 50 or h_v > 0.0005 else 15)
         return
     elif d <= 300:
-        if h_state == 1 and abs(tx - h_cx) > 0.5:
-            h_dir = 1 if tx > h_cx else -1   # retrouvee : la prochaine fois on cherchera d'abord de ce cote
+        if h_state == 1 and abs(ty - h_cx) > 0.5:
+            h_dir = 1 if ty > h_cx else -1   # retrouvee : la prochaine fois on cherchera d'abord de ce cote
         h_state = 0
         h_lost = local
-        h_cx = tx
+        h_cx = ty
     elif h_mode == 1 and h_state == 0 and not veh and local - h_lost > 150:
         # main perdue : on part a sa recherche sur le cote
         h_state = 1
@@ -803,16 +803,16 @@ def hand_tick(dt, local):
         if h_wp >= len(offs):
             h_state = 2             # pas retrouvee : on attend sur place
         else:
-            gx = clamp(h_cx + offs[h_wp] * h_dir, 0, 30)
-            ex = gx - tx
+            gy = clamp(h_cx + offs[h_wp] * h_dir, 0, 30)
+            ey = gy - ty
             stp = 0.010 * dt
-            if abs(ex) <= stp:
-                tx = gx
+            if abs(ey) <= stp:
+                ty = gy
                 h_wp += 1
             else:
-                nx = tx + (stp if ex > 0 else -stp)
-                if free_at(nx, ty):
-                    tx = nx
+                ny = ty + (stp if ey > 0 else -stp)
+                if free_at(tx, ny):
+                    ty = ny
                 else:
                     h_wp += 1       # bloque par un vehicule : on essaie l'autre cote
     if d < 60:
@@ -830,9 +830,10 @@ def hand_tick(dt, local):
         print('HD', int(d), h_state)
         sonar_eyes(100 if d <= 300 else 15)
     if v != 0:
-        ny = clamp(ty + v * dt, 0, 30)
-        if free_at(tx, ny):
-            ty = ny
+        # le capteur regarde vers la droite (-X, par-dessus la cloture) : avancer vers la main = aller vers -X
+        nx = clamp(tx - v * dt, 0, 30)
+        if free_at(nx, ty):
+            tx = nx
 
 
 #[JEUX
