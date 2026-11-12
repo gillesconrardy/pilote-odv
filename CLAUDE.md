@@ -129,6 +129,17 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      rangement (`tidyPlan` : A* `planReturn` + parkings si bloqué) et envoie `W<k><x>,<y>` (un trajet droit, `WOK`)
      puis `Z` (`JOK`), puis rend la main. Page : capteur `deviceorientation` (position au démarrage = à plat,
      zone morte 3°, plein à 20°) ; le joystick fait aussi pencher. Tests : `tests/t_billes.py`, harness (`B`, `T…`).
+   - **Matrice lumineuse 3×3 du V4** (v1.77, `ColorLightMatrix` sur le **port D du V4**, seulement le V4 ; `MX`, `mshow(motif, couleur)`
+     = 9 caractères ligne par ligne, 'x' allumé, ne renvoie rien si inchangé ; `mtick` toutes les 100 ms) :
+     **démarrage** « 4 » violet ; **calibrage** flèche orange vers la clôture du haut puis de droite (`homing`) ; **tableau de bord** :
+     ▶ vert en lecture, ◀ cyan en retour, ❚❚ orange en pause, au départ = barres de batterie (3 vertes > 7,8 V, 2 jaunes > 7,2 V, 1 rouge),
+     ✕ rouge en urgence ; **compte à rebours** : `p` depuis le début d'une chorégraphie (pas en reprise) démarre 3 s plus tard au lieu
+     de 1 s (`m_last[5]`), la matrice affiche 3, 2, 1 (les autres suivent l'horloge, donc synchrones) ; **visage** en conduite manuelle :
+     yeux qui regardent dans le sens du mouvement, yeux fermés (atténués) après 4 s immobile, orange pendant l'appui de la main,
+     rouges + bouche (attaque), jaunes + bouche ronde (poussé). Sans matrice : rien ne change (pas de délai de 3 s).
+     Harness : stub `ColorLightMatrix`, motifs dans `harness_out.json` → `matrix`. **Orientation de la matrice sur le véhicule à vérifier.**
+     Pour la place : le mode « suivre la main » (H1), `rx_ok`/`v4_ok`/`RXO` et la réception des jeux par les suiveurs sont passés
+     entre marqueurs `#[JEUX` (source V4 sans données ≈ 26,6 k, comme avant la matrice).
    - LED du hub = couleur du véhicule (`VCOL` : V1 bleu 215°, V2 orange 28°, V3 vert 140°, V4 violet 270°, `Color(h,100,100)`) ;
      en marche elle pulse couleur pleine / atténuée (`VDIM`, v = 30) ; restent : rouge = urgence, jaune/rouge = batterie faible
      (< 7,0 / 6,5 V), cyan = connexion télécommande.

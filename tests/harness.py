@@ -22,8 +22,8 @@ def mod(name, **kw):
 class Color:
     def __init__(self, h=0, s=100, v=100): self.h, self.s, self.v = h, s, v
     def __repr__(self): return 'hsv(%d,%d,%d)' % (self.h, self.s, self.v)
-    CYAN = 'cyan'; RED = 'red'; GREEN = 'green'; BLUE = 'blue'; WHITE = 'white'; YELLOW = 'yellow'; ORANGE = 'orange'; MAGENTA = 'magenta'
-class Port: A = 'A'; B = 'B'; C = 'C'
+    CYAN = 'cyan'; RED = 'red'; GREEN = 'green'; BLUE = 'blue'; WHITE = 'white'; YELLOW = 'yellow'; ORANGE = 'orange'; MAGENTA = 'magenta'; NONE = 'none'
+class Port: A = 'A'; B = 'B'; C = 'C'; D = 'D'
 class Button: LEFT_PLUS='L+'; LEFT_MINUS='L-'; RIGHT_PLUS='R+'; RIGHT_MINUS='R-'; CENTER='C'
 REMOTE = {'pressed': set(), 'present': True}
 class _RButtons:
@@ -36,6 +36,14 @@ class Remote:
 class Direction: CLOCKWISE = 1
 SONAR = json.loads(os.environ.get('HARNESS_SONAR', '[]'))
 HAND = json.loads(os.environ.get('HARNESS_HAND', '[]'))   # [[t_ms, mm], ...] : distance vue par le capteur du V4
+MATRIX = []                     # (t_ms, motif) affiches par la matrice 3x3 du V4
+class ColorLightMatrix:
+    def __init__(self, port): pass
+    def on(self, cols):
+        pat = ''.join('.' if c == 'none' else 'x' for c in cols)
+        col = next((c for c in cols if c != 'none'), 'none')
+        t = true_ms()
+        if not MATRIX or MATRIX[-1][1:] != [pat, str(col)]: MATRIX.append([t, pat, str(col)])
 class _SLights:
     def on(self, v): pass
 class UltrasonicSensor:
@@ -109,7 +117,7 @@ class _Poll:
     def register(self, s): pass
     def poll(self, t): return not STDINS[ctx.vid].empty()
 
-mod('pybricks'); mod('pybricks.hubs', TechnicHub=TechnicHub); mod('pybricks.pupdevices', Motor=Motor, Remote=Remote, UltrasonicSensor=UltrasonicSensor)
+mod('pybricks'); mod('pybricks.hubs', TechnicHub=TechnicHub); mod('pybricks.pupdevices', Motor=Motor, Remote=Remote, UltrasonicSensor=UltrasonicSensor, ColorLightMatrix=ColorLightMatrix)
 mod('pybricks.parameters', Port=Port, Direction=Direction, Color=Color, Button=Button)
 mod('pybricks.tools', wait=wait, StopWatch=StopWatch)
 mod('umath', sin=math.sin, cos=math.cos, pi=math.pi)
@@ -156,5 +164,5 @@ if __name__ == '__main__':
     time.sleep(0.2)
     json.dump({'rec': {k: [r for r in v if r[0] != 'stopped'] for k, v in REC.items()},
                'stopped': {k: [r for r in v if r[0] == 'stopped'] for k, v in REC.items()},
-               'out': OUT}, open('harness_out.json', 'w'))
+               'out': OUT, 'matrix': MATRIX}, open('harness_out.json', 'w'))
     print('done', {k: len(v) for k, v in REC.items()})

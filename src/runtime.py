@@ -9,6 +9,10 @@ try:
     from pybricks.pupdevices import UltrasonicSensor
 except ImportError:
     UltrasonicSensor = None
+try:
+    from pybricks.pupdevices import ColorLightMatrix
+except ImportError:
+    ColorLightMatrix = None
 from pybricks.parameters import Port, Direction, Color, Button
 from pybricks.tools import wait, StopWatch
 from umath import sin, cos, pi
@@ -144,13 +148,40 @@ def battery_color():
     return VCOL
 
 
+# matrice lumineuse 3x3 (port D du vehicule 4) : visage, tableau de bord, compte a rebours
+MX = None
+if IS_SENDER and ColorLightMatrix is not None:
+    try:
+        MX = ColorLightMatrix(Port.D)
+    except Exception:
+        MX = None
+m_last = ['', None, 0, 0, 7800, 0, 0, 0]   # motif, couleur, debut, prochain tour, mV, fin du compte a rebours, dernier mouvement, prochaine mesure batterie
+
+
+def mshow(pat, col):
+    # pat : 9 caracteres (lignes de haut en bas), 'x' = allume
+    if MX is None or (pat == m_last[0] and col is m_last[1]):
+        return
+    m_last[0] = pat
+    m_last[1] = col
+    try:
+        MX.on([col if ch == 'x' else Color.NONE for ch in pat])
+    except Exception:
+        pass
+
+
+mshow('x.xxxx..x', VCOL)               # le chiffre 4
+
+
 def homing():
+    mshow('.x.x.x...', Color.ORANGE)    # fleche : vers la cloture du haut
     y_motor.run_until_stalled(-200, duty_limit=35)
     print('HY')
     wait(200)
     y_motor.run_angle(1400, 110)
     wait(200)
     y_motor.reset_angle(0)
+    mshow('x...x.x..', Color.ORANGE)    # fleche : vers la cloture de droite
     x_motor.run_until_stalled(-200, duty_limit=35)
     wait(200)
     x_motor.run_angle(1400, 110)
@@ -162,10 +193,54 @@ def emergency():
     x_motor.stop()
     y_motor.stop()
     hub.light.on(Color.RED)
+    mshow('x.x.x.x.x', Color.RED)
     while True:
         if IS_SENDER:
             hub.ble.broadcast((watch.time() + COMP, P1[0], P1[1], 10 + 16 * GEN, 0))
         wait(BCAST_MS)
+
+
+def mtick(t):
+    # matrice du V4 : compte a rebours, visage en conduite manuelle, sinon tableau de bord
+    m_last[3] = t + 100
+    if not m_last[2]:
+        m_last[2] = t
+    if t - m_last[2] < 2500:
+        return                          # le chiffre 4 reste affiche au demarrage
+    if m_last[5] > t:
+        mshow(('.x..x..x.', 'xx..x..xx', 'xxx.xxxxx')[min(2, (m_last[5] - t) // 1000)], Color.ORANGE)
+        return
+    if manual:
+        dx = tx - mx
+        dy = ty - my
+        if abs(dx) + abs(dy) > 0.3 or h_v > 0.0005 or h_lost:
+            m_last[6] = t
+        if hand and h_v > 0.0005:
+            mshow('x.x...xxx' if h_gx == -1 else 'x.x....x.', Color.RED if h_gx == -1 else Color.YELLOW)
+        elif hand and h_lost:
+            mshow('x.x.x....', Color.ORANGE)
+        else:
+            if t - m_last[6] > 4000:
+                mshow('...xxx...', VDIM)        # yeux fermes : il attend
+            else:
+                e = 'xx.' if dx > 0.3 else '.xx' if dx < -0.3 else 'x.x'
+                r = 0 if dy < -0.3 else 2 if dy > 0.3 else 1
+                mshow('...' * r + e + '...' * (2 - r), VCOL)
+        return
+    p = P1 if t >= P1[0] else P0
+    if p[2] == 1:
+        mshow('x..xx.x..', Color.GREEN)         # lecture
+    elif p[2] == -1:
+        mshow('..x.xx..x', Color.CYAN)          # retour
+    elif wrap(vt(t)) in BOUNDS:
+        if t >= m_last[7]:
+            m_last[7] = t + 5000
+            m_last[4] = hub.battery.voltage()
+        b = m_last[4]
+        mshow(('......xxx', '...xxxxxx', 'xxxxxxxxx')[2 if b > 7800 else 1 if b > 7200 else 0],
+              Color.GREEN if b > 7800 else Color.YELLOW if b > 7200 else Color.RED)
+    else:
+        mshow('x.xx.xx.x', Color.ORANGE)        # pause
 
 
 # ---------------------------------------------------------------- demarrage
@@ -701,7 +776,6 @@ def guard_target(k):
     return clamp(GC[best][0] + ux / m * 10.3, 0, 30), clamp(GC[best][1] + uy / m * 10.3, 0, 30)
 
 
-#]JEUX
 RXO = [[0.0, 0.0], [0.0, 0.0]]   # cibles des 2 autres suiveurs (recues du vehicule 4)
 
 
@@ -721,6 +795,7 @@ def v4_ok(x, y):
             if dn < 10 and dn < cheb(mx, my, o[0], o[1]) - 1e-9:
                 return False
     return True
+#]JEUX
 
 
 def sonar_eyes(v):
@@ -806,7 +881,9 @@ def hand_tick(dt, local):
             print('HD', int(d), h_state)
             sonar_eyes((100 if (local // 250) % 2 else 0) if h_v > 0.0005 and h_gx == -1 else 100 if d < 100 or h_v > 0.0005 else 15)
         return
-    elif d <= 300:
+#[JEUX
+    # « suivre la main » (mode 1, plus propose dans l'appli depuis v1.72) : retire du programme envoye au hub
+    if d <= 300:
         if h_state == 1 and abs(ty - h_cx) > 0.5:
             h_dir = 1 if ty > h_cx else -1   # retrouvee : la prochaine fois on cherchera d'abord de ce cote
         h_state = 0
@@ -852,6 +929,7 @@ def hand_tick(dt, local):
         nx = clamp(tx - v * dt, 0, 30)
         if free_at(nx, ty):
             tx = nx
+#]JEUX
 
 
 #[JEUX
@@ -1239,6 +1317,9 @@ if IS_SENDER:
             return
         A = raw + LEAD
         V = vt(A)
+        if c == 'p' and MX is not None and P1[2] != 1 and wrap(V) in BOUNDS:
+            A = raw + 3000
+            m_last[5] = A
         if c == 'p':
             R = 1
             S = BIG if LOOP else TOTAL
@@ -1374,6 +1455,7 @@ while True:
             print('ST', st, w, chor_index(w), 1 if raw < P1[0] else 0, hub.battery.voltage(), GEN)
     else:
         data = hub.ble.observe(CHANNEL)
+#[JEUX
         if data is not None and len(data) == 3 and data[1] // 16 == GEN and data[1] % 16 == 7:
             feed(data[0])
             gb = data[2]
@@ -1395,7 +1477,9 @@ while True:
                     g_role = role
                     # poursuite : mechant = LED rouge, gentil = LED bleue, fixe = couleur du vehicule attenuee
                     hub.light.on(Color.RED if role == 0 else (Color.BLUE if role == 1 else (VDIM if role == 2 else VCOL)))
-        elif data is not None and len(data) == 5 and data[3] // 16 == GEN:
+            data = None
+#]JEUX
+        if data is not None and len(data) == 5 and data[3] // 16 == GEN:
             if game_rx:
                 # fin du jeu : on rejoint (en douceur) sa place dans la choregraphie
                 game_rx = False
@@ -1466,6 +1550,8 @@ while True:
         next_tgt[0] = -1
         next_bcast = 0
         print('ACK n', LEAD)
+    if MX is not None and local >= m_last[3]:
+        mtick(local)
     if IS_SENDER and SMODE and sonar is not None and not manual and game == 0:
         gesture_tick(local)
     if IS_SENDER and hand and manual and game in (0, 5):
@@ -1517,6 +1603,7 @@ while True:
         else:
             nx = mx + dx * step / d
             ny = my + dy * step / d
+#[JEUX
         if game_rx and not rx_ok(nx, ny):
             # suiveur : en rattrapant son retard, il ne doit pas couper le coin d'un autre suiveur
             if rx_ok(nx, my):
@@ -1535,6 +1622,7 @@ while True:
             else:
                 nx = mx
                 ny = my
+#]JEUX
         mx = nx
         my = ny
         if blend and mx == gx and my == gy:
