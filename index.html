@@ -126,10 +126,10 @@ textarea{height:260px}
 .vpick button{border:2px solid transparent;background:#2b2c30;color:#fff;border-radius:10px;padding:9px 0;font:700 15px ui-monospace,monospace;position:relative}
 .vpick button.on{border-color:var(--accent)}
 .vpick button i{position:absolute;right:6px;bottom:6px;width:9px;height:9px;border-radius:3px}
-.joy{width:190px;height:190px;border-radius:50%;background:var(--soft);border:2px solid var(--line);margin:12px auto 4px;position:relative;touch-action:none}
+.joy{width:190px;height:190px;border-radius:5px;background:var(--soft);border:2px solid var(--line);margin:12px auto 4px;position:relative;touch-action:none}
 .joy::before,.joy::after{content:"";position:absolute;background:var(--line)}
 .joy::before{left:50%;top:12%;bottom:12%;width:2px;margin-left:-1px}.joy::after{top:50%;left:12%;right:12%;height:2px;margin-top:-1px}
-.joy .knob{position:absolute;width:74px;height:74px;border-radius:50%;background:var(--accent);left:58px;top:58px;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1}
+.joy .knob{position:absolute;width:64px;height:64px;border-radius:5px;background:var(--accent);left:62px;top:62px;box-shadow:0 2px 6px rgba(0,0,0,.3);z-index:1}
 canvas.drive{touch-action:none;outline:3px solid var(--accent);outline-offset:-3px}
 .edwrap{position:fixed;inset:0;z-index:20;background:var(--bg);overflow:auto;display:none}
 .edwrap.on{display:block}
@@ -451,6 +451,10 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .dsbar .z3{left:42.5%;width:32.5%;background:rgba(255,154,60,.15)}
 #dsMk{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:#edeae4;border-radius:2px;transition:left .2s}
 .dsax{display:flex;justify-content:space-between;font:11px 'Space Mono',monospace;color:#8a8f94;margin-top:3px}
+/* joystick carré (v1.66) : coins ambre comme les cartes */
+.joy .jc{position:absolute;width:14px;height:14px;pointer-events:none}
+.joy .jc.a{left:-1px;top:-1px;border-left:2px solid var(--accent);border-top:2px solid var(--accent)}
+.joy .jc.b{right:-1px;bottom:-1px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -463,7 +467,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.65</b><br>publiée le 12/11/2026 16:44</div>
+    <div class="ver" title="Version de l'application"><b>v1.66</b><br>publiée le 12/11/2026 16:52</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -544,7 +548,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
         <button class="rb stop" id="bStop" disabled title="Arrêt d'urgence"><span class="ic">⛔</span>Urgence</button>
       </div>
       <canvas id="cv" width="600" height="600" aria-label="Positions des véhicules"></canvas>
-      <div id="joyBox" style="display:none"><div class="joy" id="joy"><div class="knob" id="knob"></div></div></div>
+      <div id="joyBox" style="display:none"><div class="joy" id="joy"><i class="jc a"></i><i class="jc b"></i><div class="knob" id="knob"></div></div></div>
     </div>
     <div class="card" id="odoCard">
       <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs <button type="button" class="tip" data-tip="Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas = 12,25 mm).">i</button></h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
@@ -1165,7 +1169,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.65';
+const MY_VER = '1.66';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -1979,8 +1983,9 @@ $('cv').addEventListener('pointerup', fingerUp); $('cv').addEventListener('point
 // joystick
 const joy = $('joy'), knob = $('knob');
 function joyAt(e) {
-  const r = joy.getBoundingClientRect(), cx0 = r.left + r.width / 2, cy0 = r.top + r.height / 2, R0 = r.width / 2 - 37;
-  let jx = (e.clientX - cx0) / R0, jy = (e.clientY - cy0) / R0; const n = Math.hypot(jx, jy); if (n > 1) { jx /= n; jy /= n; }
+  // joystick carré : chaque axe est borné séparément (le doigt peut aller jusque dans les coins)
+  const r = joy.getBoundingClientRect(), cx0 = r.left + r.width / 2, cy0 = r.top + r.height / 2, R0 = r.width / 2 - 40;
+  const jx = Math.max(-1, Math.min(1, (e.clientX - cx0) / R0)), jy = Math.max(-1, Math.min(1, (e.clientY - cy0) / R0));
   M.joy = [jx, jy]; knob.style.transform = `translate(${jx * R0}px,${jy * R0}px)`;
 }
 joy.addEventListener('pointerdown', e => { if (!M.active || M.returning) return; M.joyTouch = true; joy.setPointerCapture(e.pointerId); joyAt(e); });

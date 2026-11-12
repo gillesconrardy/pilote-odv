@@ -142,6 +142,8 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
    reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30) ;
    « Rendre la main » : retour du V4 par le plus court chemin qui contourne les 3 autres (A* + lissage).
+   **Joystick carré** (v1.66, design « A · Pavé » choisi par Gilles) : `.joy` carré à coins ambre (`.jc`), manette carrée 64 px ;
+   `joyAt` borne chaque axe séparément (−1..1, coins atteignables).
    **Atelier** (« Créer une chorégraphie ») : étapes = poses des 4 véhicules (glisser sur le plateau,
    aimant 1 pas), vitesse et pause par étape, contrôle de collision (pose + trajet, via core.js),
    « Ajouter le retour au départ » (tout droit / X puis Y / Y puis X / un par un, le plus court sûr),
