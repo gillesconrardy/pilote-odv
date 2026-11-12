@@ -41,7 +41,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    - Télécommande LEGO (V4, en manuel seulement) : `C` la connecte (Remote, 6 s), `O1x,y`..`O3x,y` donnent
      la position des 3 autres (anti-collision côté hub), `V<pas/s×100>` la vitesse ; boutons gauche = moteur
      port C (X : + → +X), droite = port A (Y : + → −Y), comme le programme télécommande de Gilles ; une cible
-     `G` de l'appli est prioritaire 400 ms ; le V4 imprime `POS x y <bouge>` (×100) et `RC 0|1`.
+     `G` de l'appli est prioritaire 400 ms ; le V4 imprime `POS x y <bouge>` (×100) et `RC 0|1`. **Bug v1.69–v1.85 corrigé en v1.86** : les boutons étaient ignorés dès que `hand` était vrai (mode pousser actif d'office) ; maintenant acceptés en `h_mode == 2` hors glissade et hors main pendant le spectacle (`sp`).
    - **Évitement en conduite manuelle — ANNULÉ en v1.59** (bug signalé par Gilles en prise en main du V4) : l'appli n'envoie plus `E` ;
      `evade_tick` et la commande `E` sont entre marqueurs `#[JEUX` (retirés du programme). « Suivre la main » marche sans lui (jeu 0).
      Ancienne description : après `M`, l'appli envoie `E` (→ `EON`, jeu 5). Le V4 calcule V1..V3

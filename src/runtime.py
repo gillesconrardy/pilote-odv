@@ -1599,7 +1599,8 @@ while True:
         else:
             x = mx
             y = my
-    if manual and remote is not None and not hand:
+    if manual and remote is not None and (not hand or (h_mode == 2 and h_v <= 0.0005 and not (IS_SENDER and sp[0]))):
+        # la telecommande marche aussi avec le capteur actif (mode pousser, actif d'office), sauf pendant une glissade
         try:
             pr = remote.buttons.pressed()
         except OSError:
