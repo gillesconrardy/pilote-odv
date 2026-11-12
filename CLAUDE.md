@@ -196,7 +196,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    → `ARM`, cadre cyan qui tourne autour du V4) ; main devant le capteur 1 s → le hub imprime `DG` au lieu de pousser ; l'appli
    (`dumpGo`) coupe le capteur (`H0`), calcule un chemin sur les blocs qui évite les 3 autres (`bdPlan`, A* au pas de 1, 8 directions,
    sans couper de coin), le suit (`M.auto`, `dumpTick`, pointillés cyan), attend 3 s à la décharge, revient par le même chemin puis
-   remet le capteur (`handStart(2, true)`). « Rendre la main » annule. Test : `t_dump.py` ; aussi `t_board.py`, `t_board_zoom.py`, `t_board_fit.py`.
+   remet le capteur (`handStart(2, true)`). Pendant le trajet aller (v1.91, choix « 2 · Gyrophare » de Gilles) l'appli envoie `Y2` : deux lumières orange tournent sur
+   le bord de la matrice (`RING`) et la LED du hub clignote orange. Pendant les 3 s (choix « 1 · Cascade » orange) `Y1`, puis `Y0` au retour :
+   la matrice montre des billes orange qui tombent dans chaque colonne (`a_arm[1]`, en tête de `mtick`) et la LED du hub clignote orange. « Rendre la main » annule. Test : `t_dump.py` ; aussi `t_board.py`, `t_board_zoom.py`, `t_board_fit.py`.
    **Piloter seulement le V4** (v1.65, carte `#soloCard` sous la Mise en place, bouton `#suSolo` ; depuis v1.82 façon arcade (design C
    de Gilles) : « MODE SOLO », « PLAYER 04 », bouton « ▶ PRESS START » qui pulse (`.solob`, `soloPu`), bulle d'aide en coin) : V1..V3 déjà garés le long du haut,
    V4 posé dans le coin en haut à droite ; calibre le V4 seul (programme idle), ouvre Pilotage et prend la main (`manGo`) ; joystick,
@@ -298,6 +300,9 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   les blocs `#[JEUX` … `#]JEUX` de `runtime.py` (poursuite, billes ; `opts.games` pour les garder) et tous les commentaires /
   lignes vides (`stripPy`). Source envoyée au hub (sans les données) : ≈ 26 k caractères (v1.54 qui marchait : ≈ 28,5 k).
   Toute nouvelle fonction du hub doit rester petite ; mettre ce qui n'est plus utilisé entre marqueurs.
+  **Ménage v1.91** (≈ 28,3 k → 25,0 k) : passés entre marqueurs `#[JEUX` les restes des jeux (commandes `K`/`W`/`Z` de rangement,
+  `b_pos`…`b_snapshot`, `game_tick`, appel des jeux et `JP` dans la boucle, retard radio `BOLD` de `free_at`) et la commande `S0|S1|S2`
+  (mode du capteur, plus envoyée par l'appli). Les marqueurs ne s'imbriquent pas (le retrait prend du premier `#[JEUX` au premier `#]JEUX`).
 - Paramètre `reset_angle=` de `Motor` (utilisé sans recalage) et taille max du programme par hub.
 - Ressenti du joystick (8 envois/s) ; charge radio du V4 connecté + diffusion.
 - Perte de liaison V4 au joystick (signalée de nouveau le 09/11, v1.61) : la puce Bluetooth du Technic Hub peut se bloquer si la

@@ -217,6 +217,30 @@ def mtick(t):
     if m_last[5] > t:
         mshow(('.x..x..x.', 'xx..x..xx', 'xxx.xxxxx')[min(2, (m_last[5] - t) // 1000)], Color.ORANGE)
         return
+    if a_arm[1] == 2:
+        # en route vers la decharge (v1.91, choix « 2 · Gyrophare ») : 2 lumieres orange qui tournent sur le bord, LED qui clignote
+        k = t // 110
+        c = [Color.NONE] * 9
+        for j in (0, 4):
+            c[RING[(k + j) % 8]] = Color.ORANGE
+            c[RING[(k + j + 7) % 8]] = ORDIM
+        try:
+            MX.on(c)
+        except Exception:
+            pass
+        m_last[0] = ''
+        hub.light.on(Color.ORANGE if (t // 220) % 2 else Color(28, 100, 15))
+        return
+    if a_arm[1]:
+        # dechargement des billes (v1.91) : des billes orange tombent dans chaque colonne, la LED du hub clignote orange
+        k = t // 180
+        pat = ''
+        for r in range(3):
+            for c in range(3):
+                pat += 'x' if (k + c * 2) % 5 == r else '.'
+        mshow(pat, Color.ORANGE)
+        hub.light.on(Color.ORANGE if k % 2 else Color(28, 100, 25))
+        return
     if manual:
         dx = tx - mx
         dy = ty - my
@@ -310,7 +334,7 @@ def clamp(v, a, b):
 
 # Telecommande LEGO (vehicule 4) : connectee a la demande (commande C), active seulement en manuel.
 remote = None
-a_arm = [False]
+a_arm = [False, False]        # [decharge armee, dechargement en cours]
 OBS = [None, None, None]      # positions des 3 autres vehicules (envoyees par l'appli : O1x,y O2x,y O3x,y)
 MSPD = 0.006                  # vitesse a la telecommande (pas/ms), reglee par l'appli (commande V)
 last_g = -10000               # derniere cible recue de l'appli (joystick ou retour) : prioritaire
@@ -335,12 +359,14 @@ def free_at(x, y):
     for o in OBS:
         if o is not None and abs(x - o[0]) < 10 - 1e-6 and abs(y - o[1]) < 10 - 1e-6:
             return False
+#[JEUX
     if game == 5:
         # les vehicules qui s'ecartent ont du retard radio : on evite aussi leur position d'il y a un instant
         for k in range(3):
             o = BOLD[k]
             if abs(x - o[0]) < 10.5 and abs(y - o[1]) < 10.5:
                 return False
+#]JEUX
     return True
 
 
@@ -457,6 +483,7 @@ def manual_line(s):
             pass
         return
 #]JEUX
+#[JEUX
     if s == 'K':
         hand = False
         b_ret = game in (4, 5) or (game == 1 and g_placed)
@@ -464,11 +491,9 @@ def manual_line(s):
             # poursuite placee par l'appli : le rangement se fait aussi par l'appli (W, puis Z)
             B4[0] = tx
             B4[1] = ty
-#[JEUX
         if game == 4:
             TILT[0] = 0.0
             TILT[1] = 0.0
-#]JEUX
         if game in (1, 4, 5):
             game = 2
             g_mover = -1
@@ -491,6 +516,7 @@ def manual_line(s):
             game = 3
             print('JOK')
         return
+#]JEUX
     if s == 'C':
         if manual:
             remote_connect()
@@ -525,9 +551,15 @@ def manual_line(s):
         manual = False
         blend = True
         print('MAN', 0)
+#[JEUX
     elif len(s) == 2 and s[0] == 'S' and s[1] in '012':
         SMODE = int(s[1])
         print('SMODE', SMODE)
+#]JEUX
+    elif s in ('Y0', 'Y1', 'Y2'):
+        # decharge (v1.91) : Y2 en route (gyrophare), Y1 dechargement des billes (cascade), Y0 fin
+        a_arm[1] = int(s[1])
+        hub.light.on(Color.ORANGE if a_arm[1] else VCOL)
     elif s == 'A1' or s == 'A0':
         # decharge (v1.90) : la prochaine main devant le capteur envoie le vehicule a la decharge (DG) au lieu de le pousser
         a_arm[0] = s == 'A1'
@@ -634,6 +666,7 @@ B4H = [0.0, 0.0]
 b_ret = False
 
 
+#[JEUX
 def b_pos(k):
     return B4 if k == 3 else GC[k]
 
@@ -676,6 +709,7 @@ def b_snapshot(local, reset):
             BOLD[k][1] = o[1]
             BNOW[k][0] = p[0]
             BNOW[k][1] = p[1]
+#]JEUX
 
 
 #[JEUX
@@ -1081,9 +1115,9 @@ def detour(k, ux, uy, local):
 
 
 #]JEUX
+#[JEUX
 def game_tick(dtg, local):
     global game, g_freeze, g_round, g_catch, g_mover, g_way, g_stuck
-#[JEUX
     if game == 1 and local >= g_freeze:
         st = CSPD * dtg
         for k in range(3):
@@ -1193,7 +1227,6 @@ def game_tick(dtg, local):
                 c[0] = nx
             elif g_ok(k, c[0], ny):
                 c[1] = ny
-#]JEUX
     if game == 2:
         # retour un par un : l'appli envoie les deplacements (W, puis Z) ; sans elle (poursuite), le hub les choisit
         sp = max(CSPD, 0.006) * dtg
@@ -1215,7 +1248,6 @@ def game_tick(dtg, local):
             else:
                 c[0] += dx * sp / d
                 c[1] += dy * sp / d
-#[JEUX
         elif not b_ret:
             n = 3
             if all(cheb(b_pos(k)[0], b_pos(k)[1], b_home(k)[0], b_home(k)[1]) < 0.02 for k in range(n)):
@@ -1249,9 +1281,9 @@ def game_tick(dtg, local):
                 if g_mover < 0 and not g_stuck:
                     g_stuck = True
                     print('JSTUCK')
-#]JEUX
     for k in range(3):
         OBS[k] = (GC[k][0], GC[k][1])
+#]JEUX
 
 
 if IS_SENDER:
@@ -1682,6 +1714,7 @@ while True:
         tx = B4[0]
         ty = B4[1]
 #]JEUX
+#[JEUX
     elif IS_SENDER and game:
         game_tick(local - last_loop, local)
         if b_ret and game in (2, 3):
@@ -1692,6 +1725,7 @@ while True:
             g_next_jp = local + 250
             print('JP', int(GC[0][0] * 100), int(GC[0][1] * 100), int(GC[1][0] * 100), int(GC[1][1] * 100),
                   int(GC[2][0] * 100), int(GC[2][1] * 100), int(mx * 100), int(my * 100), game, g_catch)
+#]JEUX
     if manual and IS_SENDER and local >= next_pos:
         # position du vehicule pour l'appli (souvent si la telecommande bouge, sinon toutes les secondes)
         moving = local < rc_until or hand

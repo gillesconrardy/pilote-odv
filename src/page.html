@@ -1625,6 +1625,7 @@ async function handStart(mode, quiet = false) {
 $('handGo').onclick = () => handStart(1);
 $('axGo').onclick = () => handStart(2);
 $('manGo').onclick = async () => {
+  if (M.active && M.auto && M.auto.phase !== 'back') M.hub && M.hub.stdin('Y0').catch(() => {});
   if (M.active && (M.auto || M.arm)) { M.auto = null; if (M.arm) { M.arm = false; M.hub && M.hub.stdin('A0').catch(() => {}); } }   // décharge annulée
   if (M.active && M.evade) {
     // les 3 autres se sont écartés : l'appli les range un par un (puis le véhicule 4), par des chemins dégagés
@@ -2014,6 +2015,7 @@ function dumpGo() {
   M.auto = { pts: go.slice(1), back: go.slice(0, -1).reverse(), phase: 'go', t: 0 };
   M.joy = [0, 0]; M.finger = null;
   if (M.hand) { M.hand = false; M.hub.stdin('H0').catch(() => {}); }   // pas de poussée pendant le trajet
+  M.hub.stdin('Y2').catch(() => {});   // gyrophare pendant le trajet aller
   manMsg('⬇ En route vers la décharge…'); manUI();
 }
 function dumpTick(now) {
@@ -2021,11 +2023,11 @@ function dumpTick(now) {
   const A = M.auto;
   if (A.phase === 'wait') {
     if (now < A.t) return null;
-    A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…');
+    A.phase = 'back'; A.pts = A.back; M.hub.stdin('Y0').catch(() => {}); manMsg('↩ Retour à son point de départ…');
   }
   while (A.pts.length && Math.hypot(A.pts[0][0] - M.cmd[0], A.pts[0][1] - M.cmd[1]) < 0.02) { M.cmd = A.pts[0].slice(); A.pts.shift(); }
   if (A.pts.length) return A.pts[0];
-  if (A.phase === 'go') { A.phase = 'wait'; A.t = now + 3000; manMsg('⬇ À la décharge : décharge les billes (3 s)…'); return null; }
+  if (A.phase === 'go') { A.phase = 'wait'; A.t = now + 3000; M.hub.stdin('Y1').catch(() => {}); manMsg('⬇ À la décharge : décharge les billes (3 s)…'); return null; }
   M.auto = null; manMsg('Revenu. Touche le <b>04</b> sur le plateau pour repartir à la décharge.'); handStart(2, true); manUI();
   return null;
 }
