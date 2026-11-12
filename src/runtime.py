@@ -252,7 +252,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE, u_on
 #[JEUX
     if s[0] == 'D':
         try:
@@ -420,6 +420,11 @@ def manual_line(s):
     elif len(s) == 2 and s[0] == 'S' and s[1] in '012':
         SMODE = int(s[1])
         print('SMODE', SMODE)
+    elif s == 'U1' or s == 'U0':
+        # affichage de la distance du capteur dans l'appli (onglet Pilotage)
+        u_on = s == 'U1' and sonar is not None
+        if s == 'U1' and sonar is None:
+            print('DS', -1)
     elif s == 'H1' or s == 'H0':
         # suivre la main avec le capteur de distance (port B, regarde vers +Y), en conduite manuelle avec evitement
         if s == 'H1' and IS_SENDER and manual and game in (0, 5) and sonar is not None:
@@ -474,6 +479,8 @@ h_lost = 0
 h_cx = 0.0                    # x ou la main a ete vue pour la derniere fois
 h_wp = 0                      # etape de la recherche (4, -4, 8, -8, 12, -12 pas)
 h_dir = 1                     # cote cherche en premier (+1 ou -1)
+u_on = False
+u_next = 0
 sonar = None
 if IS_SENDER and UltrasonicSensor is not None:
     try:
@@ -1397,6 +1404,12 @@ while True:
         gesture_tick(local)
     if IS_SENDER and hand and manual and game in (0, 5):
         hand_tick(min(local - last_loop, 50), local)
+    elif u_on and local >= u_next:
+        u_next = local + 250
+        try:
+            print('DS', int(sonar.distance()))
+        except Exception:
+            print('DS', 2000)
 #[JEUX
     if IS_SENDER and game == 5:
         b_snapshot(local, False)

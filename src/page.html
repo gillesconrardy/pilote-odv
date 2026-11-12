@@ -441,6 +441,16 @@ canvas.sboard{margin-top:0;border-radius:0;border-top:2px solid #4a443d;border-r
 a{color:var(--accent)}
 input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .toast{background:#24262a;color:var(--ink);border:1px solid var(--edge);border-bottom:3px solid var(--accent);border-radius:6px}
+/* distance du capteur du V4 (onglet Pilotage) */
+.dsrow{display:flex;align-items:baseline;gap:10px;margin:6px 0 8px}
+#dsVal{font-family:'Space Mono',monospace;font-size:30px;color:var(--acc,#ff9a3c);min-width:120px}
+.dsbar{position:relative;height:14px;border-radius:5px;background:#26292c;overflow:hidden}
+.dsbar i{position:absolute;top:0;bottom:0}
+.dsbar .z1{left:0;width:15%;background:rgba(255,80,60,.35)}
+.dsbar .z2{left:32.5%;width:10%;background:rgba(80,200,120,.35)}
+.dsbar .z3{left:42.5%;width:32.5%;background:rgba(255,154,60,.15)}
+#dsMk{position:absolute;top:-2px;bottom:-2px;width:4px;margin-left:-2px;background:#edeae4;border-radius:2px;transition:left .2s}
+.dsax{display:flex;justify-content:space-between;font:11px 'Space Mono',monospace;color:#8a8f94;margin-top:3px}
 </style>
 </head>
 <body>
@@ -534,6 +544,12 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
     <div class="card" id="odoCard">
       <div class="row" style="justify-content:space-between"><h2 style="margin:0">Compteurs <button type="button" class="tip" data-tip="Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas = 12,25 mm).">i</button></h2><button class="btn" id="odoReset" style="padding:6px 10px">Remettre à zéro</button></div>
       <div id="odo" style="margin-top:8px"></div>
+    </div>
+    <div class="card" style="margin-top:12px" id="dsCard">
+      <h2>Capteur de distance · V4 <button type="button" class="tip" data-tip="Distance mesurée par le capteur du véhicule 4 (port B, tourné vers l'avant du plateau) : approche ta main pour la voir changer. Mesure jusqu'à 40 cm environ ; au-delà, « rien devant ». Affichée tant que cet onglet est ouvert et que le véhicule 4 est connecté.">i</button></h2>
+      <div class="dsrow"><b id="dsVal">—</b><span class="sub" id="dsTxt">Connecte le véhicule 4</span></div>
+      <div class="dsbar"><i class="z1"></i><i class="z2"></i><i class="z3"></i><span id="dsMk" hidden></span></div>
+      <div class="dsax"><span>0</span><span>10</span><span>20</span><span>30</span><span>40 cm</span></div>
     </div>
     <div class="card" style="margin-top:12px" id="manCard">
       <h2>Conduite manuelle · V4 <button type="button" class="tip" data-tip="Mets le spectacle en pause (ou fais Stop et retour) puis prends la main : un joystick apparaît sous le plateau pour piloter le véhicule 4. Avec « Suivre la main », le véhicule 4 garde ta main à 15 cm devant son capteur (port B) ; déplace ta main sur le côté : il sort du faisceau, le véhicule la cherche à gauche puis à droite et la suit. Les autres restent immobiles et la page empêche toute collision.">i</button></h2>
@@ -1295,14 +1311,16 @@ function attachRemote(h, idle = false) {
     else if (p[0] === 'POS') onPos(+p[1] / 100, +p[2] / 100, p[3] === '1');
     else if (p[0] === 'JP') onGamePos(p.slice(1).map(Number));
     else if (['JON', 'JNO', 'JRET', 'JOK', 'JSTUCK', 'CATCH', 'BON', 'PON', 'EON', 'HON', 'HNO', 'WOK', 'WNO'].includes(p[0])) onGameEvent(p);
-    else if (p[0] === 'HD') handShow(+p[1], +p[2]);
+    else if (p[0] === 'HD') { handShow(+p[1], +p[2]); dsShow(+p[1]); }
+    else if (p[0] === 'DS') dsShow(+p[1]);
     else if (p[0] === 'GST') toast({ 1: '✋ Geste : lecture / pause', 2: '✋✋ Geste : chorégraphie suivante', H: '✋ Main tenue : stop et retour', S: '🗿 Statue : le spectacle se fige', R: '🗿 Le spectacle repart' }[p[1]] || 'Geste');
   };
   h.autoReconnect = true;
   h.onState = s => { if (s === 'reco') { $('stSub').textContent = 'Liaison perdue, reconnexion…'; toast('Liaison avec le véhicule 4 perdue : reconnexion…');
     if (M.active && M.v === 4) manMsg('Liaison avec le véhicule 4 perdue, reconnexion… (il reste immobile en attendant)'); } };
+  R.uOn = false;
   h.onReconnect = async () => {
-    toast('Véhicule 4 reconnecté'); updateRemote();
+    R.uOn = false; toast('Véhicule 4 reconnecté'); updateRemote();
     await sleep(800);   // l'état du hub arrive juste après la reconnexion
     if (!h.running) {   // le hub a redémarré (batterie trop faible sous l'effort ?) : son programme ne tourne plus
       const msg = 'Le programme du véhicule 4 s\'est arrêté (batterie faible ou redémarrage du hub ?). Va dans Véhicules et reconnecte-le.';
@@ -1364,6 +1382,20 @@ function handShow(mm, st) {
     : mm > 300 ? 'Main : <b>pas vue</b> (mets-la devant le capteur, à 15 cm)'
     : `Main à <b>${(mm / 10).toFixed(1).replace('.', ',')} cm</b> · ${mm < 130 ? 'il recule' : mm <= 170 ? 'il attend' : 'il avance'}`;
 }
+// distance du capteur du V4, affichée dans Pilotage (le hub l'envoie 4 fois/s quand on lui demande « U1 »)
+function dsShow(mm) {
+  const v = $('dsVal'), t = $('dsTxt'), k = $('dsMk'); if (!v) return;
+  if (mm < 0) { v.textContent = '—'; t.innerHTML = '<span class="bad">Pas de capteur sur le port B du véhicule 4</span>'; k.hidden = true; return; }
+  if (mm >= 400) { v.textContent = '> 40 cm'; t.textContent = 'rien devant le capteur'; k.hidden = true; return; }
+  v.textContent = (mm / 10).toFixed(1).replace('.', ',') + ' cm'; k.hidden = false; k.style.left = (mm / 4) + '%';
+  t.textContent = mm < 60 ? 'très près' : mm < 130 ? 'près' : mm <= 170 ? 'bonne distance pour « Suivre la main »' : 'main vue';
+}
+R.uOn = false;
+setInterval(() => {
+  const on = !!(R.hub && R.hub.connected) && !updating && !document.hidden && document.querySelector('section.on')?.id === 'tele';
+  if (!(R.hub && R.hub.connected)) { if (R.uOn) { R.uOn = false; } $('dsVal').textContent = '—'; $('dsTxt').textContent = 'Connecte le véhicule 4'; $('dsMk').hidden = true; return; }
+  if (on !== R.uOn) { R.uOn = on; R.hub.stdin(on ? 'U1' : 'U0').catch(() => { R.uOn = false; }); if (on) $('dsTxt').textContent = 'Mesure…'; }
+}, 1000);
 $('handGo').onclick = async () => {
   if (!M.active || M.v !== 4) return;
   if (M.hand) { M.hand = false; await M.hub.stdin('H0'); handUI(); return; }

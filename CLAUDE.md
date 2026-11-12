@@ -63,6 +63,10 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      fois), à 10 pas/s, sauf si bloqué (`free_at`) ; retrouvée → reprend le suivi ; sinon attend (`h_state` 0 suit / 1 cherche /
      2 attend, envoyé dans `HD <mm> <état>`). Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`, ou `HARNESS_HAND='[[t_ms, x_main, mm], …]'`
      (main vue si |x V4 − x main| ≤ 2,5 pas).
+   - **Distance du capteur dans Pilotage** (v1.63) : carte « Capteur de distance · V4 » (`#dsCard`, valeur en cm + barre 0–40 cm
+     avec les zones de « Suivre la main »). Tant que l'onglet Pilotage est ouvert et le V4 connecté, l'appli envoie `U1` (sinon `U0`) ;
+     le V4 imprime `DS <mm>` toutes les 250 ms (`DS -1` = pas de capteur) ; en « Suivre la main », c'est `HD` qui alimente la carte.
+     Test : `t_dist.py`.
    - **Capteur V4 pendant le spectacle** (v1.56, option « Capteur V4 » de Programme : Arrêt / Gestes / Statue, `odv.sonar`,
      intégrée au programme par `%SMODE%`, changeable en direct par `S0|S1|S2`). Uniquement hors conduite manuelle (jeu 0).
      `gesture_tick` (toutes les 40 ms) : **Gestes** — main < 12 cm (sortie > 20 cm) ; passage de 60–900 ms ; 1 passage (puis
