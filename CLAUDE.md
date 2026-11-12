@@ -63,11 +63,15 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
      fois), à 10 pas/s, sauf si bloqué (`free_at`) ; retrouvée → reprend le suivi ; sinon attend (`h_state` 0 suit / 1 cherche /
      2 attend, envoyé dans `HD <mm> <état>`). Harness : `HARNESS_SONAR='[[t_ms, mm], …]'`, ou `HARNESS_HAND='[[t_ms, x_main, mm], …]'`
      (main vue si |x V4 − x main| ≤ 2,5 pas).
-   - **Piloter avec la main** (v1.67, bouton « ☝ Piloter avec la main » `#axGo`, `H2` → `HON` ; `hand_tick` avec `h_mode = 2`) :
-     une tape brève devant le capteur (main vue 60–450 ms puis partie) change d'axe (`h_ax` 0 = avant/arrière Y, 1 = gauche/droite X,
-     imprime `AX 0|1`, toast) ; main tenue > 450 ms : mêmes distances que « Suivre la main » (proche = recule / gauche +X, 13–17 cm
-     immobile, loin = avance / droite −X), avec `free_at`. Pas de recherche latérale. `HD <mm> <3|4>` (3 = axe Y, 4 = axe X).
-     Yeux du capteur : 4 allumés en Y, 2 sur 4 en X. Test : `t_axes.py` + harness (`HARNESS_SONAR`).
+   - **Pousser avec la main** (v1.68, remplace « Piloter avec la main » de v1.67 jugé trop compliqué ; bouton « 👋 Pousser avec la main »
+     `#axGo`, `H2` → `HON`, `hand_tick` avec `h_mode = 2`) : main à < 5 cm du capteur → glissade (`h_v` = 16 pas/s, freinage
+     exponentiel 600 ms, ≈ 10 pas) dans la direction la plus dégagée qui ne va pas vers la main : arrière, biais arrière, gauche ou
+     droite (`free_at` pas à pas sur 10 pas, bonus aux directions vers l'arrière) ; imprime `PU` ; bloqué → arrêt. Un véhicule à
+     < 6 pas juste devant n'est pas une main. `HD <mm> <5|6>` (5 glisse, 6 attend). Le joystick reste utilisable dans ce mode
+     (`G` accepté quand il ne glisse pas) ; `POS` toutes les 200 ms en mode main. Test : `t_push.py` + harness.
+     **Sur le plateau de Pilotage** (`drawSensor`, état `SNS`, alimenté par `DS`/`HD` et `PU <gx×100> <gy×100>`) : faisceau ambre
+     vers l'avant du V4 (40 cm ≈ 32,6 pas), écho + point qui pulse là où il voit quelque chose (rouge < 5 cm) ; à la poussée,
+     ondes de choc à l'endroit de la main, traînée derrière le V4 et flèche dans le sens de la glissade (1 s).
    - **Distance du capteur dans Pilotage** (v1.63) : carte « Capteur de distance · V4 » (`#dsCard`, valeur en cm + barre 0–40 cm
      avec les zones de « Suivre la main »). Tant que l'onglet Pilotage est ouvert et le V4 connecté, l'appli envoie `U1` (sinon `U0`) ;
      le V4 imprime `DS <mm>` toutes les 250 ms (`DS -1` = pas de capteur) ; en « Suivre la main », c'est `HD` qui alimente la carte.

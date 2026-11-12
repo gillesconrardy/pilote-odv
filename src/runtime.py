@@ -252,7 +252,7 @@ def remote_connect():
 
 
 def manual_line(s):
-    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE, u_on, h_mode, h_ax, h_seen
+    global manual, blend, tx, ty, MSPD, last_g, game, CSPD, g_round, g_catch, g_freeze, g_mover, g_stuck, b_ret, g_way, g_placed, hand, h_state, SMODE, u_on, h_mode, h_v
 #[JEUX
     if s[0] == 'D':
         try:
@@ -427,12 +427,11 @@ def manual_line(s):
             print('DS', -1)
     elif s in ('H0', 'H1', 'H2'):
         # suivre la main avec le capteur de distance (port B, regarde vers +Y), en conduite manuelle avec evitement
-        # H1 suivre la main, H2 piloter avec la main (une tape change d'axe)
+        # H1 suivre la main, H2 pousser avec la main
         if s != 'H0' and IS_SENDER and manual and game in (0, 5) and sonar is not None:
             hand = True
             h_mode = int(s[1])
-            h_ax = 0
-            h_seen = False
+            h_v = 0.0
             h_buf.clear()
             h_state = 2
             print('HON')
@@ -441,7 +440,7 @@ def manual_line(s):
                 print('HNO')
             hand = False
             sonar_eyes(0)
-    elif s[0] == 'G' and manual and game != 4 and not hand:
+    elif s[0] == 'G' and manual and game != 4 and (not hand or (h_mode == 2 and h_v <= 0.0005)):
         k = s.find(',')
         if k > 1:
             try:
@@ -478,10 +477,10 @@ h_buf = []
 h_next = 0
 h_print = 0
 h_dist = 2000
-h_mode = 1                    # 1 suivre la main, 2 piloter (axe choisi d'une tape)
-h_ax = 0                      # 0 avant/arriere (Y), 1 gauche/droite (X)
-h_seen = False
-h_on = 0
+h_mode = 1                    # 1 suivre la main, 2 pousser avec la main
+h_v = 0.0
+h_gx = 0.0
+h_gy = -1.0
 h_state = 2                   # 0 suit la main, 1 la cherche sur le cote, 2 attend (pas de main)
 h_lost = 0
 h_cx = 0.0                    # x ou la main a ete vue pour la derniere fois
@@ -719,9 +718,9 @@ def v4_ok(x, y):
     return True
 
 
-def sonar_eyes(v, w=None):
+def sonar_eyes(v):
     try:
-        sonar.lights.on([v, v, v if w is None else w, v if w is None else w])
+        sonar.lights.on([v, v, v, v])
     except Exception:
         pass
 
@@ -730,7 +729,7 @@ def hand_tick(dt, local):
     # suivre la main : consigne 15 cm, zone morte 13..17 cm, recule vite si < 6 cm, perdue au-dela de 30 cm.
     # Deplacement lateral avec un seul capteur : quand la main sort du faisceau (partie sur le cote), le vehicule
     # la cherche a gauche puis a droite (4, 8, 12 pas), en commencant du cote ou il l'a retrouvee la derniere fois.
-    global tx, ty, h_next, h_print, h_dist, h_state, h_lost, h_cx, h_wp, h_dir, h_ax, h_seen, h_on
+    global tx, ty, h_next, h_print, h_dist, h_state, h_lost, h_cx, h_wp, h_dir, h_v, h_gx, h_gy
     if local >= h_next:
         h_next = local + 40
         try:
@@ -750,18 +749,36 @@ def hand_tick(dt, local):
             d = 2000
             veh = True
     if h_mode == 2:
-        # piloter avec la main : une tape breve (60..450 ms) change d'axe ; main tenue : proche = recule / gauche, loin = avance / droite
-        if d <= 300 and not h_seen:
-            h_seen = True
-            h_on = local
-        elif d > 300 and h_seen:
-            h_seen = False
-            if 60 <= local - h_on <= 450:
-                h_ax = 1 - h_ax
-                print('AX', h_ax)
-        h_state = 3 + h_ax
-        if not h_seen or local - h_on < 450:
-            d = 2000
+        # pousser : main a moins de 5 cm -> il s'eloigne d'une glissade (~10 pas, freine tout seul) dans la direction
+        # la plus degagee qui l'ecarte de la main (jamais vers elle) ; un vehicule tout proche devant n'est pas une main
+        if h_v > 0.0005:
+            nx = clamp(tx + h_gx * h_v * dt, 0, 30)
+            ny = clamp(ty + h_gy * h_v * dt, 0, 30)
+            if (nx != tx or ny != ty) and free_at(nx, ny):
+                tx = nx
+                ty = ny
+                h_v *= 1 - dt / 600
+            else:
+                h_v = 0
+        elif d < 50 and not veh and not any(o is not None and abs(o[0] - mx) < 10 and 0 <= o[1] - my - 10 < 6 for o in OBS):
+            best = 0
+            for gx, gy in ((0, -1), (0.71, -0.71), (-0.71, -0.71), (1, 0), (-1, 0)):
+                k = 0
+                while k < 10 and 0 <= tx + gx * (k + 1) <= 30 and 0 <= ty + gy * (k + 1) <= 30 and free_at(tx + gx * (k + 1), ty + gy * (k + 1)):
+                    k += 1
+                if k + (0.5 if gy else 0) > best:
+                    best = k + (0.5 if gy else 0)
+                    h_gx = gx
+                    h_gy = gy
+            if best >= 1:
+                h_v = vmax
+                print('PU', int(h_gx * 100), int(h_gy * 100))
+        h_state = 5 if h_v > 0.0005 else 6
+        if local >= h_print:
+            h_print = local + 250
+            print('HD', int(d), h_state)
+            sonar_eyes(100 if d < 50 or h_v > 0.0005 else 15)
+        return
     elif d <= 300:
         if h_state == 1 and abs(tx - h_cx) > 0.5:
             h_dir = 1 if tx > h_cx else -1   # retrouvee : la prochaine fois on cherchera d'abord de ce cote
@@ -802,13 +819,8 @@ def hand_tick(dt, local):
     if local >= h_print:
         h_print = local + 250
         print('HD', int(d), h_state)
-        e = 100 if d <= 300 else 15
-        sonar_eyes(e, e if h_mode == 1 or h_ax == 0 else 5)
-    if v != 0 and h_mode == 2 and h_ax == 1:
-        nx = clamp(tx - v * dt, 0, 30)
-        if free_at(nx, ty):
-            tx = nx
-    elif v != 0:
+        sonar_eyes(100 if d <= 300 else 15)
+    if v != 0:
         ny = clamp(ty + v * dt, 0, 30)
         if free_at(tx, ny):
             ty = ny
@@ -1460,7 +1472,7 @@ while True:
                   int(GC[2][0] * 100), int(GC[2][1] * 100), int(mx * 100), int(my * 100), game, g_catch)
     if manual and IS_SENDER and local >= next_pos:
         # position du vehicule pour l'appli (souvent si la telecommande bouge, sinon toutes les secondes)
-        moving = local < rc_until
+        moving = local < rc_until or hand
         next_pos = local + (200 if moving else 1000)
         print('POS', int(mx * 100), int(my * 100), 1 if moving else 0)
     if manual or blend or game_rx:
