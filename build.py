@@ -12,7 +12,7 @@ if '--publier' in sys.argv:
     ver['num'] += 1
     ver['date'] = datetime.now(ZoneInfo('Europe/Brussels')).strftime('%d/%m/%Y %H:%M')
     json.dump(ver, open(VF, 'w'), indent=1)
-VERSION = '%d.%d' % (ver['majeur'], ver['num'])
+VERSION = ('%d.%02d' if ver['majeur'] >= 2 else '%d.%d') % (ver['majeur'], ver['num'])
 BUILT = ('publiée le ' + ver['date']) if ver['date'] else 'version locale'
 import base64
 ICON = 'data:image/png;base64,' + base64.b64encode(open('icons/logo-96.png', 'rb').read()).decode()

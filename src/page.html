@@ -80,10 +80,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .veh{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:12px;background:var(--soft);border-top:5px solid var(--vc);box-shadow:inset 0 -3px 0 rgba(0,0,0,.08);min-width:0;position:relative}
 .veh .hd{display:flex;align-items:center;gap:8px}
-.veh .gear{margin-left:auto;align-self:flex-start;flex:none;width:32px;height:32px;display:grid;place-items:center;border:1px solid transparent;background:none;color:var(--muted);border-radius:5px;padding:0;transition:transform .3s}
-.veh .gear.on{color:var(--accent);border-color:var(--accent);transform:rotate(60deg)}
-.veh .vset{display:flex;flex-direction:column;gap:4px;padding:8px;border:1px dashed var(--accent);border-radius:5px}
-.veh .vset[hidden]{display:none}
+.veh.open .vset{flex-direction:column;gap:4px;padding:8px;border:1px dashed var(--accent);border-radius:5px}
+.veh .vset{display:none}
+.veh.open .vset{display:flex}
 .veh .vset input{margin:0}
 .veh .hd b{font-size:15px;line-height:1.15}
 .veh .role{font-size:11.5px;color:var(--muted)}
@@ -986,9 +985,10 @@ async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
     const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
-    const j = await r.json(), v = j.majeur + '.' + j.num;
-    if (v === MY_VER || +j.num < +MY_VER.split('.')[1]) return;
-    const b = $('newVer'); b.dataset.n = j.num;
+    const j = await r.json(), v = j.majeur + '.' + (j.majeur >= 2 ? String(j.num).padStart(2, '0') : j.num);
+    const rank = (M, n) => +M * 10000 + +n, [M0, n0] = MY_VER.split('.');
+    if (v === MY_VER || rank(j.majeur, j.num) <= rank(M0, n0)) return;
+    const b = $('newVer'); b.dataset.n = j.majeur * 10000 + j.num;
     $('newVerTxt').textContent = `Nouvelle version v${v} disponible`;
     b.classList.add('on');
   } catch (e) {}
@@ -1191,20 +1191,19 @@ function renderVehicles() {
     for (let v = 1; v <= 4; v++) {
       const d = document.createElement('div'); d.className = 'veh'; d.id = 'veh' + v;
       d.style.setProperty('--vc', `var(--v${v})`);
-      d.innerHTML = `<div class="hd"><div class="tag vbk" style="grid-row:auto;--c:var(--v${v})">0${v}</div><div><b>Véhicule ${v}</b><div class="role">${v === 4 ? 'chef d\'orchestre' : 'suit le V4'}</div></div><button type="button" class="gear" id="gear${v}" title="Paramètres" aria-label="Paramètres" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button></div>
-        <div class="vset" id="vset${v}" hidden><label class="sub" for="hubn${v}">Nom Bluetooth du hub</label><input type="text" id="hubn${v}" spellcheck="false" autocomplete="off"><div class="sub">Laisse vide pour voir tous les hubs.</div></div>
+      d.innerHTML = `<div class="hd"><div class="tag vbk" style="grid-row:auto;--c:var(--v${v})">0${v}</div><div><b>Véhicule ${v}</b><div class="role">${v === 4 ? 'chef d\'orchestre' : 'suit le V4'}</div></div></div>
         <div class="line" id="cn${v}"></div>
         <div class="line" id="bat${v}"></div>
         <div class="st" id="st${v}">Pas encore envoyé</div><div class="bar" id="bar${v}"><div></div></div>
         <button class="btn primary main" id="send${v}">Reconnecter</button>
         <button class="more" id="more${v}" title="Autres actions">⋯</button>
-        <div class="acts"><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">↻ Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>`;
+        <div class="acts"><button class="btn" id="run${v}" title="Relance le programme déjà présent sur le hub">↻ Relancer</button><button class="btn" id="copy${v}" title="Copie le programme .py (pour Pybricks Code)">.py</button></div>
+        <div class="vset" id="vset${v}"><label class="sub" for="hubn${v}">Nom Bluetooth du hub</label><input type="text" id="hubn${v}" spellcheck="false" autocomplete="off"><div class="sub">Laisse vide pour voir tous les hubs.</div></div>`;
       box.appendChild(d);
       $('more' + v).onclick = () => d.classList.toggle('open');
-      // ⚙ paramètres du véhicule (v1.99) : nom Bluetooth du hub
+      // nom Bluetooth du hub, dans le menu ⋯ (v2.00 ; v1.99 : roue dentée)
       const inp = $('hubn' + v); inp.value = hubName(v);
       inp.onchange = () => { store.set('hub' + v, inp.value.trim()); if (V[v].hub && V[v].hub.name !== inp.value.trim()) { V[v].hub.close(); V[v].hub = null; } };
-      $('gear' + v).onclick = () => { const o = $('vset' + v).hidden; $('vset' + v).hidden = !o; $('gear' + v).classList.toggle('on', o); $('gear' + v).setAttribute('aria-expanded', o); if (o) inp.focus(); };
       $('send' + v).onclick = () => { const h = V[v].hub; if (h && h.connected) disconnectOne(v); else sendVehicle(v, true, false); };
       $('run' + v).onclick = () => sendVehicle(v, false);
       $('copy' + v).onclick = async () => { try { await navigator.clipboard.writeText(programText(v)); toast('Programme du véhicule ' + v + ' copié'); } catch { toast('Copie refusée par le navigateur'); } };
@@ -1291,7 +1290,7 @@ async function sendVehicle(v, doUpload, homing = false, idle = false, gate = nul
     return true;
   } catch (e) {
     setBar(v, null);
-    const msg = e && e.name === 'NotFoundError' ? `Aucun hub choisi (le hub « ${hubName(v)} » est-il allumé ? sinon vérifie son nom dans ⚙ Paramètres du véhicule, onglet Véhicules)`
+    const msg = e && e.name === 'NotFoundError' ? `Aucun hub choisi (le hub « ${hubName(v)} » est-il allumé ? sinon vérifie son nom dans le menu ⋯ du véhicule, onglet Véhicules)`
       : e && e.name === 'SecurityError' ? 'Appuie à nouveau sur le bouton (Chrome demande un appui pour ouvrir la fenêtre Bluetooth)'
       : e && e.name === 'NetworkError' ? `Hub injoignable : si son programme tourne, appuie une fois sur le bouton du hub pour l'arrêter, puis réessaie`
       : (e && e.message) || String(e);
