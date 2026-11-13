@@ -59,8 +59,6 @@ Choisis le hub du véhicule	Choose the hub for vehicle
 Touche le bouton : la fenêtre Bluetooth ne proposera que le hub	Tap the button: the Bluetooth window will only offer the hub
 . Touche-le pour continuer.	. Tap it to continue.
 Appuie à nouveau sur le bouton (Chrome demande un appui pour ouvrir la fenêtre Bluetooth)	Press the button again (Chrome needs a tap to open the Bluetooth window)
-Aucun hub choisi (le hub « {0} » est-il allumé ? sinon vérifie son nom dans « Noms des hubs »)	No hub chosen (is hub “{0}” switched on? otherwise check its name in “Hub names”)
-Noms des hubs (pour trouver le bon hub automatiquement)	Hub names (to find the right hub automatically)
 La fenêtre Bluetooth ne propose que le hub portant ce nom. Laisse vide pour voir tous les hubs.	The Bluetooth window only offers the hub with this name. Leave empty to see all hubs.
 Ce hub ({0}) est déjà utilisé pour le véhicule {1}.	This hub ({0}) is already used for vehicle {1}.
 Hub injoignable : si son programme tourne, appuie une fois sur le bouton du hub pour l'arrêter, puis réessaie	Hub unreachable: if its program is running, press the hub button once to stop it, then try again
@@ -100,3 +98,7 @@ Je ne peux pas vérifier où sont les véhicules (véhicule 4 non connecté). So
 Nouvelle version v{0} disponible	New version v{0} available
 publiée le {0}	published on {0}
 Le Bluetooth web n'est pas disponible dans ce navigateur. Ouvre cette page dans Chrome sur Android (ou Chrome / Edge sur PC), à une adresse en https, pour piloter les véhicules. Ici, tu peux quand même préparer le programme, voir les aperçus et créer des chorégraphies.	Web Bluetooth is not available in this browser. Open this page in Chrome on Android (or Chrome / Edge on PC), at an https address, to drive the vehicles. Here you can still prepare the program, watch previews and create choreographies.
+Aucun hub choisi (le hub « {0} » est-il allumé ? sinon vérifie son nom dans ⚙ Paramètres du véhicule, onglet Véhicules)	No hub chosen (is hub “{0}” switched on? otherwise check its name in ⚙ Settings of the vehicle, Vehicles tab)
+Nom Bluetooth du hub	Hub Bluetooth name
+Paramètres	Settings
+Laisse vide pour voir tous les hubs.	Leave empty to see all hubs.
