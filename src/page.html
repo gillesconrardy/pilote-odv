@@ -277,6 +277,12 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .sendb:disabled{opacity:.4;cursor:default}.sendb:disabled .sa{animation:none}
 @keyframes sendPu{0%,100%{box-shadow:0 0 0 0 rgba(255,154,60,.5)}50%{box-shadow:0 0 0 6px rgba(255,154,60,0)}}
 @media (prefers-reduced-motion:reduce){.sendb .sa{animation:none}}
+
+/* choix de la langue (v1.95) */
+.lang{margin-left:auto;flex-shrink:0;display:flex;border:1px solid #3a3631;border-radius:5px;overflow:hidden;align-self:center}
+.lang button{background:none;border:0;color:#8a857c;font:700 11px 'Space Mono',monospace;padding:4px 7px;cursor:pointer;letter-spacing:.04em}
+.lang button.on{background:var(--accent);color:#121314}
+.lang + .ver{margin-left:10px}
 /* badge « Hors zone » (v1.92, design 5 · Mini plan de Gilles) */
 .badge.hz{display:inline-flex;align-items:center;gap:5px;background:#1f2124!important;color:#ff6b5e!important;border:1px solid #3a3631!important;padding:2px 7px 2px 4px;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:.04em}
 /* éditeur de plateau (v1.90 : en haut de Setup, replié, à valider) */
@@ -540,6 +546,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
+    <div class="lang" id="langSw" data-noi18n><button type="button" data-l="fr">FR</button><button type="button" data-l="en">EN</button></div>
     <div class="ver" title="Version de l'application"><b>v/*VERSION*/</b><br>/*BUILT*/</div>
   </header>
   <div class="banner" id="nobt"></div>
@@ -760,6 +767,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 </dialog>
 <div class="toast" id="toast"></div>
 
+<script>/*I18NJS*/</script>
 <script>/*CORE*/</script>
 <script>/*GEN*/</script>
 <script>
@@ -953,6 +961,8 @@ $('newVer').onclick = () => {
   location.replace(location.pathname + '?v=' + $('newVer').dataset.n);
 };
 checkVersion(); setInterval(checkVersion, 120000);
+// choix de la langue (v1.95), en haut à droite à côté de la version
+document.querySelectorAll('#langSw button').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l !== LANG) setLang(b.dataset.l); }; });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
@@ -2197,7 +2207,7 @@ function watchMeta() {
   const [a, b] = R.hub && R.hub.connected ? stateLabel() : ['V4 non connecté', ''];
   const t = a + (b ? ' · ' + b : '');
   if (t === WATCH.title) return; WATCH.title = t;
-  try { navigator.mediaSession.metadata = new MediaMetadata({ title: t, artist: 'F4 Square', album: 'Spectacle' }); } catch (e) {}
+  try { navigator.mediaSession.metadata = new MediaMetadata({ title: tr(t), artist: 'F4 Square', album: tr('Spectacle') }); } catch (e) {}
 }
 async function watchStart() {
   if (WATCH.on || WATCH.busy || !('mediaSession' in navigator)) return;
@@ -2511,7 +2521,7 @@ RÈGLE ABSOLUE : à tout instant (aux étapes ET pendant les trajets), pour chaq
 Conseils : les véhicules doivent se déplacer de façon coordonnée (rotation, glissements en file, échanges en plusieurs étapes). Pour échanger deux véhicules ou passer dans un couloir d'un bloc de large, passe par des étapes intermédiaires (un couloir ne laisse passer qu'un véhicule à la fois, en file). Les positions utiles sont souvent des multiples de 5 ou de 10. Évite qu'un véhicule en traverse un autre.
 speed = vitesse en % (10 à 100, multiple de 5 ; 100 % ≈ 17 pas/s). wait = pause après l'étape en ms parmi 0, 250, 500, 1000, 1500, 2000, 3000, 5000.
 Vise 8 à 30 étapes. La dernière étape doit être exactement la position de départ.
-Réponds UNIQUEMENT par un objet JSON, sans texte autour :
+${LANG === 'en' ? 'The user writes in English: the "name" field must be in English.\n' : ''}Réponds UNIQUEMENT par un objet JSON, sans texte autour :
 {"name":"nom court en français","steps":[{"pos":[[x1,y1],[x2,y2],[x3,y3],[x4,y4]],"speed":60,"wait":0}, ...]}
 (ne répète pas la position de départ en première étape).`;
 }
@@ -2846,8 +2856,13 @@ function statFrame(P, w, tl, dtms) {
   // carte de chaleur (toutes les 250 ms) : emprise 10×10 pas, cases de 2 pas sur le plateau −5..35
   STAT.heatAcc += dtms;
   if (STAT.heatAcc >= 250) {
-    const add = STAT.heatAcc; STAT.heatAcc = 0;
+    const add = STAT.heatAcc, hp = (STAT.heatAcc = 0, STAT.heatPrev) || (STAT.heatPrev = [null, null, null, null]);
     for (let i = 0; i < 4; i++) {
+      // v1.95 (demande de Gilles) : on ne compte pas un véhicule inactif (garé au départ sans chorégraphie, ou qui ne bouge pas
+      // hors spectacle) ; pendant une chorégraphie, il compte même pendant ses pauses
+      const moved = hp[i] && Math.max(Math.abs(P[i][0] - hp[i][0]), Math.abs(P[i][1] - hp[i][1])) > 0.05;
+      hp[i] = [P[i][0], P[i][1]];
+      if (!moved && !playing) continue;
       const c0 = Math.max(0, Math.round((P[i][0] - 5 + 5) / 2)), r0 = Math.max(0, Math.round((P[i][1] - 5 + 5) / 2));
       for (let cx = c0; cx < Math.min(20, c0 + 5); cx++) for (let cy = r0; cy < Math.min(20, r0 + 5); cy++) for (const b of B) b.heat[i][cy * 20 + 19 - cx] += add;
     }

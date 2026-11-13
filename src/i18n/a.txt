@@ -1,0 +1,178 @@
+Setup	Setup
+Programme	Program
+Pilotage	Control
+Véhicules	Vehicles
+Stats	Stats
+Onglets	Tabs
+Version de l'application	App version
+Nouvelle version disponible	New version available
+Touche ici pour mettre à jour	Tap here to update
+Mise en place	Setup
+Plateau	Board
+▦ Blocs	▦ Blocks
+⬇ Décharge	⬇ Unload
+Annuler	Cancel
+✓ Valider le plateau	✓ Confirm board
+✓ Plateau validé	✓ Board confirmed
+✓ validé	✓ confirmed
+● modifié, à valider	● changed, to confirm
+pas de point de décharge	no unload point
+décharge placée	unload point set
+Revoir tout le plateau	Show the whole board
+Plan du plateau en blocs	Board plan in blocks
+Plan de la mise en place	Setup plan
+Calibrer	Calibrate
+Calibrage… (il rejoint sa place)	Calibrating… (it moves to its place)
+↺ Recommencer la mise en place	↺ Restart setup
+MODE SOLO	SOLO MODE
+▶ PRESS START	▶ PRESS START
+Pose le 04 dans le coin en haut à droite : il se calibre et le cockpit s'ouvre	Put 04 in the top-right corner: it calibrates and the cockpit opens
+Pose les 4 <b>en colonne</b> contre la clôture de droite, le <b>01</b> dans le coin. Celui qui <b>clignote</b> est le prochain à calibrer.	Place the 4 <b>in a column</b> against the right fence, <b>01</b> in the corner. The <b>blinking</b> one is the next to calibrate.
+Touche « Calibrer » pour le <b>véhicule {0}</b>.	Tap “Calibrate” for <b>vehicle {0}</b>.
+Le <b>véhicule {0}</b> se calibre… Le {1} sera disponible dès qu'il touchera la clôture du haut.	<b>Vehicle {0}</b> is calibrating… {1} will be available as soon as it touches the top fence.
+Le <b>véhicule {0}</b> se calibre… Tu peux lancer le {1} : il démarrera dès que le {2} aura quitté la colonne.	<b>Vehicle {0}</b> is calibrating… You can start {1}: it will begin as soon as {2} has left the column.
+<span class="ok">✓ Les 4 véhicules sont en place.</span> Choisis maintenant les chorégraphies.	<span class="ok">✓ The 4 vehicles are in place.</span> Now choose the choreographies.
+✓ Les 4 véhicules sont en place.	✓ The 4 vehicles are in place.
+Choisis maintenant les chorégraphies.	Now choose the choreographies.
+Choisir les chorégraphies →	Choose choreographies →
+Mise en place reprise : {0} déjà calibré{1}. Continue avec le suivant.	Setup resumed: {0} already calibrated. Continue with the next one.
+En place · envoie le programme depuis l'onglet Programme	In place · send the program from the Program tab
+Prêt : il démarrera dès que le véhicule	Ready: it will start as soon as vehicle
+aura quitté la colonne	has left the column
+n'a pas quitté la colonne	has not left the column
+Le véhicule n'a pas signalé la fin de son calibrage	The vehicle did not report the end of its calibration
+Remets les 4 véhicules dans leur colonne de départ, puis calibre-les	Put the 4 vehicles back in their starting column, then calibrate them
+Hors ligne · préparation seulement	Offline · preparation only
+Les véhicules 1, 2 et 3 sont déjà à leur place le long du haut (30, 20 et 10). Pose le véhicule 4 dans le coin en haut à droite, contre les deux clôtures. Il se calibre seul, sans chorégraphie, puis l'appli ouvre Pilotage et te donne la main : joystick, télécommande LEGO ou « Suivre la main » avec le capteur. Les 3 autres ne bougent pas et le véhicule 4 ne peut pas les toucher.	Vehicles 1, 2 and 3 are already in place along the top (30, 20 and 10). Put vehicle 4 in the top-right corner, against both fences. It calibrates on its own, without a choreography, then the app opens Control and gives you control: joystick, LEGO remote or the sensor. The other 3 don't move and vehicle 4 can't touch them.
+Pose les 4 véhicules en colonne contre la clôture de droite : le 1 dans le coin du haut, puis 2, 3 et 4 en dessous. Chaque véhicule se cale contre la clôture puis rejoint sa place le long du haut et attend (aucune chorégraphie n'est envoyée ici : elles le sont à l'étape Programme). Le suivant devient disponible dès que le précédent a quitté la colonne de droite ; un bouton reste grisé tant qu'il y a un risque de collision. Le véhicule 4 reste connecté au téléphone pour le pilotage.	Place the 4 vehicles in a column against the right fence: 1 in the top corner, then 2, 3 and 4 below. Each vehicle squares up against the fence, then moves to its place along the top and waits (no choreography is sent here: that happens in the Program step). The next one becomes available as soon as the previous one has left the right column; a button stays grey while there is a risk of collision. Vehicle 4 stays connected to the phone for driving.
+Dessine la forme de ton plateau, sans limite de taille (la grille s'agrandit quand tu ajoutes des blocs au bord) : chaque case = un bloc de 10 pas (12,25 cm), la taille d'un véhicule. Mode Blocs : touche une case vide pour poser un bloc, un bloc pour l'enlever (glisse le doigt pour en poser plusieurs). Le bloc du coin en haut à droite (clôture et picot rouge, où se fait le calibrage) reste toujours ; les 2 cases rouges juste derrière ses clôtures restent vides. Pince avec 2 doigts pour zoomer / dézoomer et les glisser pour déplacer la grille ; ⤢ revient à tout le plateau. Mode Décharge : touche le bloc où les véhicules iront décharger leurs billes. Quand il correspond à ton vrai plateau, touche « Valider le plateau » : l'appli l'utilise alors partout (Pilotage, chorégraphies qui sortent du plateau bloquées, Atelier) et les véhicules le reçoivent au prochain calibrage ou envoi (le V4 ne sort jamais des blocs, au joystick comme à la télécommande).	Draw the shape of your board, with no size limit (the grid grows when you add blocks at the edge): each cell = one block of 10 steps (12.25 cm), the size of a vehicle. Blocks mode: tap an empty cell to add a block, a block to remove it (slide your finger to add several). The top-right corner block (fence and red stud, where calibration happens) always stays; the 2 red cells right behind its fences stay empty. Pinch with 2 fingers to zoom in / out and slide them to move the grid; ⤢ shows the whole board again. Unload mode: tap the block where vehicles will unload their marbles. When it matches your real board, tap “Confirm board”: the app then uses it everywhere (Control, choreographies that leave the board are blocked, Workshop) and the vehicles receive it at the next calibration or upload (V4 never leaves the blocks, with the joystick or the remote).
+Le point de décharge doit être sur un bloc	The unload point must be on a block
+Plateau validé : les véhicules le recevront au prochain calibrage ou envoi	Board confirmed: the vehicles will receive it at the next calibration or upload
+blocs	blocks
+bloc	block
+Cette chorégraphie sort du plateau validé (Setup)	This choreography leaves the confirmed board (Setup)
+HORS ZONE	OUT OF BOUNDS
+Chorégraphies à jouer	Choreographies to play
+Glisser pour changer l'ordre	Drag to change the order
+Aperçu	Preview
+▶ Aperçu	▶ Preview
+Carrousel	Carousel
+Kaléidoscope	Kaleidoscope
+Tourbillons	Whirlwinds
+Petit train	Little train
+Formation	Formation
+Chorégraphie d'origine (8, boucles, cercles…)	Original choreography (figure 8, loops, circles…)
+Spirale + Pulsation	Spiral + Pulse
+Routine Spirale + Pulsation	Spiral + Pulse routine
+Les 5 à la suite	All 5 in a row
+Vague	Wave
+Spirale	Spiral
+Miroir	Mirror
+Carré qui tourne	Spinning square
+Envoyer aux 4 véhicules	Send to the 4 vehicles
+✓ sans collision	✓ no collision
+chevauchement	overlap
+frôlement	near miss
+frôlements	near misses
+Ajouter une chorégraphie	Add a choreography
+✏️ Créer une chorégraphie	✏️ Create a choreography
+Ajouter	Add
+Supprimer	Delete
+Changer de chorégraphies…	Change choreographies…
+Colle des lignes mvc.move(...), mvc.move_circ(...), mvc.wait_sync_ms(...) ou un fichier VehicleXX.py complet. Elle doit partir de (30,0) (20,0) (10,0) (0,0) et y revenir.	Paste mvc.move(...), mvc.move_circ(...), mvc.wait_sync_ms(...) lines or a complete VehicleXX.py file. It must start from (30,0) (20,0) (10,0) (0,0) and come back there.
+Nom	Name
+Nom de la chorégraphie	Choreography name
+Ma chorégraphie	My choreography
+Chorégraphie ajoutée	Choreography added
+aucune commande reconnue	no command recognized
+Coche au moins une chorégraphie	Tick at least one choreography
+Choisis d'abord des chorégraphies	Choose some choreographies first
+Les 4 véhicules forment un carré qui tourne deux fois sur lui-même, puis reviennent en ligne.	The 4 vehicles form a square that spins around twice, then line up again.
+Les véhicules s'enroulent en spirale vers le centre puis se déroulent vers les coins.	The vehicles coil in a spiral towards the centre, then unwind towards the corners.
+Un ballet en miroir : V1 et V4 font les mêmes mouvements en symétrie, V2 et V3 aussi, avec des pauses.	A mirror ballet: V1 and V4 make the same moves symmetrically, V2 and V3 too, with pauses.
+Un petit train : les véhicules se suivent en file le long du bord du plateau, puis rentrent.	A little train: the vehicles follow each other in a line along the edge of the board, then come back.
+Une vague lente : les véhicules descendent puis remontent l'un après l'autre, de gauche à droite.	A slow wave: the vehicles go down and up one after the other, from left to right.
+Capteur V4	V4 sensor
+Arrêt	Off
+Gestes	Gestures
+Statue	Statue
+Capteur de distance sur le port B du véhicule 4, sur son côté droit, au-dessus de la clôture (la main se présente à l'extérieur du plateau, à droite). Gestes : passe la main une fois devant (à moins de 12 cm) = lecture ou pause ; deux fois rapidement = chorégraphie suivante ; garde-la 2 s = stop et retour. Statue : une main devant (moins de 25 cm) fige le spectacle, il repart 1 s après que tu l'as retirée. Les moments où un autre véhicule passe devant le capteur sont ignorés. Le réglage part avec « Envoyer aux 4 véhicules ».	Distance sensor on port B of vehicle 4, on its right side, above the fence (your hand comes from outside the board, on the right). Gestures: one pass of the hand (closer than 12 cm) = play or pause; two quick passes = next choreography; hold it 2 s = stop and return. Statue: a hand in front (closer than 25 cm) freezes the show, it restarts 1 s after you remove it. Moments when another vehicle passes in front of the sensor are ignored. The setting is sent with “Send to the 4 vehicles”.
+Atelier chorégraphie	Choreography workshop
+Fais glisser les véhicules pour créer chaque étape	Drag the vehicles to create each step
+Plateau d'édition	Editing board
+Étapes	Steps
+Départ	Start
+Départ fixe. Touche ＋ pour ajouter une étape.	Fixed start. Tap ＋ to add a step.
+Ajouter une étape	Add a step
+Supprimer l'étape	Delete the step
+Déplacer l'étape plus tôt	Move the step earlier
+Déplacer l'étape plus tard	Move the step later
+Plus tôt	Earlier
+Plus tard	Later
+Ajouter le retour au départ	Add the return to start
+Retour	Return
+Vitesse	Speed
+Pause	Pause
+aucune	none
+Choisis ou ajoute une étape pour déplacer les véhicules.	Choose or add a step to move the vehicles.
+Étape {0} : fais glisser un véhicule à sa nouvelle place.	Step {0}: drag a vehicle to its new place.
+✓ Aucune collision	✓ No collision
+Durée : {0}	Duration: {0}
+● Termine au départ : touche ⌂ Retour.	● End at the start: tap ⌂ Return.
+V{0} et V{1} se chevauchent à cette étape	V{0} and V{1} overlap at this step
+en allant à cette étape, V{0} et V{1} {2} ({3} pas)	on the way to this step, V{0} and V{1} {2} ({3} steps)
+se percutent	collide
+se frôlent	brush past each other
+V{0} est HORS ZONE (pas sur un bloc du plateau)	V{0} is OUT OF BOUNDS (not on a board block)
+en allant à cette étape, V{0} passe HORS ZONE (au-dessus d'une case vide)	on the way to this step, V{0} goes OUT OF BOUNDS (over an empty cell)
+Pas de solution automatique : ajoute une étape intermédiaire à la main.	No automatic fix: add an intermediate step by hand.
+Pas de retour direct sûr : ajoute une étape intermédiaire	No safe direct return: add an intermediate step
+La dernière étape est déjà au départ	The last step is already at the start
+Retour au départ ajouté ({0})	Return to start added ({0})
+Solution appliquée :	Fix applied:
+Tous de côté, puis en hauteur	All sideways, then up/down
+Tous en hauteur, puis de côté	All up/down, then sideways
+Un par un	One by one
+Un par un : {0}{1}	One by one: {0}{1}
+Contourner un par un : {0}{1}	Go around one by one: {0}{1}
+Décaler V{0} de {1}{2}	Shift V{0} by {1}{2}
+vers le bas	down
+vers le haut	up
+à gauche	left
+à droite	right
+(le trajet sera à corriger ensuite)	(the path will need fixing afterwards)
+tout droit	straight
+X puis Y	X then Y
+Y puis X	Y then X
+Ajoute au moins une étape	Add at least one step
+💾 Enregistrer	💾 Save
+(créée avec l'atelier F4 Square)	(created with the F4 Square workshop)
+» enregistrée et ajoutée au programme	” saved and added to the program
+Fermer	Close
+Inventer avec l'IA	Invent with AI
+Décris le mouvement en quelques mots : l'IA propose les étapes, l'appli vérifie les collisions et les fait corriger. Tu peux ensuite tout retoucher à la main.	Describe the movement in a few words: the AI suggests the steps, the app checks for collisions and has them fixed. You can then adjust everything by hand.
+Décris ta chorégraphie…	Describe your choreography…
+Inventer	Invent
+🔑 Clé API	🔑 API key
+🔑 Ajouter ta clé API	🔑 Add your API key
+🔑 Clé API enregistrée ✓	🔑 API key saved ✓
+Effacer la clé	Delete the key
+Clé effacée	Key deleted
+Clé Anthropic à créer sur console.anthropic.com (usage facturé, quelques centimes par chorégraphie). Elle reste uniquement sur ce téléphone, jamais sur GitHub.	Anthropic key to create on console.anthropic.com (paid usage, a few cents per choreography). It stays only on this phone, never on GitHub.
+Décris d'abord la chorégraphie	Describe the choreography first
+Colle d'abord ta clé API	Paste your API key first
+Remplacer les étapes actuelles par la chorégraphie inventée ?	Replace the current steps with the invented choreography?
+⏳ L'IA imagine la chorégraphie…	⏳ The AI is imagining the choreography…
+⏳ Correction {0}/3…	⏳ Correction {0}/3…
+✓ {0} étapes sans collision. Regarde l'aperçu !	✓ {0} steps without collision. Watch the preview!
+⚠ {0} étapes, mais il reste des collisions : corrige-les à la main ou relance.	⚠ {0} steps, but there are still collisions: fix them by hand or try again.
+⚠ Il manque le retour au départ : utilise le bouton ⌂.	⚠ The return to start is missing: use the ⌂ button.
+clé API refusée	API key rejected
+trop de demandes, réessaie dans un moment	too many requests, try again in a moment
+service IA surchargé, réessaie	AI service overloaded, try again
+crédit API épuisé	API credit used up
+réponse illisible	unreadable answer
+aucune étape reçue	no step received
+pas de connexion internet	no internet connection
+Failed to fetch	no internet connection
+Un petit tour en carré	A little square tour

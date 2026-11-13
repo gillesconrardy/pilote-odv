@@ -5,7 +5,7 @@ MOCK = open('t_page2.py').read().split('MOCK = r"""')[1].split('"""')[0].replace
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
-        pg = await b.new_page(viewport={'width': 412, 'height': 900})
+        pg = await b.new_page(locale='fr-FR', viewport={'width': 412, 'height': 900})
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.add_init_script(MOCK); await pg.add_init_script("try{localStorage.setItem('odv.tab','setup')}catch(e){}")
         await pg.goto('file://' + os.path.abspath('../index.html')); await pg.wait_for_timeout(300); await pg.mouse.click(200, 450); await pg.wait_for_timeout(1500)

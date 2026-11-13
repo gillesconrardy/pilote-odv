@@ -208,7 +208,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    véhicule, « Tout reconnecter » = (depuis v1.61) remise à zéro du calibrage et onglet Setup (les 4 véhicules remis en colonne), « Tout déconnecter » ; barre de chargement hachurée animée pendant `updateAll`, dans Programme et Véhicules : `updProg`, étapes 0–22 % puis ≈ 19,5 % par véhicule suivant `setBar`), **Pilotage** (`#tele`).
    Il n'y a plus d'option « Recalage au démarrage » : seul l'onglet Mise en place recale.
    5ᵉ onglet **Statistiques** (`#stats`, sous les 4 autres) : collecte dans `odoTick` (`statAdd`/`statFrame`) — distance,
-   temps en mouvement, vitesse max, carte de chaleur 20×20 (cases de 2 pas, emprise 10×10), rose des directions
+   temps en mouvement, vitesse max, carte de chaleur 20×20 (cases de 2 pas, emprise 10×10 ; depuis v1.95 un véhicule ne compte que s'il bouge ou pendant une chorégraphie : plus de ligne en haut due aux véhicules garés au départ, `STAT.heatPrev`), rose des directions
    (16 secteurs), plus courte distance entre véhicules, temps par chorégraphie, spectacles joués, mètres au joystick ;
    par session (mémoire) et par jour (localStorage `odv.stDays`, 120 jours max) ; batterie dans le temps (`odv.stBatt`,
    via `setBat`) ; trajectoires et courbes de vitesse : session seulement. Période Session / 7 jours / Depuis le début.
@@ -262,6 +262,24 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    si les 4 véhicules sont calibrés (`SU.done` 1..4), sinon un message ; Précédent = stop et retour ; Suivant ignoré. Test : `t_watch2.py`.
    Test : `t_watch.py` (`WATCH.h`). À vérifier sur le vrai téléphone + montre de Gilles. Étape suivante possible : appli
    Connect IQ + relais Internet (ntfy) pour plus de commandes.
+
+## Langue FR / EN (v1.95, demande de Gilles : « tout doit être traduit »)
+- Le français reste la langue du code. **Choix FR | EN en haut à droite, à côté de la version** (`#langSw`, aussi dans le simulateur) ;
+  localStorage `odv.lang` (partagé appli/simulateur), sinon langue du téléphone (`navigator.language`) ; changer recharge la page
+  (`setLang`, confirmation si des véhicules sont connectés).
+- `src/i18n.js` (injecté par `build.py` via `/*I18NJS*/` dans l'appli et le simulateur) : `tr(s)` = dictionnaire exact, puis modèles
+  avec variables `{0}` `{1}` (morceaux variables retraduits), puis préfixe de symboles (✨ ⚠ ●…) retiré, puis **remplacement des phrases
+  connues** dans le texte (limites de mots, les plus longues d'abord) et décimales `6,5 cm` → `6.5 cm`. `trNode` traduit le DOM au
+  chargement puis à chaque changement (MutationObserver) : un élément qui ne contient que du texte + balises de mise en forme est traduit
+  d'un bloc (`tr(html, true)` = exact/modèle seulement), sinon nœud par nœud ; attributs `title aria-label placeholder data-tip alt data-t` ;
+  textes du canvas (`fillText` enveloppé), `confirm`/`alert`, titre de la montre (`watchMeta`). `data-noi18n` = ne pas traduire (code du
+  simulateur, ligne en cours). L'IA de l'Atelier reçoit « name in English » en anglais.
+- **Dictionnaire** : `src/i18n/*.txt`, une ligne `français<TAB>anglais` (`#` = commentaire), `{0}`… = modèle. Vocabulaire : Programme →
+  Program, Pilotage → Control, pas → steps, Décharge → Unload, Rendre la main → Hand back, Prendre la main → Take control, Stop et
+  retour → Stop & return, Atelier → Workshop, HORS ZONE → OUT OF BOUNDS.
+- **Vérifier** : en anglais, `window.__i18nMiss` liste les textes encore en français. Scripts de collecte : parcourir tous les onglets et
+  états (Setup, Programme, Atelier, Pilotage/cockpit, lignes du hub simulées, décharge, montre, Véhicules, Stats, simulateur) et
+  lire `__i18nMiss` (0 à la v1.95). Les tests Playwright ouvrent la page avec `locale='fr-FR'` (sinon la page passerait en anglais).
 
 ## Construire, tester, publier
 - `python build.py` → régénère `index.html` et `simulateur/index.html` (les chorégraphies sont lues

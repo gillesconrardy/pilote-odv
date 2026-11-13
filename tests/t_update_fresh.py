@@ -6,7 +6,7 @@ MOCK = MOCK.replace("window.__picks = 0;", "window.__picks = 0; window.__names =
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
-        pg = await b.new_page(viewport={'width': 412, 'height': 900})
+        pg = await b.new_page(locale='fr-FR', viewport={'width': 412, 'height': 900})
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.on('dialog', lambda d: asyncio.ensure_future(d.accept()))
         await pg.add_init_script(MOCK)

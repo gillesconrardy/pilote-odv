@@ -33,6 +33,19 @@ page = rd('src/page.html').replace('/*CORE*/', core).replace('/*GEN*/', rd('src/
     .replace('/*RUNTIME*/', js(rd('src/runtime.py'))).replace('/*PRESETS*/', js(pre)) \
     .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT).replace('/*ICON*/', ICON) \
     .replace('/*ROUTINE*/', js(rd(C + 'routine_spirale_pulsation.py')))   # routine spéciale, toujours chargée (montre)
+def i18n_dict():
+    # traduction anglaise (v1.95) : src/i18n/*.txt, une ligne « français<TAB>anglais » ; {0} {1}… = morceaux variables (modèles)
+    import glob, re
+    ex, pat = {}, []
+    for f in sorted(glob.glob('src/i18n/*.txt')):
+        for ln in rd(f).split('\n'):
+            if not ln.strip() or ln.startswith('#'):
+                continue
+            fr, en = ln.split('\t')
+            (pat.append([fr, en]) if re.search(r'\{\d+\}', fr) else ex.__setitem__(fr, en))
+    return js({'exact': ex, 'pat': pat})
+I18N_JS = rd('src/i18n.js').replace('/*I18N*/', i18n_dict())
+page = page.replace('/*I18NJS*/', I18N_JS)
 open('index.html', 'w', encoding='utf-8').write(page)
 
 # --- Simulateur (simulateur/index.html)
@@ -41,6 +54,6 @@ sim = [{'name': '%d · %s' % (i + 1, n), 'src': rd(C + f)} for i, (n, f, _) in e
 sim += [{'name': 'Les 5 à la suite', 'src': five}, {'name': 'Routine Spirale + Pulsation', 'src': rd(C + 'routine_spirale_pulsation.py')},
         {'name': CHORS[5][0], 'src': rd(C + CHORS[5][1])}]
 s = rd('simulateur/template.html').replace('/*CORE*/', core).replace('/*PRESETS*/', js(sim)) \
-    .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT)
+    .replace('/*VERSION*/', VERSION).replace('/*BUILT*/', BUILT).replace('/*I18NJS*/', I18N_JS)
 open('simulateur/index.html', 'w', encoding='utf-8').write(s)
 print('v' + VERSION, BUILT, '| index.html', len(page), '| simulateur/index.html', len(s))

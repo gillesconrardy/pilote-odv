@@ -6,7 +6,7 @@ R2 = {"name": "Carré tournant", "steps": [{"pos": [[30,20],[20,0],[10,0],[0,20]
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
-        pg = await b.new_page(viewport={'width': 412, 'height': 900}, device_scale_factor=2)
+        pg = await b.new_page(locale='fr-FR', viewport={'width': 412, 'height': 900}, device_scale_factor=2)
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         calls = []
         async def handle(route):

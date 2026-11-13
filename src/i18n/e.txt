@@ -1,0 +1,43 @@
+# simulateur
+Simulateur	Simulator
+F4 Square – Simulateur	F4 Square – Simulator
+Rejoue exactement <code>mvc.move</code>, <code>mvc.move_circ</code> et <code>mvc.wait_sync_ms</code> (pas de 4 ms, 80°/pas, 1400°/s) et repère les chevauchements entre véhicules.	Replays <code>mvc.move</code>, <code>mvc.move_circ</code> and <code>mvc.wait_sync_ms</code> exactly (4 ms tick, 80°/step, 1400°/s) and spots overlaps between vehicles.
+Vue de dessus de la zone de jeu	Top view of the play area
+▶ Lecture	▶ Play
+⏸ Pause	⏸ Pause
+Commande précédente	Previous command
+Commande suivante	Next command
+Position dans le temps	Position in time
+Traces	Trails
+tout	all
+En boucle	Loop
+Suivre le code	Follow the code
+chevauchement > 1 pas	overlap > 1 step
+chevauchement &gt; 1 pas	overlap &gt; 1 step
+frôlement ≤ 1 pas	near miss ≤ 1 step
+Origine O en haut à droite · +X vers la gauche · +Y vers le bas · unité = pas de grille	Origin O at top right · +X to the left · +Y downwards · unit = grid step
+Durée du cycle	Cycle length
+Commandes	Commands
+Chevauchements	Overlaps
+Frôlements	Near misses
+Chorégraphie	Choreography
+Modifier	Edit
+Copier	Copy
+Simuler	Simulate
+Colle un fichier VehicleXX.py complet (la simulation démarre après <code>mvc.init_20sec_sync_process()</code>) ou seulement des lignes <code>mvc.…</code>. Les boucles <code>for _ in range(n):</code> sont dépliées, <code>while True:</code> est joué une fois.	Paste a complete VehicleXX.py file (the simulation starts after <code>mvc.init_20sec_sync_process()</code>) or just <code>mvc.…</code> lines. <code>for _ in range(n):</code> loops are unrolled, <code>while True:</code> is played once.
+Problèmes détectés	Problems found
+Réglages	Settings
+Emprise d'un véhicule (pas)	Vehicle footprint (steps)
+Position de départ = position après la mise en place initiale du programme. L'emprise de 10 pas correspond à l'écart entre deux véhicules voisins au départ.	Start position = position after the program's initial setup. The 10-step footprint matches the gap between two neighbouring vehicles at the start.
+position de départ	start position
+ligne	line
+chevauch.	overlap
+Code copié	Code copied
+Copie refusée par le navigateur : sélectionne le texte dans « Modifier »	Copy refused by the browser: select the text in “Edit”
+ligne {0} : {1}	line {0}: {1}
+move : {0} valeurs au lieu de {1}, ligne ignorée	move: {0} values instead of {1}, line ignored
+move_circ : {0} angles au lieu de {1}, ligne ignorée	move_circ: {0} angles instead of {1}, line ignored
+speed={0} hors 1..100 : le robot lèverait une erreur	speed={0} outside 1..100: the robot would raise an error
+ligne non simulée : {0}	line not simulated: {0}
+valeur non numérique : {0}	non-numeric value: {0}
+{0} · ligne {1}	{0} · line {1}

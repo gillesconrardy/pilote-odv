@@ -24,7 +24,7 @@ window.__picks = 0; navigator.bluetooth = { requestDevice: async (o) => { window
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
-        pg = await b.new_page(viewport={'width': 412, 'height': 900}, device_scale_factor=2)
+        pg = await b.new_page(locale='fr-FR', viewport={'width': 412, 'height': 900}, device_scale_factor=2)
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
         await pg.add_init_script(MOCK)
         await pg.goto('file://' + __import__('os').path.abspath('../index.html') + ''); await pg.wait_for_timeout(400)

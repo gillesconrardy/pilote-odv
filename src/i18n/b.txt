@@ -1,0 +1,125 @@
+Lecture	Play
+Urgence	Emergency
+Stop et retour	Stop & return
+Stop et retour au départ	Stop and return to start
+Arrêt d'urgence	Emergency stop
+Lecture/Pause	Play/Pause
+Suivant	Next
+Précédent	Previous
+Autres actions	More actions
+Connecter V4	Connect V4
+Connecte le véhicule 4	Connect vehicle 4
+Connexion au véhicule	Connecting to vehicle
+Connexion au véhicule 4…	Connecting to vehicle 4…
+Connexion au véhicule {0}…	Connecting to vehicle {0}…
+Calculés d'après la chorégraphie et l'horloge du véhicule 4 (plateau de 49 cm : 1 pas = 12,25 mm).	Computed from the choreography and vehicle 4's clock (49 cm board: 1 step = 12.25 mm).
+Stop et retour : les véhicules repassent sur leurs traces jusqu'au début de la chorégraphie en cours (ou vont jusqu'à sa fin si c'est plus court). Ces trajets sont déjà validés sans collision. Arrêt d'urgence : les moteurs se coupent tout de suite. Ensuite, replace les véhicules à la main, puis relance-les depuis l'onglet Envoi.	Stop & return: the vehicles retrace their path back to the start of the current choreography (or go to its end if that is shorter). These paths are already checked collision-free. Emergency stop: the motors stop at once. Then put the vehicles back by hand and restart them from the Vehicles tab.
+Prêt · position de départ	Ready · start position
+Prêt · position de départ · Spirale + Pulsation	Ready · start position · Spiral + Pulse
+En pause	Paused
+SPECTACLE	SHOW
+MANUEL	MANUAL
+POURSUITE	CHASE
+RETOUR AU DÉPART	BACK TO START
+ARRÊT DES PROGRAMMES	STOPPING PROGRAMS
+CONNEXION V4	V4 CONNECTION
+Arrêté	Stopped
+Retour au départ…	Returning to start…
+À la position de départ	At the start position
+{0} / {1}  ·  chorégraphie {2} sur {3}	{0} / {1}  ·  choreography {2} of {3}
+{0} / {1} · chorégraphie {2} sur {3}	{0} / {1} · choreography {2} of {3}
+chorégraphie	choreography
+chorégraphies	choreographies
+Positions des véhicules	Vehicle positions
+(en direct)	(live)
+Compteurs	Counters
+Remettre à zéro	Reset
+Compteurs remis à zéro	Counters reset
+Conduite manuelle · V4	Manual driving · V4
+Prendre la main	Take control
+Rendre la main	Hand back
+Rendre	Hand back
+Mets le spectacle en pause (ou fais Stop et retour), règle la vitesse puis touche « Prendre la main ». L’écran passe en mode Cockpit : le plateau, la distance mesurée par le capteur et le joystick. À gauche du joystick, le bouton télécommande connecte la télécommande LEGO ; à droite, « Rendre » ramène le véhicule 4 à sa place par le plus court chemin et rend l’écran normal. Capteur (port B, côté droit, au-dessus de la clôture) : garde ta main à moins de 10 cm pendant 1 s et, au hasard, le véhicule est poussé (il glisse dans une direction libre) ou il attaque (il fonce vers ta main, lumière rouge). Avec une montre, Lecture/Pause = Rendre la main. Les 3 autres véhicules restent immobiles et le véhicule 4 ne peut jamais les toucher.	Pause the show (or do Stop & return), set the speed, then tap “Take control”. The screen switches to Cockpit mode: the board, the distance measured by the sensor and the joystick. Left of the joystick, the remote button connects the LEGO remote; on the right, “Hand back” brings vehicle 4 back to its place by the shortest path and restores the normal screen. Sensor (port B, right side, above the fence): keep your hand closer than 10 cm for 1 s and, at random, the vehicle is pushed (it slides in a free direction) or it attacks (it rushes towards your hand, red light). With a watch, Play/Pause = Hand back. The other 3 vehicles stay still and vehicle 4 can never touch them.
+Pousse le joystick sous le plateau, ou utilise la télécommande, pour déplacer le véhicule <b>04</b>.	Push the joystick below the board, or use the remote, to move vehicle <b>04</b>.
+Pousse le joystick (sous le plateau) pour déplacer le véhicule <b>0{0}</b>.	Push the joystick (below the board) to move vehicle <b>0{0}</b>.
+Touche ou fais glisser ton doigt sur le plateau : le véhicule <b>0{0}</b> se dirige vers ton doigt.	Tap or slide your finger on the board: vehicle <b>0{0}</b> heads towards your finger.
+Véhicule 4 prêt : passe à la télécommande	Vehicle 4 ready: switch to the remote
+Le véhicule rentre à sa place par le plus court chemin…	The vehicle goes back to its place by the shortest path…
+Le véhicule repasse par son chemin jusqu'à sa place…	The vehicle retraces its path back to its place…
+Le véhicule est revenu à sa place. Tu peux relancer la Lecture ou reprendre la main.	The vehicle is back in its place. You can press Play again or take control again.
+Retour à sa place…	Going back to its place…
+Rends d'abord la main du véhicule 4	Hand back vehicle 4 first
+Mets d'abord le spectacle en pause ou fais Stop et retour	Pause the show first or do Stop & return
+Le véhicule 4 joue une autre sélection : mets d'abord les 4 véhicules à jour	Vehicle 4 is playing another selection: update the 4 vehicles first
+Connecte d'abord le véhicule 4	Connect vehicle 4 first
+Connecte d'abord le véhicule 4 (il donne la position de tous)	Connect vehicle 4 first (it gives everyone's position)
+Impossible de prendre la main sur le véhicule 4.	Unable to take control of vehicle 4.
+Véhicule 4 perdu. Il est resté où il était. Reconnecte-le (onglet Véhicules) puis rends la main.	Vehicle 4 lost. It stayed where it was. Reconnect it (Vehicles tab), then hand back.
+Liaison avec le véhicule 4 perdue, reconnexion… (il reste immobile en attendant)	Link with vehicle 4 lost, reconnecting… (it stays still meanwhile)
+Liaison avec le véhicule 4 perdue : reconnexion…	Link with vehicle 4 lost: reconnecting…
+Liaison avec le véhicule	Link with vehicle
+perdue, reconnexion… (il reste immobile en attendant)	lost, reconnecting… (it stays still meanwhile)
+reconnecté, tu peux continuer.	reconnected, you can carry on.
+Véhicule 4 reconnecté, tu peux continuer.	Vehicle 4 reconnected, you can carry on.
+Véhicule 4 reconnecté	Vehicle 4 reconnected
+Véhicule 4 déconnecté	Vehicle 4 disconnected
+Véhicule 4 déconnecté pendant le retour.	Vehicle 4 disconnected during the return.
+Le programme du véhicule 4 s'est arrêté (batterie faible ou redémarrage du hub ?). Va dans Véhicules et reconnecte-le.	Vehicle 4's program has stopped (low battery or hub restart?). Go to Vehicles and reconnect it.
+perdu. Il est resté où il était. Reconnecte-le puis rends la main.	lost. It stayed where it was. Reconnect it, then hand back.
+Commande ignorée : attends une seconde	Command ignored: wait a second
+Connecter la télécommande	Connect the remote
+Connecter la télécommande LEGO	Connect the LEGO remote
+🎮 Connecter la télécommande	🎮 Connect the remote
+🎮 Reconnecter la télécommande	🎮 Reconnect the remote
+Télécommande : non connectée	Remote: not connected
+Télécommande : connectée	Remote: connected
+Télécommande connectée	Remote connected
+Télécommande connectée (toucher pour reconnecter)	Remote connected (tap to reconnect)
+Télécommande introuvable ou déconnectée	Remote not found or disconnected
+Recherche… allume la télécommande (bouton vert)	Searching… switch on the remote (green button)
+Capteur de distance · V4	Distance sensor · V4
+DISTANCE · CAPTEUR V4	DISTANCE · V4 SENSOR
+Distance mesurée par le capteur du véhicule 4 (port B, sur son côté droit, au-dessus de la clôture) : approche ta main pour la voir changer. Mesure jusqu'à 40 cm environ ; au-delà, « rien devant ». Affichée tant que cet onglet est ouvert et que le véhicule 4 est connecté.	Distance measured by vehicle 4's sensor (port B, on its right side, above the fence): bring your hand closer to see it change. Measures up to about 40 cm; beyond that, “nothing in front”. Shown while this tab is open and vehicle 4 is connected.
+rien devant	nothing in front
+rien devant le capteur	nothing in front of the sensor
+Mesure…	Measuring…
+pas encore de mesure	no measurement yet
+Pas de capteur sur le port B du véhicule 4	No sensor on port B of vehicle 4
+Capteur de distance sur le port B, côté droit du véhicule, au-dessus de la clôture.	Distance sensor on port B, right side of the vehicle, above the fence.
+Capteur de distance introuvable sur le port B du véhicule 4 (ou programme à mettre à jour).	Distance sensor not found on port B of vehicle 4 (or the program needs updating).
+très près	very close
+près	close
+bonne distance pour « Suivre la main »	good distance for “Follow the hand”
+Mets ta main devant le capteur, à environ 15 cm.	Put your hand in front of the sensor, about 15 cm away.
+Capteur : main <b>à moins de 10 cm pendant 1 s</b> = il est poussé… ou il attaque !	Sensor: hand <b>closer than 10 cm for 1 s</b> = it gets pushed… or it attacks!
+Capteur actif (côté droit du véhicule) : main <b>à moins de 10 cm pendant 1 s</b> = au hasard, il est poussé (il glisse vers la gauche ou en biais) ou il attaque (il fonce vers ta main, LED rouge). Le joystick et la télécommande restent prioritaires.	Sensor active (right side of the vehicle): hand <b>closer than 10 cm for 1 s</b> = at random, it gets pushed (it slides left or diagonally) or it attacks (it rushes towards your hand, red LED). The joystick and remote keep priority.
+Garde ta main… <b>{0} s</b>	Keep your hand there… <b>{0} s</b>
+<b>Poussé !</b> Il s'éloigne de ta main…	<b>Pushed!</b> It moves away from your hand…
+<b style="color:#ff4d43">Attaque !</b> Il fonce vers ta main…	<b style="color:#ff4d43">Attack!</b> It rushes towards your hand…
+Attaque !	Attack!
+Poussé !	Pushed!
+Main tout près, mais <b>pas de place</b> pour s'éloigner (clôture ou véhicule)	Hand very close, but <b>no room</b> to move away (fence or vehicle)
+Main à <b>{0} cm</b> · {1}	Hand at <b>{0} cm</b> · {1}
+Main : <b>pas vue</b> (mets-la devant le capteur, à 15 cm)	Hand: <b>not seen</b> (put it in front of the sensor, 15 cm away)
+Main sortie du faisceau : <b>il la cherche vers le haut et le bas…</b>	Hand left the beam: <b>it searches up and down…</b>
+main vue	hand seen
+(main à {0} cm)	(hand at {0} cm)
+✋ Suivre la main	✋ Follow the hand
+👋 Pousser avec la main	👋 Push with your hand
+■ Arrêter de suivre la main	■ Stop following the hand
+■ Arrêter de pousser avec la main	■ Stop pushing with the hand
+✋ Main devant le capteur : pause	✋ Hand in front of the sensor: pause
+Le véhicule 4 rentre à sa place, le spectacle reprend	Vehicle 4 goes back to its place, the show resumes
+✋ Geste : lecture / pause	✋ Gesture: play / pause
+✋✋ Geste : chorégraphie suivante	✋✋ Gesture: next choreography
+✋ Main tenue : stop et retour	✋ Hand held: stop and return
+🗿 Statue : le spectacle se fige	🗿 Statue: the show freezes
+🗿 Le spectacle repart	🗿 The show restarts
+⬇ Approche ta main du capteur : le véhicule <b>04</b> part à la décharge.	⬇ Bring your hand to the sensor: vehicle <b>04</b> goes to unload.
+Décharge annulée.	Unload cancelled.
+⬇ En route vers la décharge…	⬇ On the way to the unload point…
+⬇ À la décharge : décharge les billes (3 s)…	⬇ At the unload point: unloading the marbles (3 s)…
+↩ Retour à son point de départ…	↩ Going back to where it started…
+Revenu. Touche le <b>04</b> sur le plateau pour repartir à la décharge.	Back. Tap <b>04</b> on the board to go to the unload point again.
+Place d'abord un point de décharge dans l'éditeur de plateau (Setup)	Place an unload point first in the board editor (Setup)
+Pas de chemin libre jusqu'à la décharge	No free path to the unload point

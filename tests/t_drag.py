@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path='/usr/bin/google-chrome', args=['--no-sandbox'])
-        pg = await b.new_page(viewport={'width': 412, 'height': 900}, device_scale_factor=2, has_touch=True)
+        pg = await b.new_page(locale='fr-FR', viewport={'width': 412, 'height': 900}, device_scale_factor=2, has_touch=True)
         errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         await pg.goto('file://' + os.path.abspath('../index.html')); await pg.wait_for_timeout(300)
         names = lambda: pg.eval_on_selector_all('#chList .ch .nm b', 'e => e.map(x => x.textContent)')

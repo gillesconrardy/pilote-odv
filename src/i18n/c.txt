@@ -1,0 +1,102 @@
+Montre · télécommande	Watch · remote
+⌚ Activer la montre	⌚ Enable the watch
+■ Désactiver la montre	■ Disable the watch
+Utilise les boutons Musique de ta montre pour piloter le spectacle.	Use your watch's Music buttons to control the show.
+Les commandes de musique de ta montre (Garmin ou autre) pilotent le spectacle : Lecture/Pause = lecture ou pause, Suivant = chorégraphie suivante, Précédent = stop et retour au départ. L'appli se présente au téléphone comme un lecteur de musique (son silencieux). Laisse F4 Square ouvert dans Chrome ; la montre affiche l'état du spectacle comme titre du morceau.	Your watch's music controls (Garmin or other) drive the show: Play/Pause = play or pause, Next = next choreography, Previous = stop and return to start. The app shows up on the phone as a music player (silent sound). Keep F4 Square open in Chrome; the watch shows the show's state as the track title.
+Montre active : <b>Lecture/Pause</b> = lecture ou pause · <b>Suivant</b> = chorégraphie suivante · <b>Précédent</b> = stop et retour. Laisse F4 Square ouvert.	Watch active: <b>Play/Pause</b> = play or pause · <b>Next</b> = next choreography · <b>Previous</b> = stop and return. Keep F4 Square open.
+Ce navigateur ne gère pas les commandes de musique.	This browser doesn't support music controls.
+Lecture du son impossible :	Unable to play sound:
+⌚ Montre : connecte d'abord le véhicule 4	⌚ Watch: connect vehicle 4 first
+⌚ Montre : calibre d'abord les 4 véhicules (onglet Setup)	⌚ Watch: calibrate the 4 vehicles first (Setup tab)
+⌚ Rendre la main	⌚ Hand back
+⌚ Lecture	⌚ Play
+⌚ Pause	⌚ Pause
+⌚ Chorégraphie suivante	⌚ Next choreography
+⌚ Stop et retour	⌚ Stop & return
+Spectacle	Show
+V4 non connecté	V4 not connected
+Les 4 véhicules	The 4 vehicles
+Tout reconnecter	Reconnect all
+Tout déconnecter	Disconnect all
+Tout reconnecter : ramène les véhicules au départ, puis leur renvoie la sélection de l'onglet Programme, sans calibrage. Tout déconnecter : le téléphone coupe la liaison, les programmes continuent sur les hubs.	Reconnect all: brings the vehicles back to the start, then sends them the Program tab selection again, without calibration. Disconnect all: the phone cuts the link, the programs keep running on the hubs.
+Véhicule 1	Vehicle 1
+Véhicule 2	Vehicle 2
+Véhicule 3	Vehicle 3
+Véhicule 4	Vehicle 4
+Véhicule	Vehicle
+véhicule	vehicle
+véhicules	vehicles
+Reconnecter	Reconnect
+Déconnecter	Disconnect
+Connecter	Connect
+○ Non connecté	○ Not connected
+○ non connecté	○ not connected
+● connecté	● connected
+● Connecté	● Connected
+○ Déconnecté (le programme continue sur le hub)	○ Disconnected (the program keeps running on the hub)
+◌ reconnexion…	◌ reconnecting…
+Pas encore envoyé	Not sent yet
+batterie inconnue	battery unknown
+chef d'orchestre	conductor
+suit le V4	follows V4
+Envoi	Upload
+Envoi…	Uploading…
+Envoi {0} %	Upload {0} %
+Préparation du programme…	Preparing the program…
+Arrêt du programme en cours…	Stopping the running program…
+Arrêt du véhicule 4…	Stopping vehicle 4…
+Arrêt des programmes des véhicules 1 à 3…	Stopping the programs of vehicles 1 to 3…
+Programmes arrêtés	Programs stopped
+Retour des véhicules…	Vehicles returning…
+Retour des véhicules au départ…	Vehicles returning to start…
+Mise à jour annulée.	Update cancelled.
+Envoi au véhicule {0} ({1} sur 4)…	Sending to vehicle {0} ({1} of 4)…
+✓ Les 4 véhicules ont la nouvelle sélection. Passe à Pilotage et appuie sur Lecture.	✓ The 4 vehicles have the new selection. Go to Control and press Play.
+Les véhicules ne sont pas revenus au départ.	The vehicles did not come back to the start.
+⚠ Autre sélection que l'onglet Programme	⚠ Different selection from the Program tab
+Choisis le hub du véhicule {0}…	Choose the hub for vehicle {0}…
+Choisis le hub du véhicule	Choose the hub for vehicle
+Touche le bouton : la fenêtre Bluetooth ne proposera que le hub	Tap the button: the Bluetooth window will only offer the hub
+. Touche-le pour continuer.	. Tap it to continue.
+Appuie à nouveau sur le bouton (Chrome demande un appui pour ouvrir la fenêtre Bluetooth)	Press the button again (Chrome needs a tap to open the Bluetooth window)
+Aucun hub choisi (le hub « {0} » est-il allumé ? sinon vérifie son nom dans « Noms des hubs »)	No hub chosen (is hub “{0}” switched on? otherwise check its name in “Hub names”)
+Noms des hubs (pour trouver le bon hub automatiquement)	Hub names (to find the right hub automatically)
+La fenêtre Bluetooth ne propose que le hub portant ce nom. Laisse vide pour voir tous les hubs.	The Bluetooth window only offers the hub with this name. Leave empty to see all hubs.
+Ce hub ({0}) est déjà utilisé pour le véhicule {1}.	This hub ({0}) is already used for vehicle {1}.
+Hub injoignable : si son programme tourne, appuie une fois sur le bouton du hub pour l'arrêter, puis réessaie	Hub unreachable: if its program is running, press the hub button once to stop it, then try again
+Impossible de joindre le véhicule {0} (« {1} »). Appuie une fois sur le bouton de son hub pour arrêter son programme, puis relance la mise à jour.	Unable to reach vehicle {0} (“{1}”). Press its hub button once to stop its program, then restart the update.
+Le véhicule ne répond pas : son programme est-il à jour (bouton « Mettre à jour les 4 véhicules ») ?	The vehicle doesn't answer: is its program up to date (“Update the 4 vehicles” button)?
+Échec de l'envoi au véhicule {0} (voir son message ci-dessous).	Upload to vehicle {0} failed (see its message below).
+Envoi impossible :	Upload impossible:
+Erreur de compilation :	Compilation error:
+Impossible de charger le compilateur Pybricks (connexion internet nécessaire) :	Unable to load the Pybricks compiler (internet connection needed):
+Programme trop gros pour ce hub ({0} octets, maximum {1}). Choisis moins de chorégraphies.	Program too big for this hub ({0} bytes, maximum {1}). Choose fewer choreographies.
+Firmware Pybricks trop ancien (format multi-mpy6 absent) : mets-le à jour avec Pybricks Code.	Pybricks firmware too old (no multi-mpy6 format): update it with Pybricks Code.
+Ce hub ne donne pas ses capacités : mets à jour le firmware Pybricks (v3.3 ou plus).	This hub doesn't report its capabilities: update the Pybricks firmware (v3.3 or later).
+Bluetooth web indisponible dans ce navigateur	Web Bluetooth not available in this browser
+Une liaison n'a pas pu être coupée	A link could not be closed
+Le téléphone garde encore la liaison avec {0}. Désactive puis réactive le Bluetooth du téléphone pour la couper.	The phone still keeps the link with {0}. Turn the phone's Bluetooth off and on again to cut it.
+Tous les véhicules sont déconnectés	All vehicles are disconnected
+✓ Les 4 véhicules sont déconnectés. Leurs programmes continuent de tourner.	✓ The 4 vehicles are disconnected. Their programs keep running.
+⚠ toujours connecté	⚠ still connected
+déconnecté	disconnected
+V{0} : connecté à « {1} »	V{0}: connected to “{1}”
+V{0} : connecté à « {1} » (max {2} octets)	V{0}: connected to “{1}” (max {2} bytes)
+V{0} : programme {1} octets	V{0}: program {1} bytes
+V{0} : reconnexion automatique à « {1} »	V{0}: automatic reconnection to “{1}”
+Liaison perdue, reconnexion…	Link lost, reconnecting…
+✓ En marche sur « {0} » · attend le véhicule 4	✓ Running on “{0}” · waiting for vehicle 4
+✓ En marche sur « {0} » · télécommande prête	✓ Running on “{0}” · remote ready
+✓ En marche sur « {0} » {1}	✓ Running on “{0}” {1}
+Connecté à	Connected to
+Copie le programme .py (pour Pybricks Code)	Copy the .py program (for Pybricks Code)
+copié	copied
+Copie refusée par le navigateur	Copy refused by the browser
+Relance le programme déjà présent sur le hub	Restart the program already on the hub
+↻ Relancer	↻ Restart
+Programme du véhicule	Vehicle program
+Recharger l'appli ? Le téléphone se déconnecte des véhicules (leurs programmes continuent).	Reload the app? The phone disconnects from the vehicles (their programs keep running).
+Je ne peux pas vérifier où sont les véhicules (véhicule 4 non connecté). Sont-ils bien à leur position de départ ?	I can't check where the vehicles are (vehicle 4 not connected). Are they really at their start position?
+Nouvelle version v{0} disponible	New version v{0} available
+publiée le {0}	published on {0}
+Le Bluetooth web n'est pas disponible dans ce navigateur. Ouvre cette page dans Chrome sur Android (ou Chrome / Edge sur PC), à une adresse en https, pour piloter les véhicules. Ici, tu peux quand même préparer le programme, voir les aperçus et créer des chorégraphies.	Web Bluetooth is not available in this browser. Open this page in Chrome on Android (or Chrome / Edge on PC), at an https address, to drive the vehicles. Here you can still prepare the program, watch previews and create choreographies.

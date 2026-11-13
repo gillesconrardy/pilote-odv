@@ -1,0 +1,125 @@
+Statistiques	Statistics
+PÉRIODE	PERIOD
+Session	Session
+7 jours	7 days
+Depuis le début	Since the start
+session en cours	current session
+Tous	All
+Par véhicule	Per vehicle
+Records	Records
+Record	Record
+Le plus voyageur	The greatest traveller
+Carte de chaleur	Heat map
+Carte de chaleur des zones les plus parcourues	Heat map of the most travelled areas
+rare	rare
+fréquent	frequent
+Rose des directions	Direction rose
+Longueur d'un pétale = distance parcourue dans cette direction (haut du plateau en haut).	Petal length = distance travelled in that direction (top of the board at the top).
+Directions du véhicule {0}	Directions of vehicle {0}
+Trajectoires	Paths
+Trajets des 4 véhicules	Paths of the 4 vehicles
+Les trajets de cette session s’afficheront ici	This session's paths will appear here
+Temps par chorégraphie	Time per choreography
+Aucune chorégraphie jouée sur cette période.	No choreography played in this period.
+Batterie dans le temps	Battery over time
+Niveau de batterie dans le temps	Battery level over time
+Les niveaux s’afficheront ici au fil des connexions (mesure envoyée par chaque hub).	Levels will appear here as connections happen (measurement sent by each hub).
+Effacer les statistiques	Delete statistics
+Effacer toutes les statistiques (session et historique) ?	Delete all statistics (session and history)?
+Statistiques effacées	Statistics deleted
+Pas encore de déplacement mesuré : connecte le véhicule 4 et lance un spectacle.	No movement measured yet: connect vehicle 4 and start a show.
+DISTANCE TOTALE	TOTAL DISTANCE
+DISTANCE	DISTANCE
+VITESSE DE POINTE	TOP SPEED
+VITESSE (SESSION)	SPEED (SESSION)
+SPECTACLES	SHOWS
+PLUS PRÈS	CLOSEST
+joués en entier	played in full
+temps de lecture	playing time
+mètres au joystick	metres with the joystick
+4 véhicules réunis	4 vehicles combined
+aucun chevauchement	no overlap
+meilleure survie	best survival
+pas	steps
+4ᵉ · véhicule {0}	4th · vehicle {0}
+Total	Total
+Jeu de poursuite	Chase game
+▶ Lancer la poursuite	▶ Start the chase
+■ Arrêter la poursuite	■ Stop the chase
+Difficulté	Difficulty
+Facile	Easy
+Moyen	Medium
+Difficile	Hard
+Survie	Survival
+Attrapé	Caught
+Méchant	Villain
+Gentil	Friend
+Fixe	Fixed
+Retiré	Removed
+Choisis au moins un méchant	Choose at least one villain
+📱 Billes : les 4 roulent quand tu penches	📱 Marbles: the 4 roll when you tilt
+■ Arrêter les billes	■ Stop the marbles
+Tu conduis le véhicule 4 (joystick ou télécommande). Choisis le rôle des véhicules 1, 2 et 3 : Méchant (LED rouge) te chasse ; Gentil (LED bleue) est ton garde du corps et barre la route au méchant le plus proche ; Fixe reste immobile sur le plateau, comme un obstacle ; Retiré est rangé dans un coin. Au départ, l'appli place les 4 véhicules au hasard. Personne ne percute personne : si un méchant vient se coller à toi, tu es attrapé.	You drive vehicle 4 (joystick or remote). Choose the role of vehicles 1, 2 and 3: Villain (red LED) chases you; Friend (blue LED) is your bodyguard and blocks the nearest villain; Fixed stays still on the board, like an obstacle; Removed is parked in a corner. At the start, the app places the 4 vehicles at random. Nobody hits anybody: if a villain comes right up to you, you're caught.
+Rangement des véhicules…	Tidying up the vehicles…
+🎲 Placement des véhicules…	🎲 Placing the vehicles…
+🎲 Placement des véhicules au hasard, un par un…	🎲 Placing the vehicles at random, one by one…
+Fin de partie : les 4 véhicules rentrent à leur place, un par un…	Game over: the 4 vehicles go back to their places, one by one…
+Les véhicules rentrent à leur place, un par un…	The vehicles go back to their places, one by one…
+Partie terminée : attrapé {0} fois. Record : {1}.	Game over: caught {0} times. Record: {1}.
+Attrapé ! Tu as tenu	Caught! You lasted
+Attrapé ! Nouveau record :	Caught! New record:
+Nouveau record :	New record:
+Fuis avec le joystick (sous le plateau) ou la télécommande.	Run away with the joystick (below the board) or the remote.
+Un chasseur ne trouve pas de passage : écarte un peu le véhicule 4 avec le joystick ou la télécommande.	A chaser can't find a way through: move vehicle 4 a little with the joystick or the remote.
+Le départ n'a pas marché. Arrête la partie puis réessaie.	The start didn't work. Stop the game, then try again.
+Le placement s'est interrompu. Arrête la partie puis réessaie.	The placement was interrupted. Stop the game, then try again.
+Je ne trouve pas de placement possible : essaie d'autres rôles.	I can't find a possible placement: try other roles.
+Je ne trouve pas de chemin pour ranger les véhicules. Range-les à la main, puis recalibre-les dans Setup.	I can't find a path to tidy up the vehicles. Put them away by hand, then recalibrate them in Setup.
+Je ne trouve pas de chemin pour ranger les véhicules. Range-les à la main, puis recalibre-les dans Mise en place.	I can't find a path to tidy up the vehicles. Put them away by hand, then recalibrate them in Setup.
+Le rangement s'est interrompu (véhicule	The tidying was interrupted (vehicle
+Le véhicule 4 ne connaît pas encore les billes : fais « Mettre à jour les 4 véhicules ».	Vehicle 4 doesn't know the marbles yet: do “Update the 4 vehicles”.
+Le véhicule 4 ne connaît pas encore cette version du jeu : fais « Mettre à jour les 4 véhicules ».	Vehicle 4 doesn't know this version of the game yet: do “Update the 4 vehicles”.
+Les 4 billes sont rangées à leur place.	The 4 marbles are back in their places.
+Les billes s'arrêtent, puis les véhicules rentrent à leur place un par un…	The marbles stop, then the vehicles go back to their places one by one…
+Accès aux capteurs refusé : tu pourras faire rouler les billes avec le joystick.	Sensor access refused: you can roll the marbles with the joystick.
+Ce téléphone ne donne pas l'inclinaison : fais rouler les billes avec le joystick.	This phone doesn't report the tilt: roll the marbles with the joystick.
+Tiens le téléphone à plat (ou comme tu veux : cette position compte comme « à plat »), puis <b>penche-le</b> : les 4 véhicules roulent comme des billes. Le joystick marche aussi.	Hold the phone flat (or however you like: this position counts as “flat”), then <b>tilt it</b>: the 4 vehicles roll like marbles. The joystick works too.
+Arrêté	Stopped
+Refaire	Redo
+Spectacle	Show
+Ce navigateur ne gère pas	This browser doesn't support
+Attention :	Warning:
+contient un chevauchement entre véhicules (vérifie-le dans le simulateur).	contains an overlap between vehicles (check it in the simulator).
+Aperçu impossible :	Preview impossible:
+Programme	Program
+publiée le	published on
+Étape	Step
+étape	step
+étapes	steps
+et	and
+se chevauchent à cette étape	overlap at this step
+Décaler V{0} de {1} pas {2} (le trajet sera à corriger ensuite)	Shift V{0} {1} steps {2} (the path will need fixing afterwards)
+Décaler V{0} de {1} pas {2}	Shift V{0} {1} steps {2}
+programme	program
+octets	bytes
+connecté à	connected to
+reconnexion automatique à	automatic reconnection to
+max	max
+Arrêter	Stop
+en arrière	backwards
+jusqu'à la fin	to the end
+Retour au départ ajouté ({0} étape)	Return to start added ({0} step)
+Retour au départ ajouté ({0} étapes)	Return to start added ({0} steps)
+C'est parti !	Let's go!
+méchant	villain
+méchants	villains
+gentil	friend
+gentils	friends
+(rouge)	(red)
+(bleu)	(blue)
+Le {0} sera disponible dès qu'il touchera la clôture du haut.	{0} will be available as soon as it touches the top fence.
+Tu peux lancer le {0} : il démarrera dès que le {1} aura quitté la colonne.	You can start {0}: it will begin as soon as {1} has left the column.
+à calibrer	calibrate
+en attente	waiting
+en place	in place
+calibrage…	calibrating…

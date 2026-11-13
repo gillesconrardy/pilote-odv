@@ -105,11 +105,16 @@ select,input[type=number]{background:var(--board);border-color:#4a443d}
 .stat .v{font-weight:400}
 .toast{background:#24262a;color:var(--ink);border:1px solid #4a443d;border-bottom:3px solid var(--accent)}
 canvas{border-radius:6px}
+/* choix de la langue (v1.95), comme dans l'appli */
+header h1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lang{margin-left:auto;display:flex;border:1px solid #3a3631;border-radius:5px;overflow:hidden}
+.lang button{background:none;border:0;color:#8a857c;font:700 11px 'Space Mono',monospace;padding:4px 7px;cursor:pointer;min-width:0}
+.lang button.on{background:var(--accent);color:#121314}
 </style>
 </head>
 <body>
 <header>
-  <h1><span style="font-family:'Russo One',var(--sans);letter-spacing:.05em">F4 <span style="color:var(--accent)">SQUARE</span></span> · Simulateur <small style="font:400 11px var(--mono);letter-spacing:0;text-transform:none;color:var(--accent)">v/*VERSION*/ · /*BUILT*/</small></h1>
+  <h1><span style="font-family:'Russo One',var(--sans);letter-spacing:.05em">F4 <span style="color:var(--accent)">SQUARE</span></span> · Simulateur <small style="font:400 11px var(--mono);letter-spacing:0;text-transform:none;color:var(--accent)">v/*VERSION*/ · /*BUILT*/</small><span class="lang" id="langSw" data-noi18n><button type="button" data-l="fr">FR</button><button type="button" data-l="en">EN</button></span></h1>
   <div class="sub">Rejoue exactement <code>mvc.move</code>, <code>mvc.move_circ</code> et <code>mvc.wait_sync_ms</code> (pas de 4 ms, 80°/pas, 1400°/s) et repère les chevauchements entre véhicules.</div>
 </header>
 <main>
@@ -132,7 +137,7 @@ canvas{border-radius:6px}
       <label class="chk"><input type="checkbox" id="loop" checked> En boucle</label>
       <label class="chk"><input type="checkbox" id="follow" checked> Suivre le code</label>
     </div>
-    <div class="now" id="now"><b>—</b></div>
+    <div class="now" id="now" data-noi18n><b>—</b></div>
     <div class="pos" id="pos"></div>
     <div class="legend">
       <span><span class="dot" style="background:var(--red)"></span>chevauchement &gt; 1 pas</span>
@@ -155,7 +160,7 @@ canvas{border-radius:6px}
       <button id="edit">Modifier</button>
       <button id="copy">Copier</button>
     </div>
-    <div id="codeWrap" style="margin-top:8px"><div class="code" id="code"></div></div>
+    <div id="codeWrap" style="margin-top:8px" data-noi18n><div class="code" id="code"></div></div>
     <div id="editWrap" style="margin-top:8px;display:none">
       <textarea id="ta" spellcheck="false"></textarea>
       <div class="row" style="margin-top:6px"><button class="primary" id="run">Simuler</button><button id="cancel">Annuler</button><span class="sp"></span></div>
@@ -177,11 +182,13 @@ canvas{border-radius:6px}
 </main>
 <div class="toast" id="toast"></div>
 
+<script>/*I18NJS*/</script>
 <script>
 /*CORE*/
 </script>
 <script>
 const PRESETS = /*PRESETS*/;
+document.querySelectorAll('#langSw button').forEach(b => { b.classList.toggle('on', b.dataset.l === LANG); b.onclick = () => { if (b.dataset.l !== LANG) setLang(b.dataset.l); }; });
 const N = 4;
 const $ = id => document.getElementById(id);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -418,7 +425,7 @@ function draw() {
     const el = lineEls.get(ln);
     if (el) { el.classList.add('cur'); if ($('follow').checked) scrollToLine(ln); }
     const txt = ln ? (state.src.replace(/\r/g, '').split('\n')[ln - 1] || '').trim() : 'position de départ';
-    $('now').innerHTML = `<b>${ln ? 'ligne ' + ln + ' · ' : ''}</b>${escapeHtml(txt)}`;
+    $('now').innerHTML = `<b>${ln ? tr('ligne') + ' ' + ln + ' · ' : ''}</b>${escapeHtml(ln ? txt : tr(txt))}`;
   }
 }
 
