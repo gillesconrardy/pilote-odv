@@ -294,7 +294,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
   de Bruxelles, affichées en haut à droite de l'appli et dans le simulateur) ; l'appli relit `version.json` sans cache
   (démarrage, toutes les 2 min, retour dans l'appli) et affiche un bandeau « Nouvelle version disponible » qui recharge avec `?v=N`, puis commit de
   `index.html`, `simulateur/index.html`, `version.json` sur `main` ; en ligne en 1–2 min.
-- Écran de démarrage (`#splash`, classe `spm`, ≈ 4,9 s, touche pour passer, désactivé si « réduire les animations ») — depuis v1.96 variante « 4 · Matrice » choisie par Gilles : grande matrice 3×3 (`.mxs`, comme celle du V4), comète rouge qui fait 2 tours (`.rg`, `--r`), centre orange qui clignote (`.ct`), puis un « 4 » orange s'allume (`.f`, `--f`) et le nom « F4 SQUARE » en gros (`.nms`, Russo One, min(54px, 10vw)) apparaît ; à la fin les blocs du 4 s'éteignent un par un en rafale (`--o`, 0,1 s d'écart) et le texte disparaît en simple fondu. L'ancien CSS (véhicules, éclatement, flash) reste en place mais n'est plus utilisé.
+- Écran de démarrage (`#splash`, 5 s, touche pour passer, désactivé si « réduire les animations ») : point orange, (v1.96 a essayé une version « 4 · Matrice » ; Gilles a demandé de remettre celle-ci en v1.97)
 - Dessin des véhicules PARTOUT (plateaux canvas `vehDraw` dans la page, `drawVehicle` du simulateur, écran de
   démarrage, étiquettes HTML classe `.vbk` avec `--c` = couleur du véhicule) : bloc sombre #1f2124 hachuré en
   diagonale à la couleur du véhicule, coins « crochets » de sa couleur, ligne orange en bas, numéro en police
