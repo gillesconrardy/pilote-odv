@@ -307,7 +307,31 @@ pre.code{background:var(--panel);font-family:var(--mono)}
 .vbk i{display:none}
 .pt.vbk{font-size:22px}.pt.vbk.gold{box-shadow:0 0 0 2px var(--accent),0 0 22px rgba(255,154,60,.35)}
 .tag.vbk{font-size:17px}
-/* ===== écran de démarrage (5 s, touche pour passer) ===== */
+/* ===== écran de démarrage v1.96 (choix « 4 · Matrice » de Gilles) : la matrice 3×3 du V4 en grand, une comète rouge fait le
+   tour (point orange qui clignote au centre), le « 4 » s'allume en orange, le nom (gros) apparaît ; à la fin les cases du 4
+   s'éteignent en rafale et le texte disparaît en fondu ===== */
+#spStage.spm{width:300px;height:520px}
+#spStage.spm *{position:static}
+#spStage.spm .mxs{position:absolute;left:50%;top:95px;margin-left:-93px;display:grid;grid-template-columns:repeat(3,52px);gap:9px;padding:14px;background:#0d0e0f;border-radius:12px;
+  animation:smIn .4s ease-out both,smOut .5s 4.35s ease-in forwards}
+@keyframes smIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+@keyframes smOut{to{opacity:0}}
+#spStage.spm .m{position:relative;width:52px;height:52px;border-radius:7px;background:#1c1d1f}
+#spStage.spm .m::before,#spStage.spm .m::after{content:"";position:absolute;inset:0;border-radius:7px;opacity:0}
+/* comète : 2 tours, tête rouge + traînée */
+#spStage.spm .rg::before{background:#e8453c;animation:smCm .88s var(--r) linear 2}
+@keyframes smCm{0%{opacity:1}12%{opacity:.35}25%,100%{opacity:0}}
+#spStage.spm .ct::before{background:#ff9a3c;animation:smCt .44s .5s ease-in-out 4}
+@keyframes smCt{0%,100%{opacity:0}50%{opacity:1}}
+/* le 4 : s'allume (2,3 s) puis s'éteint en rafale (3,7 s) */
+#spStage.spm .f::after{background:#ff9a3c;box-shadow:0 0 18px rgba(255,154,60,.45);animation:smF4 .3s calc(2.3s + var(--f)) cubic-bezier(.3,1.4,.5,1) forwards,smF4o .25s calc(3.7s + var(--o)) ease-in forwards}
+@keyframes smF4{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:none}}
+@keyframes smF4o{from{opacity:1;transform:none}to{opacity:0;transform:scale(.4)}}
+#spStage.spm .nms{position:absolute;left:-80px;right:-80px;top:330px;text-align:center;font:400 min(54px,10vw)/1 "Russo One","Space Grotesk",sans-serif;letter-spacing:.04em;color:#edeae4;white-space:nowrap;
+  opacity:0;animation:smNm .6s 2.5s ease-out forwards,smOut .6s 4.2s ease-in forwards}
+#spStage.spm .nms span{color:#ff9a3c}
+@keyframes smNm{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+/* ===== ancien écran de démarrage (jusqu'à v1.95, plus utilisé) ===== */
 #splash{position:fixed;inset:0;z-index:100;background:#121314;display:grid;place-items:center;transition:opacity .35s}
 #splash.out{opacity:0;pointer-events:none}
 #spStage{position:relative;width:300px;height:520px;flex:none}
@@ -537,12 +561,10 @@ body.focus #dsBar .dsh b{font-size:17px}
 </style>
 </head>
 <body>
-<div id="splash" role="img" aria-label="F4 Square"><div id="spStage">
-  <div class="scene"><div class="ex e0"><div class="grid"></div><div class="dot"></div><div class="c1"></div><div class="c2"></div><div class="sq"></div></div>
-    <div class="ex e1 g2"><div class="v v1">01</div></div><div class="ex e1 g1"><div class="v v1">01</div></div><div class="ex e1"><div class="v v1">01</div></div><div class="ex e2 g2"><div class="v v2">02</div></div><div class="ex e2 g1"><div class="v v2">02</div></div><div class="ex e2"><div class="v v2">02</div></div><div class="ex e3 g2"><div class="v v3">03</div></div><div class="ex e3 g1"><div class="v v3">03</div></div><div class="ex e3"><div class="v v3">03</div></div><div class="ex e4 g2"><div class="v v4">04</div></div><div class="ex e4 g1"><div class="v v4">04</div></div><div class="ex e4"><div class="v v4">04</div></div></div>
-  <div class="name"><div class="t">F4 <span>SQUARE</span></div><div class="ln"></div><div class="sub">4 · 4 · SYNC</div></div>
-  <div class="bar"><i></i></div>
-</div><div class="spfl"></div></div>
+<div id="splash" role="img" aria-label="F4 Square"><div id="spStage" class="spm">
+  <div class="mxs"><i class="m rg f" style="--r:0.50s;--f:0.00s;--o:0.00s"></i><i class="m rg" style="--r:0.61s"></i><i class="m rg f" style="--r:0.72s;--f:0.07s;--o:0.10s"></i><i class="m rg f" style="--r:1.27s;--f:0.14s;--o:0.20s"></i><i class="m ct f" style="--f:0.21s;--o:0.30s"></i><i class="m rg f" style="--r:0.83s;--f:0.28s;--o:0.40s"></i><i class="m rg" style="--r:1.16s"></i><i class="m rg" style="--r:1.05s"></i><i class="m rg f" style="--r:0.94s;--f:0.35s;--o:0.50s"></i></div>
+  <div class="nms">F4 <span>SQUARE</span></div>
+</div></div>
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
@@ -3209,7 +3231,7 @@ function tabsArrive() {
   const end = () => { if (done) return; done = true; sp.classList.add('out'); setTimeout(() => sp.remove(), 400);
     tabsArrive(); const cur = document.querySelector('section.on'); if (cur) showTab(cur.id); };
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { end(); return; }
-  sp.onclick = end; setTimeout(end, 5000);
+  sp.onclick = end; setTimeout(end, 4900);
 })();
 loadItems(); refresh(); showManSpeed(); gameUI(); suRender();
 { let t = 'setup'; try { t = localStorage.getItem('odv.tab') || 'setup'; } catch (e) {} showTab($(t) && document.querySelector(`nav button[data-tab="${t}"]`) ? t : 'setup'); }
