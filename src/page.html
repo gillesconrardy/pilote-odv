@@ -2066,16 +2066,27 @@ function dumpGo() {
   M.hub.stdin('Y2').catch(() => {});   // gyrophare pendant le trajet aller
   manMsg('⬇ En route vers la décharge…'); manUI();
 }
+const DUMP_NUDGE = 1 / 1.225;   // 1 cm en pas : petit pas à droite (vu de face, = −X) pour vider les billes (v2.01)
 function dumpTick(now) {
-  // renvoie la cible du moment pendant le trajet automatique
+  // renvoie la cible du moment pendant le trajet automatique :
+  // aller → 1 cm à droite → pause 3 s (décharge) → 1 cm à gauche (place d'arrivée) → retour
   const A = M.auto;
   if (A.phase === 'wait') {
     if (now < A.t) return null;
-    A.phase = 'back'; A.pts = A.back; M.hub.stdin('Y0').catch(() => {}); manMsg('↩ Retour à son point de départ…');
+    M.hub.stdin('Y0').catch(() => {});
+    if (A.home) { A.phase = 'out'; A.pts = [A.home]; }
+    else { A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…'); }
   }
   while (A.pts.length && Math.hypot(A.pts[0][0] - M.cmd[0], A.pts[0][1] - M.cmd[1]) < 0.02) { M.cmd = A.pts[0].slice(); A.pts.shift(); }
   if (A.pts.length) return A.pts[0];
-  if (A.phase === 'go') { A.phase = 'wait'; A.t = now + 3000; M.hub.stdin('Y1').catch(() => {}); manMsg('⬇ À la décharge : décharge les billes (3 s)…'); return null; }
+  if (A.phase === 'go') {
+    // arrivé à la décharge : 1 cm vers la droite du plateau, sauf contre la clôture du coin (bloc 0,0)
+    const q = [M.cmd[0] - DUMP_NUDGE, M.cmd[1]], fence = Math.round(M.cmd[0] / 10) === 0 && Math.round(M.cmd[1] / 10) === 0;
+    A.home = !fence && bdFits(q, 1) && M.others.every(o => Math.max(Math.abs(q[0] - o[0]), Math.abs(q[1] - o[1])) >= 10) ? M.cmd.slice() : null;
+    if (A.home) { A.phase = 'in'; A.pts = [q]; return q; }
+  }
+  if (A.phase === 'go' || A.phase === 'in') { A.phase = 'wait'; A.t = now + 3000; M.hub.stdin('Y1').catch(() => {}); manMsg('⬇ À la décharge : décharge les billes (3 s)…'); return null; }
+  if (A.phase === 'out') { A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…'); return A.pts.length ? A.pts[0] : null; }
   M.auto = null; manMsg('Revenu. Touche le <b>04</b> sur le plateau pour repartir à la décharge.'); handStart(2, true); manUI();
   return null;
 }
