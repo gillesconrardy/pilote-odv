@@ -504,7 +504,7 @@ input[type=checkbox],input[type=range]{accent-color:var(--accent)}
 .fb:disabled{opacity:.4}
 #fMsg{text-align:center;margin-top:6px}#fMsg:empty{display:none}
 body.focus nav.tabbar,body.focus header,body.focus #tele .state,body.focus #tele .prog,body.focus #stTime,body.focus #tele .remote,body.focus #tele>:not(:first-child){display:none!important}
-body.focus #dsBar{position:absolute;left:8px;right:8px;bottom:8px;margin:0;background:rgba(18,19,20,.88);padding:5px 8px 3px}
+body.focus #dsBar{position:static;margin:6px 0 0;padding:5px 8px 3px}   /* v1.94 : juste sous le plateau (avant : posée sur le bas du plateau) */
 body.focus #dsBar .dsh b{font-size:17px}
 /* carte « Piloter seulement le V4 » façon arcade (v1.82, design C choisi par Gilles) */
 #soloCard{text-align:center;padding-top:18px;padding-bottom:16px}
@@ -540,7 +540,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.93</b><br>publiée le 13/11/2026 09:39</div>
+    <div class="ver" title="Version de l'application"><b>v1.94</b><br>publiée le 13/11/2026 10:11</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -1298,7 +1298,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.93';
+const MY_VER = '1.94';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {

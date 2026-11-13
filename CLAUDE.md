@@ -223,7 +223,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    « Rendre la main » : retour du V4 par le plus court chemin qui contourne les 3 autres (A* + lissage).
    **Mode focus de conduite** (v1.79, design « B · Cockpit » choisi par Gilles) : dès que le V4 est en conduite manuelle au joystick,
    `body.focus` (posé par `manUI`) cache la barre d'onglets, l'en-tête, l'état/boutons du spectacle et tout sauf la 1ʳᵉ carte de Pilotage ;
-   la jauge `#dsBar` se pose en transparence sur le bas du plateau (`.cvw`) ; `#joyBox` devient une console (bande orange) :
+   la jauge `#dsBar` est juste sous le plateau (v1.94 ; avant : en transparence sur le bas du plateau) ; `#joyBox` devient une console (bande orange) :
    bouton rond `#fRc` à gauche (icône SVG de télécommande LEGO, cyan si connectée, « respire » pendant la recherche → `rcGo`),
    joystick, bouton rond orange `#fBack` « Rendre » à droite (→ `manGo`) ; depuis v1.85 (design « B · Briques » de Gilles) les deux `.fb` sont des blocs graphite 70×190 (hauteur du joystick) avec bande en bas (cyan téléco, orange Rendre), icônes seules. `#fMsg` reprend `manMsg`. Le bouton « Connecter la
    télécommande » et son état sous Conduite manuelle sont masqués (`hidden`). Tests : `t_joy.py`/`t_push.py` cliquent `#fBack`.
