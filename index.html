@@ -540,7 +540,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 <div class="wrap">
   <header>
     <div><h1 class="brand">F4 <span>Square</span></h1></div>
-    <div class="ver" title="Version de l'application"><b>v1.92</b><br>publiée le 12/11/2026 22:54</div>
+    <div class="ver" title="Version de l'application"><b>v1.93</b><br>publiée le 13/11/2026 09:39</div>
   </header>
   <div class="banner" id="nobt"></div>
 
@@ -1298,7 +1298,7 @@ document.addEventListener('click', e => {
 }, true);
 addEventListener('scroll', closeTip, { passive: true });
 // nouvelle version publiée ? (version.json relu sans cache au démarrage, toutes les 2 min et au retour dans l'appli)
-const MY_VER = '1.92';
+const MY_VER = '1.93';
 async function checkVersion() {
   if (!/^https?:/.test(location.protocol)) return;
   try {
@@ -2719,6 +2719,18 @@ function edValidate() {
       issues[k] = { lvl: c.pen > 1 ? 'bad' : 'warn', msg: `en allant à cette étape, V${c.i} et V${c.j} ${c.pen > 1 ? 'se percutent' : 'se frôlent'} (${c.pen.toFixed(1)} pas)` };
     }
   }
+  // plateau validé (v1.93) : chaque véhicule doit rester sur les blocs, à l'étape et pendant le trajet en ligne droite
+  ED.steps.forEach((s, k) => {
+    if (issues[k] && issues[k].lvl === 'bad') return;
+    const pv = ED.steps[k - 1];
+    for (let i = 0; i < 4; i++) {
+      if (!bdFits(s.pos[i], 0.01)) { issues[k] = { lvl: 'bad', msg: `V${i + 1} est HORS ZONE (pas sur un bloc du plateau)` }; return; }
+      if (pv) for (let f = 0.05; f < 1; f += 0.05) {
+        const q = [pv.pos[i][0] + (s.pos[i][0] - pv.pos[i][0]) * f, pv.pos[i][1] + (s.pos[i][1] - pv.pos[i][1]) * f];
+        if (!bdFits(q, 0.01)) { issues[k] = { lvl: 'bad', msg: `en allant à cette étape, V${i + 1} passe HORS ZONE (au-dessus d'une case vide)` }; return; }
+      }
+    }
+  });
   const last = ED.steps[ED.steps.length - 1].pos, H = ODVGEN.HOME;
   const atHome = last.every((p, i) => Math.abs(p[0] - H[i][0]) < 0.01 && Math.abs(p[1] - H[i][1]) < 0.01);
   ED.issues = issues;
@@ -2837,18 +2849,35 @@ $('edHome').onclick = () => {
 // ====================================================================== atelier : inventer avec l'IA (API Anthropic, clé gardée dans ce navigateur)
 const AI = { model: 'claude-sonnet-5-5', busy: false };
 const AI_WAITS = [0, 250, 500, 1000, 1500, 2000, 3000, 5000];
-const AI_SYS = `Tu crées des chorégraphies pour 4 véhicules LEGO omnidirectionnels sur un plateau carré.
+function aiBoardTxt() {
+  // le plateau validé (Setup) décrit pour l'IA : carte en texte + liste des blocs + décharge
+  const xs = BD.cells.map(c => +c.split(',')[0]), ys = BD.cells.map(c => +c.split(',')[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), rows = [];
+  for (let y = y0; y <= y1; y++) { let r = ''; for (let x = x1; x >= x0; x--) r += BD.d && BD.d[0] === x && BD.d[1] === y ? 'D' : bdHas(x, y) ? '#' : '.'; rows.push(r); }
+  const sq = BD.cells.length === 16 && x0 === 0 && y0 === 0 && x1 === 3 && y1 === 3;
+  return `PLATEAU (dessiné par l'utilisateur) : des blocs de 10×10 pas. Bloc (bx, by) = un véhicule placé en (10·bx, 10·by) tient exactement dessus.
+Carte (une ligne par by de ${y0} à ${y1} ; colonnes de bx = ${x1} à GAUCHE jusqu'à bx = ${x0} à DROITE ; # = bloc, D = bloc de décharge, . = vide) :
+${rows.join('\n')}
+Blocs (bx,by) : ${BD.cells.map(c => '(' + c + ')').join(' ')}
+Un véhicule en (x, y) couvre les blocs floor(x/10) et ceil(x/10) en X, floor(y/10) et ceil(y/10) en Y : TOUS doivent exister, à chaque étape ET pendant les trajets (lignes droites). Les coordonnées peuvent sortir de 0..30 si le plateau le permet ; jamais sur une case vide.`
+    + (sq ? `\nC'est le carré 4×4 classique : 0 ≤ x ≤ 30 et 0 ≤ y ≤ 30, il ne laisse que 30 pas de jeu.` : '')
+    + (BD.d ? `\nDÉCHARGE : bloc (${BD.d[0]},${BD.d[1]}) → position (${10 * BD.d[0]},${10 * BD.d[1]}). C'est là qu'un véhicule vide ses billes : si la demande parle de décharge, livrer, vider, apporter ou transporter, envoie-y les véhicules UN PAR UN (un seul sur la décharge à la fois), avec une pause (wait 3000) sur la décharge, puis fais-les repartir.` : '\nPas de point de décharge défini.');
+}
+function aiSys() {
+  return `Tu crées des chorégraphies pour 4 véhicules LEGO omnidirectionnels.
 Repère : origine en haut à droite, X augmente vers la GAUCHE, Y augmente vers le BAS. Unité : le pas (1 pas = 12,25 mm).
-Chaque véhicule est un carré de 10 pas ; sa position (x, y) est son coin, avec 0 ≤ x ≤ 30 et 0 ≤ y ≤ 30.
+Chaque véhicule est un carré de 10 pas ; sa position (x, y) est son coin.
+${aiBoardTxt()}
 Départ et arrivée obligatoires : V1 (30,0), V2 (20,0), V3 (10,0), V4 (0,0) (alignés en haut, V1 à gauche, V4 à droite).
 Une étape = la nouvelle position des 4 véhicules. Entre deux étapes, les 4 véhicules partent ensemble, vont en LIGNE DROITE et arrivent ensemble.
 RÈGLE ABSOLUE : à tout instant (aux étapes ET pendant les trajets), pour chaque paire de véhicules, max(|xa−xb|, |ya−yb|) ≥ 10. 10 = côte à côte, autorisé ; moins = collision.
-Conseils : le plateau ne laisse que 30 pas de jeu, donc les véhicules doivent se déplacer de façon coordonnée (rotation des 4 coins d'un carré, glissements en file, échanges en plusieurs étapes). Pour échanger deux véhicules, passe par des étapes intermédiaires. Les positions utiles sont souvent des multiples de 5 ou de 10. Évite qu'un véhicule en traverse un autre.
+Conseils : les véhicules doivent se déplacer de façon coordonnée (rotation, glissements en file, échanges en plusieurs étapes). Pour échanger deux véhicules ou passer dans un couloir d'un bloc de large, passe par des étapes intermédiaires (un couloir ne laisse passer qu'un véhicule à la fois, en file). Les positions utiles sont souvent des multiples de 5 ou de 10. Évite qu'un véhicule en traverse un autre.
 speed = vitesse en % (10 à 100, multiple de 5 ; 100 % ≈ 17 pas/s). wait = pause après l'étape en ms parmi 0, 250, 500, 1000, 1500, 2000, 3000, 5000.
 Vise 8 à 30 étapes. La dernière étape doit être exactement la position de départ.
 Réponds UNIQUEMENT par un objet JSON, sans texte autour :
 {"name":"nom court en français","steps":[{"pos":[[x1,y1],[x2,y2],[x3,y3],[x4,y4]],"speed":60,"wait":0}, ...]}
 (ne répète pas la position de départ en première étape).`;
+}
 try { $('aiKey').value = localStorage.getItem('odv.aikey') || ''; } catch (e) {}
 if (!$('aiKey').value) $('aiCfg').open = true;
 const aiKeyLabel = () => { const k = !!$('aiKey').value.trim(); $('aiKeySum').textContent = k ? '🔑 Clé API enregistrée ✓' : '🔑 Ajouter ta clé API'; $('aiForget').style.display = k ? 'inline-block' : 'none'; };
@@ -2860,7 +2889,7 @@ async function aiCall(messages) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': $('aiKey').value.trim(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: AI.model, max_tokens: 8000, system: AI_SYS, messages })
+    body: JSON.stringify({ model: AI.model, max_tokens: 8000, system: aiSys(), messages })
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
@@ -2874,9 +2903,9 @@ function aiParse(txt) {
   if (a < 0 || b < a) throw new Error('réponse illisible');
   const o = JSON.parse(txt.slice(a, b + 1));
   if (!Array.isArray(o.steps) || !o.steps.length) throw new Error('aucune étape reçue');
-  const cl = v => Math.min(30, Math.max(0, Math.round((+v || 0) * 4) / 4));
+  const bb = bdBox(), cl = (v, a, z) => Math.min(z, Math.max(a, Math.round((+v || 0) * 4) / 4));
   const steps = o.steps.slice(0, 60).map(s => ({
-    pos: [0, 1, 2, 3].map(i => { const p = (s.pos || [])[i] || [0, 0]; return [cl(p[0]), cl(p[1])]; }),
+    pos: [0, 1, 2, 3].map(i => { const p = (s.pos || [])[i] || [0, 0]; return [cl(p[0], bb.x0, bb.x1), cl(p[1], bb.y0, bb.y1)]; }),
     speed: Math.min(100, Math.max(10, Math.round((+s.speed || 100) / 5) * 5)),
     wait: AI_WAITS.reduce((b, w) => Math.abs(w - (+s.wait || 0)) < Math.abs(b - (+s.wait || 0)) ? w : b, 0)
   }));
@@ -2911,7 +2940,7 @@ $('aiGo').onclick = async () => {
       if (!pb.length) break;
       if (!v.nBad && !Object.keys(ED.issues).length) { $('edHome').onclick(); v = edValidate(); if (v.atHome && !v.nBad) break; }
       if (tour === 4) break;
-      msgs.push({ role: 'user', content: 'Le contrôle de collision a trouvé ces problèmes :\n' + pb.join('\n') + '\nCorrige la chorégraphie (ajoute des étapes intermédiaires si besoin) et renvoie le JSON complet.' });
+      msgs.push({ role: 'user', content: 'Le contrôle (collisions et plateau) a trouvé ces problèmes :\n' + pb.join('\n') + '\nCorrige la chorégraphie (ajoute des étapes intermédiaires si besoin) et renvoie le JSON complet.' });
     }
     if (!v.atHome && !v.nBad) $('edHome').onclick();
     v = edValidate();

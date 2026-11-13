@@ -240,7 +240,11 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    **Inventer avec l'IA** (dans l'Atelier, sous les Étapes ; exemples en pastilles, bouton ✨, clé repliée) : description en français → API Anthropic (`claude-sonnet-5-5`,
    appel direct du navigateur avec `anthropic-dangerous-direct-browser-access`), réponse JSON
    `{name, steps:[{pos,speed,wait}]}` chargée dans l'Atelier ; jusqu'à 3 corrections automatiques en renvoyant
-   les collisions ; retour au départ ajouté par ⌂ si c'est le seul manque. Clé API dans localStorage `odv.aikey`
+   les collisions ; retour au départ ajouté par ⌂ si c'est le seul manque. **Depuis v1.93** (demande de Gilles) : le prompt système est construit
+   par `aiSys()` avec le **plateau validé** (`aiBoardTxt` : carte en texte `#`/`.`/`D`, liste des blocs, règle floor/ceil, coordonnées
+   hors 0..30 permises) et la **décharge** (aller y vider les billes un par un, pause 3000) ; `aiParse` borne à `bdBox` ; l'éditeur
+   (`edValidate`) signale « HORS ZONE » à l'étape et pendant le trajet (lignes droites échantillonnées), ce qui part aussi dans les
+   corrections demandées à l'IA. Test : `t_ai_board.py`. Clé API dans localStorage `odv.aikey`
    uniquement (JAMAIS dans le dépôt). Test : `tests/t_ai.py` (API simulée). Les chorégraphies créées ne sont PAS dans le dépôt : pour les garder pour de
    bon, copier leur code dans `choregraphies/` et `CHORS`.
 5. **`simulateur/template.html`** : simulateur visuel (plateau sombre à points, véhicules en blocs sombres
