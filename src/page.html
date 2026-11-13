@@ -864,10 +864,23 @@ function tlFits(tl) {
 // plateau pour lequel une chorégraphie est prévue (v1.98) : celui enregistré avec elle (Atelier, depuis v1.98),
 // sinon le plateau validé si elle y tient, sinon le 4×4 d'origine ; null = le plateau validé
 function bdCopy() { return { cells: BD.cells.slice(), d: BD.d ? BD.d.slice() : null }; }
-function bdSame(b) { return b.cells.length === BD.cells.length && b.cells.every(c => BD.cells.includes(c)) && String(b.d) === String(BD.d); }
+function bdSame(b) { return b.cells.length === BD.cells.length && b.cells.every(c => BD.cells.includes(c)) && (!b.d || String(b.d) === String(BD.d)); }
 function chorBoard(it) {
-  if (it.board && Array.isArray(it.board.cells)) return bdSame(it.board) ? null : it.board;
-  return it.fit === false ? { cells: bdSquare(), d: null } : null;
+  // v2.04 : chorégraphies de l'appli = toujours le 4×4 d'origine ; chorégraphies créées = plateau enregistré avec elles,
+  // sinon (créées avant v1.98) les blocs sur lesquels passent les véhicules ; null = même plateau que le plateau validé
+  let b = it.board && Array.isArray(it.board.cells) ? it.board : !it.custom ? { cells: bdSquare(), d: null } : it.tl ? tlBoard(it.tl) : null;
+  return b && !bdSame(b) ? b : null;
+}
+function tlBoard(tl) {
+  // blocs couverts par les véhicules pendant la chorégraphie (emprise réduite de 1 pas, comme la tolérance de bdFits)
+  const S = new Set();
+  for (let i = 0; i < 4; i++) for (let t = 0; t <= tl.total; t += 100) {
+    const q = ODVGEN.posAt(tl, i, t);
+    for (let bx = Math.floor((q[0] + 1) / 10); bx <= Math.floor((q[0] + 9) / 10); bx++)
+      for (let by = Math.floor((q[1] + 1) / 10); by <= Math.floor((q[1] + 9) / 10); by++) S.add(bx + ',' + by);
+  }
+  S.add('0,0');
+  return { cells: [...S], d: null };
 }
 function withBoard(b, fn) {
   // dessine / calcule avec un autre plateau que le plateau validé, le temps d'un appel

@@ -1664,9 +1664,9 @@ while True:
             remote = None
             pr = ()
             print('RC', 0)
-        # memes boutons que le programme telecommande : gauche = moteur port C (X), droite = moteur port A (Y)
-        vx = 1 if Button.LEFT_PLUS in pr else (-1 if Button.LEFT_MINUS in pr else 0)
-        vy = -1 if Button.RIGHT_PLUS in pr else (1 if Button.RIGHT_MINUS in pr else 0)
+        # v2.04 (Gilles pilote face aux véhicules) : sens inversé, comme le joystick de l appli : gauche + = vers la droite du plateau (-X), droite + = vers le bas (+Y)
+        vx = -1 if Button.LEFT_PLUS in pr else (1 if Button.LEFT_MINUS in pr else 0)
+        vy = 1 if Button.RIGHT_PLUS in pr else (-1 if Button.RIGHT_MINUS in pr else 0)
         if (vx or vy) and local - last_g > 400:
             step = MSPD * (local - last_loop)
             if vx and vy:
