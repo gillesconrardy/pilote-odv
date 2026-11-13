@@ -31,11 +31,13 @@ async def main():
         await pg.evaluate("R.hub.onLine('DG')"); await pg.wait_for_timeout(200)
         print('auto', await pg.evaluate('JSON.stringify(M.auto && M.auto.pts)'))
         assert await pg.evaluate('!!M.auto')
-        best = 0; minx = 0
+        best = 0; minx = 0; shot = False
         for k in range(60):
             await pg.wait_for_timeout(500)
             y = await pg.evaluate('M.cmd[1]'); best = max(best, y); minx = min(minx, await pg.evaluate('M.cmd[0]'))
             if k == 8: await pg.screenshot(path='/tmp/dump_go.png')
+            if await pg.evaluate("!!(M.auto && M.auto.phase === 'wait')") and not shot:
+                await pg.wait_for_timeout(1200); shot = True; await pg.locator('#cv').screenshot(path='/tmp/dump_unload.png')
             if not await pg.evaluate('!!M.auto'): break
         print('plus bas atteint', round(best, 2), '| fin', await pg.evaluate('JSON.stringify(M.cmd)'), '| msg', await pg.inner_text('#fMsg'))
         assert best > 49.9 and await pg.evaluate('Math.hypot(M.cmd[0], M.cmd[1]) < 0.1')
@@ -44,6 +46,6 @@ async def main():
         # v2.01 : à la décharge, 1 cm à droite (−X), pause, puis retour à la place d'arrivée
         nx = [t for t in g if t.startswith('G-')]
         print('petit pas à droite', round(minx, 2), nx)
-        assert abs(minx + 1 / 1.225) < 0.02 and any(t.startswith('G-82,') for t in nx)
+        assert shot and abs(minx + 1 / 1.225) < 0.02 and any(t.startswith('G-82,') for t in nx)
         print('errors', errs); await b.close()
 asyncio.run(main())

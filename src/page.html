@@ -1997,6 +1997,7 @@ function manualTick(ts) {
   if (goal) {
     let dx = goal[0] - M.cmd[0], dy = goal[1] - M.cmd[1]; const d = Math.hypot(dx, dy);
     let sp = VPAGE * dt; if (M.mode === 'joy' && !M.returning && !M.auto) sp *= Math.min(1, Math.hypot(M.joy[0], M.joy[1]));
+    if (M.auto && (M.auto.phase === 'in' || M.auto.phase === 'out')) sp = 1.6 * dt;   // petit pas de décharge : lent (≈ 0,5 s), bien visible
     if (d > 1e-6) {
       const k = Math.min(1, sp / d); dx *= k; dy *= k;
       const tries = M.returning || M.auto ? [[dx, dy]] : [[dx, dy], [dx, 0], [0, dy]];
@@ -2068,25 +2069,30 @@ function dumpGo() {
 }
 const DUMP_NUDGE = 1 / 1.225;   // 1 cm en pas : petit pas à droite (vu de face, = −X) pour vider les billes (v2.01)
 function dumpTick(now) {
-  // renvoie la cible du moment pendant le trajet automatique :
-  // aller → 1 cm à droite → pause 3 s (décharge) → 1 cm à gauche (place d'arrivée) → retour
+  // renvoie la cible du moment pendant le trajet automatique (v2.02 : le petit pas se fait à l'arrêt, lentement) :
+  // aller → arrêt 0,8 s → 1 cm à droite → décharge 3 s → 1 cm à gauche → arrêt 0,5 s → retour
   const A = M.auto;
-  if (A.phase === 'wait') {
+  if (A.phase === 'settle' || A.phase === 'wait' || A.phase === 'rest') {
     if (now < A.t) return null;
-    M.hub.stdin('Y0').catch(() => {});
-    if (A.home) { A.phase = 'out'; A.pts = [A.home]; }
-    else { A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…'); }
+    if (A.phase === 'settle') {
+      // arrêté à la décharge : 1 cm vers la droite du plateau, sauf contre la clôture du coin (bloc 0,0) ou un autre véhicule
+      const q = [M.cmd[0] - DUMP_NUDGE, M.cmd[1]], fence = Math.round(M.cmd[0] / 10) === 0 && Math.round(M.cmd[1] / 10) === 0;
+      A.home = !fence && bdFits(q, 1) && M.others.every(o => Math.max(Math.abs(q[0] - o[0]), Math.abs(q[1] - o[1])) >= 10) ? M.cmd.slice() : null;
+      A.t0 = now;   // début du déchargement (dessin sur le plateau)
+      M.hub.stdin('Y1').catch(() => {}); manMsg('⬇ À la décharge : décharge les billes…');
+      if (A.home) { A.phase = 'in'; A.pts = [q]; }
+      else { A.phase = 'wait'; A.t = now + 3000; return null; }
+    } else if (A.phase === 'wait') {
+      M.hub.stdin('Y0').catch(() => {});
+      if (A.home) { A.phase = 'out'; A.pts = [A.home]; }
+      else { A.phase = 'rest'; A.t = now; }
+    } else { A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…'); }
   }
   while (A.pts.length && Math.hypot(A.pts[0][0] - M.cmd[0], A.pts[0][1] - M.cmd[1]) < 0.02) { M.cmd = A.pts[0].slice(); A.pts.shift(); }
   if (A.pts.length) return A.pts[0];
-  if (A.phase === 'go') {
-    // arrivé à la décharge : 1 cm vers la droite du plateau, sauf contre la clôture du coin (bloc 0,0)
-    const q = [M.cmd[0] - DUMP_NUDGE, M.cmd[1]], fence = Math.round(M.cmd[0] / 10) === 0 && Math.round(M.cmd[1] / 10) === 0;
-    A.home = !fence && bdFits(q, 1) && M.others.every(o => Math.max(Math.abs(q[0] - o[0]), Math.abs(q[1] - o[1])) >= 10) ? M.cmd.slice() : null;
-    if (A.home) { A.phase = 'in'; A.pts = [q]; return q; }
-  }
-  if (A.phase === 'go' || A.phase === 'in') { A.phase = 'wait'; A.t = now + 3000; M.hub.stdin('Y1').catch(() => {}); manMsg('⬇ À la décharge : décharge les billes (3 s)…'); return null; }
-  if (A.phase === 'out') { A.phase = 'back'; A.pts = A.back; manMsg('↩ Retour à son point de départ…'); return A.pts.length ? A.pts[0] : null; }
+  if (A.phase === 'go') { A.phase = 'settle'; A.t = now + 800; manMsg('⬇ Arrivé à la décharge…'); return null; }
+  if (A.phase === 'in') { A.phase = 'wait'; A.t = now + 3000; return null; }
+  if (A.phase === 'out') { A.phase = 'rest'; A.t = now + 500; return null; }
   M.auto = null; manMsg('Revenu. Touche le <b>04</b> sur le plateau pour repartir à la décharge.'); handStart(2, true); manUI();
   return null;
 }
@@ -3094,6 +3100,7 @@ function drawPlate(c, tl, w, man, trails, ovr) {
     vehDraw(cx, L, T, S, u, cols[i], '0' + (i + 1));
     if (man && man.v === i + 1 && (man.arm || man.auto)) { cx.save(); cx.strokeStyle = '#22d3ee'; cx.lineWidth = u * .45; cx.setLineDash([u * .9, u * .6]); cx.lineDashOffset = -performance.now() / 60; cx.strokeRect(L - u * 1.1, T - u * 1.1, S + u * 2.2, S + u * 2.2); cx.restore(); }
     if (man && man.v === i + 1) { cx.strokeStyle = '#ff9a3c'; cx.lineWidth = u * .5; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
+    if (man && man.v === i + 1 && man.auto && man.auto.t0) dumpDraw(cx, u, L, T, S, man.auto);
     if (hit) { cx.strokeStyle = '#e5483a'; cx.lineWidth = u * .6; cx.strokeRect(L - u * .3, T - u * .3, S + u * .6, S + u * .6); }
     // poursuite : pastille du rôle (méchant rouge, gentil bleu, fixe gris, toi = ambre)
     if (ovr && GM.on && GM.kind === 'chase') {
@@ -3105,6 +3112,35 @@ function drawPlate(c, tl, w, man, trails, ovr) {
       cx.fillText(B[1], bx, by + u * .1); cx.restore();
     }
   }
+}
+// déchargement sur le plateau virtuel (v2.02) : billes orange qui glissent du côté droit du V4 et tombent,
+// barre de 3 s sous le véhicule et mot DÉCHARGE ; dure tant qu'il est à la décharge (petit pas aller, pause, petit pas retour)
+function dumpDraw(cx, u, L, T, S, A) {
+  if (!['in', 'wait', 'out'].includes(A.phase) && !(A.phase === 'rest' && performance.now() - A.t < 0)) return;
+  const now = performance.now(), el = now - A.t0, end = A.phase === 'wait' ? A.t : A.phase === 'in' ? now + 3000 : now;
+  const pr = A.phase === 'out' || A.phase === 'rest' ? 1 : Math.max(0, Math.min(1, 1 - (end - now) / 3000));
+  cx.save();
+  // billes : roulent dans le véhicule vers son bord droit (écran), s'y vident et disparaissent (reste dans le dessin du plateau)
+  if (A.phase !== 'out') for (let k = 0; k < 14; k++) {
+    const life = 1100, t0 = k * 200, tt = (el - t0) % (life * 3);
+    if (el < t0 || tt > life) continue;
+    const f = tt / life, x0 = L + S * (0.15 + 0.5 * ((k * 53) % 10) / 10), x = x0 + (L + S + u * 1.2 - x0) * f * f;
+    const y = T + S * (0.18 + 0.64 * ((k * 37) % 10) / 10) + u * 1.5 * Math.max(0, f - .75) * 4;
+    cx.globalAlpha = f < .75 ? 1 : (1 - f) * 4; cx.fillStyle = '#ff9a3c'; cx.beginPath(); cx.arc(x, y, u * .85, 0, 7); cx.fill();
+    cx.globalAlpha *= .6; cx.fillStyle = '#fff'; cx.beginPath(); cx.arc(x - u * .28, y - u * .28, u * .28, 0, 7); cx.fill();
+  }
+  cx.globalAlpha = 1;
+  // le côté droit du V4 s'allume (benne qui s'ouvre)
+  cx.strokeStyle = '#ff9a3c'; cx.lineWidth = u * .7; cx.beginPath(); cx.moveTo(L + S + u * .3, T + u); cx.lineTo(L + S + u * .3, T + S - u); cx.stroke();
+  // barre de progression + mot
+  // sous le véhicule, ou au-dessus s'il est en bas du plateau
+  const below = T + S + u * 6 < cx.canvas.height, by = below ? T + S + u * 1.4 : T - u * 2.8, ty = below ? by + u * 1.9 : by - u * .5;
+  cx.fillStyle = 'rgba(18,19,20,.85)'; cx.fillRect(L, by, S, u * 1.4);
+  cx.fillStyle = '#22d3ee'; cx.fillRect(L, by, S * pr, u * 1.4);
+  cx.font = `700 ${1.9 * u}px "Space Mono",monospace`; cx.textAlign = 'center'; cx.textBaseline = below ? 'top' : 'bottom';
+  const tw = cx.measureText('DÉCHARGE').width; cx.fillStyle = 'rgba(18,19,20,.85)'; cx.fillRect(L + S / 2 - tw / 2 - u * .4, below ? ty - u * .2 : ty - u * 2.2, tw + u * .8, u * 2.4);
+  cx.fillStyle = '#22d3ee'; cx.fillText('DÉCHARGE', L + S / 2, ty);
+  cx.restore();
 }
 function drawBoard() {
   const tl = R.tl || TL;
