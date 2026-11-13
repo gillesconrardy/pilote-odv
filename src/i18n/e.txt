@@ -41,3 +41,4 @@ speed={0} hors 1..100 : le robot lèverait une erreur	speed={0} outside 1..100: 
 ligne non simulée : {0}	line not simulated: {0}
 valeur non numérique : {0}	non-numeric value: {0}
 {0} · ligne {1}	{0} · line {1}
+Plateau prévu pour cette chorégraphie ({0} blocs), pas le plateau validé	Board this choreography was made for ({0} blocks), not the validated board

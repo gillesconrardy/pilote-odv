@@ -754,6 +754,7 @@ body.focus #dsBar .dsh b{font-size:17px}
 <button class="newver" id="newVer"><span style="font-size:22px">⟳</span><span><span id="newVerTxt">Nouvelle version disponible</span><small>Touche ici pour mettre à jour</small></span></button>
 <dialog id="pvDlg" style="padding:12px">
   <div class="row" style="justify-content:space-between;align-items:flex-start;flex-wrap:nowrap;gap:10px;margin-bottom:6px"><b id="pvName" style="font-size:16px;flex:1;min-width:0"></b><button class="xclose" id="pvClose" aria-label="Fermer" title="Fermer"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div class="sub" id="pvBd" hidden style="margin:0 0 6px;color:#ff9a3c"></div>
   <canvas id="pvCv" width="600" height="600" style="margin-top:0"></canvas>
   <div class="row" style="margin-top:8px;flex-wrap:nowrap"><button class="btn primary" id="pvPlay" style="min-width:52px">❚❚</button>
     <input type="range" id="pvSeek" min="0" max="1000" value="0" style="flex:1;accent-color:var(--accent)">
@@ -860,6 +861,20 @@ function tlFits(tl) {
   for (let i = 0; i < 4; i++) for (let t = 0; t <= tl.total; t += 100) { const q = ODVGEN.posAt(tl, i, t); if (!bdFits(q)) return false; }
   return true;
 }
+// plateau pour lequel une chorégraphie est prévue (v1.98) : celui enregistré avec elle (Atelier, depuis v1.98),
+// sinon le plateau validé si elle y tient, sinon le 4×4 d'origine ; null = le plateau validé
+function bdCopy() { return { cells: BD.cells.slice(), d: BD.d ? BD.d.slice() : null }; }
+function bdSame(b) { return b.cells.length === BD.cells.length && b.cells.every(c => BD.cells.includes(c)) && String(b.d) === String(BD.d); }
+function chorBoard(it) {
+  if (it.board && Array.isArray(it.board.cells)) return bdSame(it.board) ? null : it.board;
+  return it.fit === false ? { cells: bdSquare(), d: null } : null;
+}
+function withBoard(b, fn) {
+  // dessine / calcule avec un autre plateau que le plateau validé, le temps d'un appel
+  if (!b) return fn();
+  const c = BD.cells, d = BD.d; BD.cells = b.cells; BD.d = b.d;
+  try { return fn(); } finally { BD.cells = c; BD.d = d; }
+}
 function bdChanged() {
   // plateau modifié : on revérifie les chorégraphies et on redessine
   if (typeof items === 'undefined' || !items) return;
@@ -868,7 +883,7 @@ function bdChanged() {
 }
 function loadItems() {
   const all = PRESETS.map((p, i) => ({ id: 'p' + i, name: p.name, src: p.src, def: p.def }))
-    .concat(custom.map((c, i) => ({ id: 'c' + c.id, name: c.name, src: c.src, custom: c.id, ed: c.ed })));
+    .concat(custom.map((c, i) => ({ id: 'c' + c.id, name: c.name, src: c.src, custom: c.id, ed: c.ed, board: c.board })));
   all.forEach(analyse);
   const saved = store.get('order', null);
   const on = store.get('on', null);
@@ -901,31 +916,53 @@ function renderList() {
 }
 // glisser-déposer pour changer l'ordre (poignée ⠿, doigt ou souris)
 function chDrag(e, row) {
+  // v1.98 : la ligne déplacée n'est jamais retirée du document (sinon le navigateur perd la capture du doigt en montant),
+  // plusieurs places d'un coup si le doigt va vite, défilement automatique près du haut / du bas de l'écran,
+  // suivi du doigt sur toute la fenêtre (pas seulement sur la poignée)
   e.preventDefault();
-  const box = $('chList'), grip = e.currentTarget; grip.setPointerCapture(e.pointerId);
-  let y0 = e.clientY, moved = false;
+  const box = $('chList'), grip = e.currentTarget, pid = e.pointerId;
+  try { grip.setPointerCapture(pid); } catch {}
+  let y0 = e.clientY, cy = e.clientY, moved = false, raf = 0, done = false;
   row.classList.add('drag');
-  const move = ev => {
-    row.style.transform = `translateY(${ev.clientY - y0}px)`;
-    const r = row.getBoundingClientRect(), mid = r.top + r.height / 2;
-    const prev = row.previousElementSibling, next = row.nextElementSibling;
-    if (prev && mid < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
-      const h = prev.offsetHeight; box.insertBefore(row, prev); y0 -= h; moved = true;
-    } else if (next && mid > next.getBoundingClientRect().top + next.offsetHeight / 2) {
-      const h = next.offsetHeight; box.insertBefore(next, row); y0 += h; moved = true;
-    } else return;
-    row.style.transform = `translateY(${ev.clientY - y0}px)`;
-    if (navigator.vibrate) try { navigator.vibrate(8); } catch {}
+  const place = () => {
+    row.style.transform = `translateY(${cy - y0}px)`;
+    for (let n = 0; n < 50; n++) {
+      const r = row.getBoundingClientRect(), mid = r.top + r.height / 2;
+      const prev = row.previousElementSibling, next = row.nextElementSibling;
+      if (prev && mid < prev.getBoundingClientRect().top + prev.offsetHeight / 2) {
+        const h = prev.offsetHeight; box.insertBefore(prev, row.nextSibling); y0 -= h;
+      } else if (next && mid > next.getBoundingClientRect().top + next.offsetHeight / 2) {
+        const h = next.offsetHeight; box.insertBefore(next, row); y0 += h;
+      } else break;
+      moved = true; row.style.transform = `translateY(${cy - y0}px)`;
+      if (navigator.vibrate) try { navigator.vibrate(8); } catch {}
+    }
   };
-  const up = () => {
-    grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
+  const scroll = () => {
+    // près du bord de l'écran : la page défile et la ligne suit le doigt
+    raf = 0; if (done) return;
+    const m = 70, H = innerHeight, v = cy < m ? -Math.ceil((m - cy) / 6) : cy > H - m ? Math.ceil((cy - H + m) / 6) : 0;
+    if (!v) return;
+    const before = scrollY; scrollBy(0, v); const d = scrollY - before;
+    if (d) { y0 -= d; place(); }
+    raf = requestAnimationFrame(scroll);
+  };
+  const move = ev => {
+    if (ev.pointerId !== pid) return;
+    ev.preventDefault(); cy = ev.clientY; place();
+    if (!raf) raf = requestAnimationFrame(scroll);
+  };
+  const up = ev => {
+    if (ev && ev.pointerId !== undefined && ev.pointerId !== pid) return;
+    done = true; cancelAnimationFrame(raf);
+    removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
     row.classList.remove('drag'); row.style.transform = '';
     if (!moved) return;
     const order = [...box.children].map(c => c.dataset.id);
     items.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
     persist(); refresh();
   };
-  grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
+  addEventListener('pointermove', move, { passive: false }); addEventListener('pointerup', up); addEventListener('pointercancel', up);
 }
 // infobulles ⓘ (appui pour ouvrir, appui ailleurs pour fermer)
 let bubble = null;
@@ -998,7 +1035,7 @@ $('dlgOk').onclick = () => {
   const name = $('dlgName').value.trim() || 'Ma chorégraphie', src = $('dlgSrc').value;
   const it = analyse({ name, src });
   if (!it.ok) { $('dlgMsg').innerHTML = '<span class="bad">' + esc(it.msg) + '</span>'; return; }
-  const id = Date.now(); custom.push({ id, name, src }); store.set('custom', custom);
+  const id = Date.now(); custom.push({ id, name, src, board: bdCopy() }); store.set('custom', custom);
   const on = store.get('on', items.filter(i => i.on).map(i => i.id)); on.push('c' + id); store.set('on', on);
   $('dlg').close(); loadItems(); refresh(); toast('Chorégraphie ajoutée');
 };
@@ -2617,9 +2654,9 @@ if ($('edCode')) $('edCode').onclick = () => { const b = $('edCodeBox'); b.style
 $('edSave').onclick = () => {
   const v = edValidate(); if (!v.atHome || v.nBad) return;
   const name = $('edName').value.trim() || 'Ma chorégraphie';
-  if (ED.id) { const c = custom.find(c => c.id === ED.id); Object.assign(c, { name, src: v.src, ed: clone(ED.steps) }); }
+  if (ED.id) { const c = custom.find(c => c.id === ED.id); Object.assign(c, { name, src: v.src, ed: clone(ED.steps), board: bdCopy() }); }
   else {
-    const id = Date.now(); custom.push({ id, name, src: v.src, ed: clone(ED.steps) }); ED.id = id;
+    const id = Date.now(); custom.push({ id, name, src: v.src, ed: clone(ED.steps), board: bdCopy() }); ED.id = id;
     const on = store.get('on', items.filter(i => i.on).map(i => i.id)); on.push('c' + id); store.set('on', on);
   }
   store.set('custom', custom); loadItems(); refresh();
@@ -2634,6 +2671,9 @@ function openPreview(it) {
   catch (e) { toast('Aperçu impossible : ' + e.message); return; }
   const { prog } = ODV.parse(ODVGEN.prepare(it.src), 4);
   PV.cols = ODV.collisions(ODV.simulate(prog, ODVGEN.HOME), 10).filter(c => c.pen > 1);
+  PV.board = chorBoard(it);
+  $('pvBd').hidden = !PV.board;
+  if (PV.board) $('pvBd').textContent = `Plateau prévu pour cette chorégraphie (${PV.board.cells.length} blocs), pas le plateau validé`;
   PV.w = 0; PV.play = true; PV.last = performance.now();
   $('pvName').textContent = it.name + ' · ' + fmt(PV.tl.total);
   $('pvPlay').textContent = '❚❚';
@@ -2651,7 +2691,7 @@ function previewTick() {
   $('pvSeek').value = Math.round(PV.w / PV.tl.total * 1000);
   $('pvTime').textContent = fmt(PV.w) + ' / ' + fmt(PV.tl.total);
   const c = $('pvCv');
-  drawPlate(c, PV.tl, PV.w, null, true);
+  withBoard(PV.board, () => drawPlate(c, PV.tl, PV.w, null, true));
 }
 // ====================================================================== jeu de poursuite
 const GM = { on: false, phase: 0, speed: 5, pos: null, home: null, catches: 0, roundAt: 0, best: store.get('best', 0), wait: null };

@@ -188,7 +188,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    (`drawPlate`, `drawSensor`, `boardPt`, `edPt`, Atelier ; 4×4 = l'ancien u = W/44) : **Pilotage et Atelier dessinent le plateau validé**
    (blocs, clôtures en haut/à droite du coin, décharge) ; véhicule hors plateau encadré en rouge ; **chorégraphies qui sortent du
    plateau bloquées** dans Programme (`tlFits`, `it.fit`, badge « HORS ZONE » (v1.92, design « 5 · Mini plan » : petit bloc gris + véhicule rouge qui déborde, `.badge.hz`), case désactivée, exclues de `PLAY`) ;
-   joystick limité aux blocs (`freeAt` → `bdFits(p, 0.01)`). Les programmes reçoivent le plateau (`opts.board` = `bdPairs()`,
+   joystick limité aux blocs (`freeAt` → `bdFits(p, 0.01)`). **Plateau d'une chorégraphie** (v1.98, demande de Gilles) : les chorégraphies créées (Atelier, IA, code collé) enregistrent le plateau validé du moment (`board` dans `odv.custom`, `bdCopy`) ; l'**aperçu** dessine le plateau pour lequel la chorégraphie est prévue (`chorBoard(it)` : son plateau enregistré, sinon le 4×4 d'origine si elle sort du plateau validé ; `withBoard(b, fn)` remplace `BD` le temps du dessin) avec la ligne `#pvBd` « Plateau prévu pour cette chorégraphie (n blocs), pas le plateau validé ». Les anciennes chorégraphies créées n'ont pas de plateau enregistré. Les programmes reçoivent le plateau (`opts.board` = `bdPairs()`,
    marqueur `%BOARD%` → `BOARD = ((bx, by), …)`, défaut 4×4) ; `genId` et `keyNow` en tiennent compte (renvoi nécessaire après
    validation). Hub : `on_board` dans `free_at` (télécommande et poussée restent sur les blocs) ; `G` borné à ±200 (c'est l'appli qui
    garde le V4 sur les blocs). Harness : `BOARD='[[bx,by],…]' node mkprogs.js …`.
@@ -216,7 +216,7 @@ Moteurs : X port C, Y port A. Recalage (homing) contre la clôture : un véhicul
    `@pybricks/mpy-cross-v6@2.0.0` (chargé depuis jsDelivr, ou esm.sh en secours), envoie au hub
    (format multi-mpy6 : taille u32 + `__main__\0` + mpy ; commandes 0 stop, 3 meta, 4 RAM, 1 start,
    6 stdin), service Pybricks `c5f50001-8280-46da-89f4-6d8051e4aeef`.
-   Fonctions : choix/ordre des chorégraphies (glisser-déposer par la poignée ⠿), aperçu animé (bouton radar, icône SVG ambre), recalage (« Jouer en boucle » retiré en v1.84 : `#optLoop` caché, toujours décoché),
+   Fonctions : choix/ordre des chorégraphies (glisser-déposer par la poignée ⠿ ; corrigé en v1.98 (`chDrag`) : en montant, la ligne était retirée du document et perdait la capture du doigt (une seule place, ligne restée « en glisse ») → on déplace les voisines, plusieurs places par mouvement, suivi sur toute la fenêtre, défilement auto près des bords ; test `t_drag.py`), aperçu animé (bouton radar, icône SVG ambre), recalage (« Jouer en boucle » retiré en v1.84 : `#optLoop` caché, toujours décoché),
    « Mettre à jour les 4 véhicules » (retour au départ → `e` → arrêt V4 → envoi 1,2,3,4 sans recalage ;
    une petite boîte demande un appui par hub inconnu, la fenêtre Bluetooth étant filtrée sur son nom), « Tout déconnecter » (vérifié),
    reconnexion automatique, joystick pour le véhicule 4 uniquement (anti-collision et bornes 0..30) ;
