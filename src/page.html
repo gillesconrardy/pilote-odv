@@ -1997,7 +1997,7 @@ function manualTick(ts) {
   if (goal) {
     let dx = goal[0] - M.cmd[0], dy = goal[1] - M.cmd[1]; const d = Math.hypot(dx, dy);
     let sp = VPAGE * dt; if (M.mode === 'joy' && !M.returning && !M.auto) sp *= Math.min(1, Math.hypot(M.joy[0], M.joy[1]));
-    if (M.auto && (M.auto.phase === 'in' || M.auto.phase === 'out')) sp = 1.6 * dt;   // petit pas de décharge : lent (≈ 0,5 s), bien visible
+    if (M.auto && (M.auto.phase === 'in' || M.auto.phase === 'out')) sp = 1.6 * dt;   // petit pas de décharge : lent (≈ 1 s), bien visible
     if (d > 1e-6) {
       const k = Math.min(1, sp / d); dx *= k; dy *= k;
       const tries = M.returning || M.auto ? [[dx, dy]] : [[dx, dy], [dx, 0], [0, dy]];
@@ -2067,17 +2067,17 @@ function dumpGo() {
   M.hub.stdin('Y2').catch(() => {});   // gyrophare pendant le trajet aller
   manMsg('⬇ En route vers la décharge…'); manUI();
 }
-const DUMP_NUDGE = 1 / 1.225;   // 1 cm en pas : petit pas à droite (vu de face, = −X) pour vider les billes (v2.01)
+const DUMP_NUDGE = 2 / 1.225;   // 2 cm en pas (v2.03 ; 1 cm en v2.01) : petit pas à droite (vu de face, = −X) pour vider les billes
 function dumpTick(now) {
   // renvoie la cible du moment pendant le trajet automatique (v2.02 : le petit pas se fait à l'arrêt, lentement) :
-  // aller → arrêt 0,8 s → 1 cm à droite → décharge 3 s → 1 cm à gauche → arrêt 0,5 s → retour
+  // aller → arrêt 0,8 s → 2 cm à droite → décharge 3 s → 2 cm à gauche → arrêt 0,5 s → retour
   const A = M.auto;
   if (A.phase === 'settle' || A.phase === 'wait' || A.phase === 'rest') {
     if (now < A.t) return null;
     if (A.phase === 'settle') {
-      // arrêté à la décharge : 1 cm vers la droite du plateau, sauf contre la clôture du coin (bloc 0,0) ou un autre véhicule
+      // arrêté à la décharge : 2 cm vers la droite du plateau, sauf contre la clôture du coin (bloc 0,0) ou un autre véhicule
       const q = [M.cmd[0] - DUMP_NUDGE, M.cmd[1]], fence = Math.round(M.cmd[0] / 10) === 0 && Math.round(M.cmd[1] / 10) === 0;
-      A.home = !fence && bdFits(q, 1) && M.others.every(o => Math.max(Math.abs(q[0] - o[0]), Math.abs(q[1] - o[1])) >= 10) ? M.cmd.slice() : null;
+      A.home = !fence && bdFits(q, DUMP_NUDGE + 0.1) && M.others.every(o => Math.max(Math.abs(q[0] - o[0]), Math.abs(q[1] - o[1])) >= 10) ? M.cmd.slice() : null;
       A.t0 = now;   // début du déchargement (dessin sur le plateau)
       M.hub.stdin('Y1').catch(() => {}); manMsg('⬇ À la décharge : décharge les billes…');
       if (A.home) { A.phase = 'in'; A.pts = [q]; }

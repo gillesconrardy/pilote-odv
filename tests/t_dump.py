@@ -43,9 +43,9 @@ async def main():
         assert best > 49.9 and await pg.evaluate('Math.hypot(M.cmd[0], M.cmd[1]) < 0.1')
         g = [t for n, t in (await pg.evaluate('window.__stdin'))[n0:] if t.startswith('G')]
         print('G envoyés', len(g), g[:2], g[-1:])
-        # v2.01 : à la décharge, 1 cm à droite (−X), pause, puis retour à la place d'arrivée
+        # v2.03 : à la décharge, 2 cm à droite (−X), pause, puis retour à la place d'arrivée
         nx = [t for t in g if t.startswith('G-')]
         print('petit pas à droite', round(minx, 2), nx)
-        assert shot and abs(minx + 1 / 1.225) < 0.02 and any(t.startswith('G-82,') for t in nx)
+        assert shot and abs(minx + 2 / 1.225) < 0.02 and any(t.startswith('G-163,') for t in nx)
         print('errors', errs); await b.close()
 asyncio.run(main())
